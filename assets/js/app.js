@@ -64,18 +64,35 @@ function loadMasterItems() {
         // Ukuran default jendela
         let w = 300; let h = 250;
 
+        // --- LOGIC: Cek di WidgetRegistry (widgets.js) ---
+        let widgetContent = `Modul: ${name} (Data ID: ${id})<br><br><small>Konten dinamis akan dimuat di sini.</small>`;
+
+        // Cek apakah ada render logic khusus untuk widget ini
+        if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
+            if (WidgetRegistry[name].render) {
+                widgetContent = WidgetRegistry[name].render(wId);
+            }
+        }
+
         let html = `
             <div class="lobe-widget" id="${wId}" data-isai="${isAI}" style="width:${w}px; height:${h}px; left: 100px; top: 100px;">
                 <div class="widget-header">
                     <span>${name}</span>
                     <span class="widget-close" style="display: none;">&times;</span>
                 </div>
-                <div class="widget-content">Modul: ${name} (Data ID: ${id})<br><br><small>Konten dinamis akan dimuat di sini.</small></div>
+                <div class="widget-content">${widgetContent}</div>
             </div>
         `;
         
         $('#workspace-screen').append(html);
         
+        // --- LOGIC: Init Script (Setelah elemen masuk DOM) ---
+        if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
+            if (WidgetRegistry[name].init) {
+                WidgetRegistry[name].init(wId);
+            }
+        }
+
         let newWidget = $(`#${wId}`);
 
         // Jadikan Draggable (Bisa dipindah) & Resizable (Bisa diubah ukuran)

@@ -76,6 +76,7 @@
             </div>
     </div>
 
+    <script src="assets/js/widgets.js"></script>
     <script src="assets/js/app.js"></script>
 </body>
 </html>
