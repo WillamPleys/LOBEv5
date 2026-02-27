@@ -173,7 +173,8 @@ body, html {
 .custom-select-wrapper {
     position: relative;
     user-select: none;
-    width: 200px;
+    max-width: 300px; /* Limit width */
+    min-width: 200px;
 }
 
 .custom-select-trigger {
@@ -192,6 +193,16 @@ body, html {
     border: 1px solid #ddd;
 }
 
+/* Handling Long Text */
+.custom-select-trigger span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 10px;
+    display: block;
+    max-width: 250px;
+}
+
 .custom-options {
     position: absolute;
     display: block;
@@ -208,6 +219,8 @@ body, html {
     z-index: 2;
     border-radius: 0 0 4px 4px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    max-height: 300px; /* Scrollable if too many rooms */
+    overflow-y: auto;
 }
 
 .custom-select-wrapper .custom-options.open {
@@ -226,6 +239,10 @@ body, html {
     line-height: 40px;
     cursor: pointer;
     transition: all 0.2s;
+    /* Handle long option text */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .custom-option:hover {

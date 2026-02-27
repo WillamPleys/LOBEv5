@@ -2,6 +2,8 @@
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']) ? 'true' : 'false';
 $username = isset($_SESSION['username']) ? $_SESSION['username'] : 'Guest';
+$activeRoomId = isset($_SESSION['active_room_id']) ? $_SESSION['active_room_id'] : 'null';
+$activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_name'] : '';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -25,7 +27,9 @@ $username = isset($_SESSION['username']) ? $_SESSION['username'] : 'Guest';
     <script>
         const INITIAL_STATE = {
             isLoggedIn: <?php echo $isLoggedIn; ?>,
-            username: "<?php echo htmlspecialchars($username); ?>"
+            username: "<?php echo htmlspecialchars($username); ?>",
+            activeRoomId: <?php echo $activeRoomId; ?>,
+            activeRoomName: "<?php echo htmlspecialchars($activeRoomName); ?>"
         };
     </script>
 </head>
@@ -35,11 +39,12 @@ $username = isset($_SESSION['username']) ? $_SESSION['username'] : 'Guest';
     <div id="ad-notification">
         <div class="ad-toast">
             <div class="ad-header">
-                <span><i class="fas fa-bullhorn"></i> Sponsored Ad</span>
+                <span><i class="fas fa-crown"></i> LOBE Premium</span>
                 <span class="ad-close" onclick="$('#ad-notification').fadeOut()">&times;</span>
             </div>
             <div class="ad-body">
-                <p>This is a non-intrusive advertisement. <br><small>It appears every 5 minutes.</small></p>
+                <p>Unlock exclusive features with LOBE Premium! <br><strong>Subscribe now for only $9.99/mo.</strong></p>
+                <button class="btn btn-primary" style="margin-top:10px; font-size:0.8rem; padding:5px;">Upgrade Now</button>
             </div>
         </div>
     </div>
@@ -80,7 +85,7 @@ $username = isset($_SESSION['username']) ? $_SESSION['username'] : 'Guest';
         <div class="box-container">
             <h2>Beri Nama Ruanganmu</h2>
             <p class="subtitle">Contoh: Ruang Belajar, Basecamp LOBE</p>
-            <input type="text" id="room-name" placeholder="Nama Room..." required>
+            <input type="text" id="room-name" placeholder="Nama Room..." required maxlength="50">
             <button type="button" id="btn-create-room" class="btn-primary" style="width: 100%;">Mulai Membangun</button>
         </div>
     </div>
