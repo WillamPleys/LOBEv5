@@ -25,9 +25,11 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
 
     <script>
+        const APP_IS_LOGGED_IN = <?php echo $isLoggedIn; ?>;
+        const APP_USERNAME = "<?php echo htmlspecialchars($username); ?>";
         const INITIAL_STATE = {
-            isLoggedIn: <?php echo $isLoggedIn; ?>,
-            username: "<?php echo htmlspecialchars($username); ?>",
+            isLoggedIn: APP_IS_LOGGED_IN,
+            username: APP_USERNAME,
             activeRoomId: <?php echo $activeRoomId; ?>,
             activeRoomName: "<?php echo htmlspecialchars($activeRoomName); ?>"
         };
