@@ -159,7 +159,8 @@ body, html {
     justify-content: space-between; 
     align-items: center; 
     padding: 0 25px; 
-    z-index: 100;
+    /* High Z-Index to stay above everything */
+    z-index: 1000;
 }
 
 .nav-logo {
