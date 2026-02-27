@@ -30,10 +30,25 @@ if ($action === 'login') {
             $_SESSION['role'] = $user['role'];
             $_SESSION['username'] = $user['username'];
 
+            // Log Transaction
             $detail = "User {$user['username']} berhasil login.";
             $conn->query("INSERT INTO transactions (user_id, jenis_aktivitas, detail_aktivitas, ip_address) VALUES ('{$user['id']}', 'Login', '$detail', '$ip')");
 
-            echo json_encode(['status' => 'success', 'role' => $user['role'], 'message' => 'Login berhasil.']);
+            // CHECK IF USER HAS EXISTING ROOMS
+            $room_check = $conn->query("SELECT id, nama_room FROM rooms WHERE user_id = '{$user['id']}' ORDER BY created_at DESC LIMIT 1");
+            $existing_room = null;
+            if ($room_check && $room_check->num_rows > 0) {
+                $existing_room = $room_check->fetch_assoc();
+                $_SESSION['active_room_id'] = $existing_room['id'];
+                $_SESSION['active_room_name'] = $existing_room['nama_room'];
+            }
+
+            echo json_encode([
+                'status' => 'success',
+                'role' => $user['role'],
+                'message' => 'Login berhasil.',
+                'active_room' => $existing_room
+            ]);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Password salah.']);
         }
