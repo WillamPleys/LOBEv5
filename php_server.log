@@ -1,0 +1,13 @@
+[Fri Feb 27 08:23:57 2026] PHP 8.3.6 Development Server (http://localhost:8000) started
+[Fri Feb 27 08:24:15 2026] [::1]:54762 Accepted
+[Fri Feb 27 08:24:15 2026] [::1]:54762 [200]: GET /index.php
+[Fri Feb 27 08:24:15 2026] [::1]:54762 Closing
+[Fri Feb 27 08:24:16 2026] [::1]:54766 Accepted
+[Fri Feb 27 08:24:16 2026] [::1]:54778 Accepted
+[Fri Feb 27 08:24:16 2026] [::1]:54782 Accepted
+[Fri Feb 27 08:24:16 2026] [::1]:54766 [200]: GET /assets/css/style.css
+[Fri Feb 27 08:24:16 2026] [::1]:54778 [200]: GET /assets/js/widgets.js
+[Fri Feb 27 08:24:16 2026] [::1]:54782 [200]: GET /assets/js/app.js
+[Fri Feb 27 08:24:16 2026] [::1]:54766 Closing
+[Fri Feb 27 08:24:16 2026] [::1]:54778 Closing
+[Fri Feb 27 08:24:16 2026] [::1]:54782 Closing
