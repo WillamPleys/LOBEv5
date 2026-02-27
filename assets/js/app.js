@@ -4,6 +4,10 @@ $(document).ready(function() {
     const roomScreen = $('#room-setup-screen');
     const workspaceScreen = $('#workspace-screen');
 
+    let widgetCount = 0;
+    let currentTargetWidget = null;
+    let saveTimeout = null;
+
     // --- SESSION MANAGEMENT ---
     if (typeof INITIAL_STATE !== 'undefined' && INITIAL_STATE.isLoggedIn) {
         loginScreen.hide();
@@ -16,6 +20,9 @@ $(document).ready(function() {
             $('#current-room-name').text(INITIAL_STATE.activeRoomName);
             $('.grid-background').addClass('active');
             $('.custom-options').append(`<span class="custom-option" data-value="${INITIAL_STATE.activeRoomId}">${INITIAL_STATE.activeRoomName}</span>`);
+
+            // LOAD SAVED WIDGETS
+            loadWorkspaceState();
         } else {
             roomScreen.css('display', 'flex');
         }
@@ -29,14 +36,12 @@ $(document).ready(function() {
     };
 
     // --- ADVERTISEMENT SYSTEM (TOAST) ---
-    // Exposed globally for testing
     window.showAdToast = function() {
         if(workspaceScreen.is(':visible')) {
             $('#ad-notification').fadeIn().css('display', 'flex');
             setTimeout(() => { $('#ad-notification').fadeOut(); }, 10000);
         }
     }
-
     setInterval(window.showAdToast, 120000);
 
     // --- LOAD MASTER ITEMS ---
@@ -62,16 +67,67 @@ $(document).ready(function() {
     }
     loadMasterItems();
 
-    // --- WIDGET SPAWNING LOGIC ---
-    let widgetCount = 0;
-    let currentTargetWidget = null;
+    // --- STATE MANAGEMENT ---
+    function saveWorkspaceState() {
+        if (saveTimeout) clearTimeout(saveTimeout);
 
-    function spawnWidget(id, name, type, x = 100, y = 100) {
+        // Debounce save to prevent spamming server
+        saveTimeout = setTimeout(() => {
+            let widgets = [];
+            $('.lobe-widget').each(function() {
+                let $el = $(this);
+                let pos = $el.position();
+
+                // Collect specific content data if needed (e.g. text in notes)
+                // For now we persist geometry. Content persistence would require
+                // widget-specific 'get state' methods in WidgetRegistry.
+
+                widgets.push({
+                    id: $el.attr('id'),
+                    master_id: $el.data('master-id'),
+                    x: pos.left,
+                    y: pos.top,
+                    w: $el.width(),
+                    h: $el.height(),
+                    content_data: {} // Placeholder for future deep state
+                });
+            });
+
+            $.ajax({
+                url: 'backend/save_widgets.php',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ widgets: widgets }),
+                success: function() { console.log('State Saved'); }
+            });
+        }, 1000);
+    }
+
+    function loadWorkspaceState() {
+        $.ajax({
+            url: 'backend/get_widgets.php',
+            type: 'GET',
+            success: function(res) {
+                if (res.status === 'success') {
+                    // Prevent Welcome Screen if widgets exist
+                    if (res.data.length > 0) $('#welcome-screen').hide();
+
+                    res.data.forEach(w => {
+                        spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false);
+                    });
+                }
+            }
+        });
+    }
+
+    // --- WIDGET SPAWNING LOGIC ---
+    function spawnWidget(id, name, type, x = 100, y = 100, w = 350, h = 300, animate = true) {
         if ($('#welcome-screen').is(':visible')) { $('#welcome-screen').fadeOut(300); }
+
         widgetCount++;
         let wId = `widget-${widgetCount}`;
         let isAI = (type === 'api' || type === 'output') ? 'true' : 'false';
-        let w = 350; let h = 300;
+
         let widgetContent = `Modul: ${name} (ID: ${id})<br><small>Loading content...</small>`;
 
         if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
@@ -82,18 +138,29 @@ $(document).ready(function() {
 
         if (y < 70) y = 70;
 
-        let html = `<div class="lobe-widget fade-in" id="${wId}" data-isai="${isAI}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span>${name}</span><span class="widget-close" style="display: none;">&times;</span></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
+        let animClass = animate ? 'fade-in' : '';
+        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span>${name}</span><span class="widget-close" style="display: none;">&times;</span></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
         
         $('#workspace-screen').append(html);
-        setTimeout(() => { $(`#${wId}`).removeClass('fade-in'); }, 500);
+        if(animate) setTimeout(() => { $(`#${wId}`).removeClass('fade-in'); }, 500);
 
         if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
             if (WidgetRegistry[name].init) setTimeout(() => { WidgetRegistry[name].init(wId); }, 10);
         }
 
         let newWidget = $(`#${wId}`);
-        newWidget.draggable({ handle: ".widget-header", snap: true, snapTolerance: 15, containment: [0, 60, $(window).width() - 50, $(window).height() - 50] }).resizable();
+        newWidget.draggable({
+            handle: ".widget-header",
+            snap: true,
+            snapTolerance: 15,
+            containment: [0, 60, $(window).width() - 50, $(window).height() - 50],
+            stop: saveWorkspaceState // Save on drag end
+        }).resizable({
+            stop: saveWorkspaceState // Save on resize end
+        });
+
         newWidget.on('mousedown', function() { $('.lobe-widget').css('z-index', 500); $(this).css('z-index', 501); });
+
         newWidget.on('contextmenu', function(e) {
             e.preventDefault(); e.stopPropagation();
             currentTargetWidget = wId;
@@ -101,7 +168,14 @@ $(document).ready(function() {
             $('#context-menu').hide();
             $('#widget-context-menu').css({ display: 'block', left: e.clientX, top: e.clientY });
         });
-        newWidget.find('.widget-close').on('click', function() { newWidget.remove(); });
+
+        newWidget.find('.widget-close').on('click', function() {
+            newWidget.remove();
+            saveWorkspaceState(); // Save on delete
+        });
+
+        // Trigger save on initial spawn if animate (user action)
+        if(animate) saveWorkspaceState();
     }
 
     $(document).on('click', '.item-btn', function() { let id = $(this).data('id'); let type = $(this).data('type'); let name = $(this).find('span').text().trim(); spawnWidget(id, name, type, 200, 200); });
