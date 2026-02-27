@@ -51,6 +51,7 @@ $(document).ready(function() {
     setInterval(window.showAdToast, 120000);
 
     // --- SHARED: UPDATE ROOM LISTS (NAVBAR & SIDEBAR) ---
+    // Make this robust against failures
     window.updateRoomLists = function() {
         $.ajax({
             url: 'backend/get_user_rooms.php',
@@ -82,6 +83,9 @@ $(document).ready(function() {
                         }
                     });
                 }
+            },
+            error: function(e) {
+                console.error("Failed to fetch user rooms:", e);
             }
         });
     };
@@ -154,7 +158,11 @@ $(document).ready(function() {
     loadMasterItems();
 
     // --- STATE MANAGEMENT ---
+    let isWorkspaceLoaded = false; // Flag to prevent overwriting empty state on load failure
+
     function saveWorkspaceState() {
+        if (!isWorkspaceLoaded) return; // Don't save if we haven't successfully loaded yet
+
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
             let widgets = [];
@@ -183,7 +191,7 @@ $(document).ready(function() {
     }
 
     function loadWorkspaceState() {
-        // Clear existing widgets first (Fix Bug 3)
+        // Clear existing widgets first
         $('.lobe-widget').remove();
 
         $.ajax({
@@ -191,13 +199,23 @@ $(document).ready(function() {
             type: 'GET',
             success: function(res) {
                 if (res.status === 'success') {
-                    if (res.data.length > 0) $('#welcome-screen').hide();
-                    else $('#welcome-screen').show(); // Show welcome if room empty
-
-                    res.data.forEach(w => {
-                        spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false);
-                    });
+                    isWorkspaceLoaded = true; // Mark as loaded
+                    if (res.data.length > 0) {
+                        $('#welcome-screen').hide();
+                        res.data.forEach(w => {
+                            spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false);
+                        });
+                    } else {
+                        $('#welcome-screen').show(); // Show welcome if room empty
+                    }
+                } else {
+                    console.error("Failed to load widgets:", res.message);
+                    window.showCustomModal('Error', 'Failed to load workspace state. Please refresh.');
                 }
+            },
+            error: function() {
+                console.error("Failed to load widgets (Network/Server Error)");
+                window.showCustomModal('Error', 'Failed to load workspace state. Please refresh.');
             }
         });
     }
@@ -255,7 +273,8 @@ $(document).ready(function() {
             saveWorkspaceState();
         });
 
-        if(animate) saveWorkspaceState();
+        // Only save if this was a user action (animate=true), not a load action
+        if(animate && isWorkspaceLoaded) saveWorkspaceState();
     }
 
     $(document).on('click', '.item-btn', function() { let id = $(this).data('id'); let type = $(this).data('type'); let name = $(this).find('span').text().trim(); spawnWidget(id, name, type, 200, 200); });
@@ -330,6 +349,9 @@ $(document).ready(function() {
                 if(res.status === 'success') {
                     // Fix Bug 3: Clear workspace before showing new room
                     $('.lobe-widget').remove();
+
+                    // Mark as loaded so we can save new widgets
+                    isWorkspaceLoaded = true;
 
                     $('#current-room-name').text(res.room_name);
                     roomScreen.fadeOut(300, function() { workspaceScreen.fadeIn(300, function() { $('.grid-background').addClass('active'); }); $('#up-nav-bar').slideDown(300); setTimeout(() => $('#welcome-screen').fadeIn(800), 500); });
