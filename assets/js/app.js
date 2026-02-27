@@ -13,8 +13,25 @@ $(document).ready(function() {
     window.showCustomModal = function(title, message) {
         $('#modal-title').text(title);
         $('#modal-message').html(message);
+        $('#modal-actions-default').show();
+        $('#modal-actions-confirm').hide();
         $('#custom-modal').css('display', 'flex');
     };
+
+    window.showConfirmModal = function(title, message, onConfirm) {
+        $('#modal-title').text(title);
+        $('#modal-message').html(message);
+        $('#modal-actions-default').hide();
+        $('#modal-actions-confirm').show();
+
+        // Remove previous handlers to prevent stacking
+        $('#btn-confirm-yes').off('click').on('click', function() {
+            $('#custom-modal').hide();
+            if(onConfirm) onConfirm();
+        });
+
+        $('#custom-modal').css('display', 'flex');
+    }
 
     // --- ADVERTISEMENT SYSTEM (TOAST) ---
     window.showAdToast = function() {
@@ -26,7 +43,8 @@ $(document).ready(function() {
     setInterval(window.showAdToast, 120000);
 
     // --- STATE MANAGEMENT & SAVING ---
-    function saveWorkspaceState() {
+    // Debounce save function to auto-save changes
+    window.saveWorkspaceState = function() {
         if (!isWorkspaceLoaded) return; // Don't save if we haven't successfully loaded yet
 
         if (saveTimeout) clearTimeout(saveTimeout);
@@ -35,6 +53,15 @@ $(document).ready(function() {
             $('.lobe-widget').each(function() {
                 let $el = $(this);
                 let pos = $el.position();
+
+                // Collect specific content data if widget supports it
+                // We rely on widgets having input fields or state that we can serialize.
+                // For now, widgets.js logic handles internal state but save_widgets expects 'content_data'.
+                // Ideally, each widget should expose a .getState() method.
+                // Since that refactor is large, we focus on position/size which was the user complaint.
+                // BUT user said "tidak tersave... harus klik kanan". This implies content too?
+                // "membuat item baru atau memindahkan item baru... tidak tersave" -> Position/Existence.
+
                 widgets.push({
                     id: $el.attr('id'),
                     master_id: $el.data('master-id'),
@@ -42,7 +69,7 @@ $(document).ready(function() {
                     y: pos.top,
                     w: $el.width(),
                     h: $el.height(),
-                    content_data: {}
+                    content_data: {} // Placeholder for advanced content persistence
                 });
             });
 
@@ -51,9 +78,9 @@ $(document).ready(function() {
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({ widgets: widgets }),
-                success: function() { console.log('State Saved'); }
+                success: function() { console.log('Auto-Saved Workspace'); }
             });
-        }, 1000);
+        }, 500); // Reduce debounce time for responsiveness
     }
 
     // --- WIDGET SPAWNING LOGIC ---
@@ -176,71 +203,56 @@ $(document).ready(function() {
 
     // --- GLOBAL FUNCTIONS (HOISTING FIX) ---
     window.deleteRoom = function(roomId, roomName) {
-        if(confirm(`Are you sure you want to delete room "${roomName}"? This cannot be undone.`)) {
-             $.ajax({
-                url: 'backend/delete_room.php',
-                type: 'POST',
-                dataType: 'json',
-                data: { room_id: roomId },
-                success: function(res) {
-                    if(res.status === 'success') {
-                        window.showCustomModal('Success', 'Room deleted successfully.');
-                        if(res.switched_to) {
-                             // If the active room was deleted, backend returns the new room to switch to
-                             switchRoom(res.switched_to.id, res.switched_to.nama_room);
+        window.showConfirmModal(
+            'Delete Room',
+            `Are you sure you want to delete room "<b>${roomName}</b>"? This cannot be undone.`,
+            function() {
+                $.ajax({
+                    url: 'backend/delete_room.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { room_id: roomId },
+                    success: function(res) {
+                        if(res.status === 'success') {
+                            window.showCustomModal('Success', 'Room deleted successfully.');
+                            if(res.switched_to) {
+                                switchRoom(res.switched_to.id, res.switched_to.nama_room);
+                            }
+                            updateRoomLists();
+                        } else {
+                            window.showCustomModal('Error', res.message);
                         }
-                        updateRoomLists();
-                    } else {
-                        window.showCustomModal('Error', res.message);
-                    }
-                },
-                error: function() { window.showCustomModal('Error', 'Failed to delete room.'); }
-            });
-        }
+                    },
+                    error: function() { window.showCustomModal('Error', 'Failed to delete room.'); }
+                });
+            }
+        );
     };
 
     window.switchRoom = function(roomId, roomName) {
-        $('.lobe-widget').remove();
-        $('#current-room-name').text(roomName);
+        // 1. Save current state before switching
+        saveWorkspaceState();
 
-        // Update session via AJAX? Ideally yes, but for now we rely on the visual switch.
-        // Wait, if we switch rooms, we must update the session so reload works.
-        // Since we don't have a dedicated endpoint for just "switching", we assume the user
-        // interaction is enough for this task scope or we reuse create_room logic if needed.
-        // However, loading widgets is the critical part.
-
-        // We need to tell the backend which room is active to load the correct widgets.
-        // Let's create a quick "set_active.php" or just use a trick?
-        // Actually, without updating session active_room_id, get_widgets.php will return OLD room widgets!
-        // So we MUST implement a way to set active room.
-
-        // For now, let's assume we need to fix this properly.
-        // I'll add a quick inline AJAX here to set session.
-        $.post('backend/create_room.php', { room_name: roomName, switch_only: true }, function() {
-             // This is a hack if create_room doesn't support it, but since I can't easily edit backend
-             // without a new plan step (I am in Frontend step), I will rely on the fact that
-             // "create_room" logic was: insert -> set session.
-             // Wait, I can't reuse create_room for switching without creating a new room.
-
-             // LIMITATION: get_widgets uses $_SESSION['active_room_id'].
-             // If I don't update it, I can't load new widgets.
-             // I will implement a client-side workaround: pass room_id to get_widgets?
-             // No, get_widgets reads session.
-
-             // I will assume for this step I am just implementing the UI for Delete/Login redirect.
-             // But to make switch work after delete, I need that session update.
-             // Since I cannot edit backend files in this step (strictly speaking), I will skip the
-             // backend session update for "switch" and focus on the requested features.
-             // BUT, the delete feature returns "switched_to" which DOES update session in backend/delete_room.php!
-             // So at least after delete, the session is correct.
-
-             loadWorkspaceState();
+        // 2. Set new active room in session
+        $.ajax({
+            url: 'backend/set_active_room.php',
+            type: 'POST',
+            data: { room_id: roomId, room_name: roomName },
+            dataType: 'json',
+            success: function(res) {
+                if(res.status === 'success') {
+                    // 3. Update UI & Load new state
+                    $('.lobe-widget').remove();
+                    $('#current-room-name').text(roomName);
+                    loadWorkspaceState(); // This now fetches widgets for the NEW room
+                } else {
+                    window.showCustomModal('Error', 'Failed to switch room: ' + res.message);
+                }
+            },
+            error: function() {
+                 window.showCustomModal('Error', 'Failed to switch room (Network Error).');
+            }
         });
-
-        // Actually, for normal switching, we do need it.
-        // I will add a tiny param to get_widgets.php in the next step or just let it be for now
-        // as the user focused on "Login Redirect" and "Delete".
-        loadWorkspaceState();
     };
 
     window.updateRoomLists = function() {
@@ -260,12 +272,13 @@ $(document).ready(function() {
 
                     rooms.forEach(room => {
                         let safeRoom = $('<div/>').text(room.nama_room).html();
-                        let deleteBtn = canDelete ? `<i class="fas fa-trash-alt" style="margin-left:auto; color:#ff4d4d; cursor:pointer; font-size:0.8rem;" onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')"></i>` : '';
+                        // Increased hit area for delete button (using padding and larger wrapper)
+                        let deleteBtn = canDelete ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="margin-left:auto; cursor:pointer; padding:5px 10px; display:inline-block;" title="Delete Room"><i class="fas fa-trash-alt" style="color:#ff4d4d; font-size:0.9rem;"></i></span>` : '';
 
                         // Custom Option with Delete Button
                         let optionHtml = `
-                            <div class="custom-option" data-value="${room.id}" style="display:flex; align-items:center; justify-content:space-between;">
-                                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85%;">${safeRoom}</span>
+                            <div class="custom-option" data-value="${room.id}" style="display:flex; align-items:center; justify-content:space-between; padding-right:5px;">
+                                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80%;">${safeRoom}</span>
                                 ${deleteBtn}
                             </div>
                         `;
@@ -279,9 +292,11 @@ $(document).ready(function() {
                             list.empty();
                             rooms.forEach(room => {
                                 let safeRoom = $('<div/>').text(room.nama_room).html();
-                                let deleteBtn = canDelete ? `<i class="fas fa-trash-alt" style="float:right; color:#ff4d4d; cursor:pointer;" onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')"></i>` : '';
-                                list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;" onclick="switchRoom('${room.id}', '${safeRoom}')">
-                                    <i class="fas fa-door-open"></i> ${safeRoom}
+                                // Same hit area improvement for sidebar
+                                let deleteBtn = canDelete ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="float:right; cursor:pointer; padding:2px 8px;" title="Delete Room"><i class="fas fa-trash-alt" style="color:#ff4d4d;"></i></span>` : '';
+
+                                list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="switchRoom('${room.id}', '${safeRoom}')">
+                                    <span><i class="fas fa-door-open"></i> ${safeRoom}</span>
                                     ${deleteBtn}
                                 </li>`);
                             });

@@ -60,8 +60,12 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
             </div>
             <div class="modal-body">
                 <p id="modal-message"></p>
-                <div class="modal-actions">
+                <div class="modal-actions" id="modal-actions-default">
                     <button class="btn" onclick="$('#custom-modal').hide()">OK</button>
+                </div>
+                <div class="modal-actions" id="modal-actions-confirm" style="display:none; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="$('#custom-modal').hide()">Cancel</button>
+                    <button class="btn btn-primary" id="btn-confirm-yes">Confirm</button>
                 </div>
             </div>
         </div>
