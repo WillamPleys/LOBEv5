@@ -66,7 +66,7 @@ body, html {
 #ad-notification {
     position: fixed;
     bottom: 20px;
-    left: 20px;
+    right: 20px; /* Changed from left to right as requested */
     z-index: 20000;
     display: none; /* Hidden by default */
 }
@@ -78,11 +78,11 @@ body, html {
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     width: 300px;
     overflow: hidden;
-    animation: slideInLeft 0.5s ease-out;
+    animation: slideInRight 0.5s ease-out; /* Changed animation direction */
 }
 
-@keyframes slideInLeft {
-    from { transform: translateX(-100%); opacity: 0; }
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
 
