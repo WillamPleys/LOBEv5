@@ -4,8 +4,36 @@ $(document).ready(function() {
     const roomScreen = $('#room-setup-screen');
     const workspaceScreen = $('#workspace-screen');
 
-// FUNGSI UNTUK MEMUAT 15 ITEM DARI DATABASE
-function loadMasterItems() {
+    // --- ADVERTISEMENT SYSTEM ---
+    // Start automatic ads timer (Every 5 minutes = 300000ms)
+    setInterval(showAdOverlay, 300000);
+
+    function showAdOverlay() {
+        // Only show if user is in workspace
+        if(workspaceScreen.is(':visible')) {
+            $('#ad-overlay').fadeIn();
+            let timeLeft = 5; // 5 seconds ad
+            const $timer = $('#ad-timer-count');
+            const $btn = $('#ad-close-btn');
+
+            $timer.text(timeLeft);
+            $btn.prop('disabled', true).removeClass('active').text(`Wait ${timeLeft}s`);
+
+            let interval = setInterval(() => {
+                timeLeft--;
+                $timer.text(timeLeft);
+                if(timeLeft > 0) {
+                     $btn.text(`Wait ${timeLeft}s`);
+                } else {
+                    clearInterval(interval);
+                    $btn.prop('disabled', false).addClass('active').text('Close Advertisement');
+                }
+            }, 1000);
+        }
+    }
+
+    // --- LOAD MASTER ITEMS ---
+    function loadMasterItems() {
         $.ajax({
             url: 'backend/get_items.php',
             type: 'GET',
@@ -16,10 +44,9 @@ function loadMasterItems() {
                     const contextList = $('#menu-items-list');
                     
                     welcomeContainer.empty();
-                    contextList.append('<div class="context-divider"></div><div class="context-title">Tambah Item:</div>');
+                    contextList.append('<div class="context-divider"></div><div class="context-title">Add Item:</div>');
 
                     res.data.forEach(item => {
-                        // Mengambil class ikon (gambar) langsung dari database
                         let iconClass = item.gambar; 
 
                         // Render ke Welcome Screen
@@ -42,36 +69,37 @@ function loadMasterItems() {
         });
     }
 
-    // Panggil fungsi saat aplikasi dimulai
     loadMasterItems();
 
-    // --- 5. LOGIKA MEMBUAT (SPAWN) WIDGET KE KANVAS ---
+    // --- WIDGET SPAWNING LOGIC ---
     let widgetCount = 0;
     let currentTargetWidget = null;
 
     function spawnWidget(id, name, type) {
-        // Hilangkan layar perkenalan IKEA beserta kotak menunya (sesuai instruksimu)
         if ($('#welcome-screen').is(':visible')) {
             $('#welcome-screen').fadeOut(300);
         }
 
         widgetCount++;
         let wId = `widget-${widgetCount}`;
-        
-        // Identifikasi apakah ini item AI/Output untuk memunculkan menu khusus
         let isAI = (type === 'api' || type === 'output') ? 'true' : 'false';
         
-        // Ukuran default jendela
-        let w = 300; let h = 250;
+        // Default size, overridden by widget specific render if needed,
+        // but for now keeping it simple. Can be enhanced in widgets.js
+        let w = 350; let h = 300;
 
-        // --- LOGIC: Cek di WidgetRegistry (widgets.js) ---
-        let widgetContent = `Modul: ${name} (Data ID: ${id})<br><br><small>Konten dinamis akan dimuat di sini.</small>`;
+        let widgetContent = `Modul: ${name} (ID: ${id})<br><small>Loading content...</small>`;
 
-        // Cek apakah ada render logic khusus untuk widget ini
         if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
             if (WidgetRegistry[name].render) {
                 widgetContent = WidgetRegistry[name].render(wId);
             }
+        } else {
+             // Fallback generic content
+             widgetContent = `<div style="padding:20px; text-align:center;">
+                <i class="fas fa-hammer" style="font-size:3rem; color:#eee; margin-bottom:10px;"></i>
+                <p>Feature <b>${name}</b> is ready to use!</p>
+             </div>`;
         }
 
         let html = `
@@ -80,62 +108,58 @@ function loadMasterItems() {
                     <span>${name}</span>
                     <span class="widget-close" style="display: none;">&times;</span>
                 </div>
-                <div class="widget-content">${widgetContent}</div>
+                <div class="widget-content" id="content-${wId}">${widgetContent}</div>
             </div>
         `;
         
         $('#workspace-screen').append(html);
         
-        // --- LOGIC: Init Script (Setelah elemen masuk DOM) ---
+        // Init Script
         if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
             if (WidgetRegistry[name].init) {
-                WidgetRegistry[name].init(wId);
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                    WidgetRegistry[name].init(wId);
+                }, 10);
             }
         }
 
         let newWidget = $(`#${wId}`);
 
-        // Jadikan Draggable (Bisa dipindah) & Resizable (Bisa diubah ukuran)
-        // Fitur snap akan menempelkan widget ke garis grid
         newWidget.draggable({ 
             handle: ".widget-header", 
             snap: true, 
             snapTolerance: 15,
-            containment: "#workspace-screen" // Agar tidak keluar dari layar
+            containment: "#workspace-screen"
         }).resizable();
 
-        // Bawa widget ke depan saat di-klik (Z-Index logic)
         newWidget.on('mousedown', function() {
             $('.lobe-widget').css('z-index', 500);
             $(this).css('z-index', 501);
         });
 
-        // Event Klik Kanan khusus pada Widget ini
+        // Widget Context Menu
         newWidget.on('contextmenu', function(e) {
             e.preventDefault();
-            e.stopPropagation(); // Mencegah klik kanan tembus ke kanvas utama
+            e.stopPropagation();
             
             currentTargetWidget = wId;
             
-            // Cek apakah ini modul AI / Output Field
             if($(this).data('isai') == true || $(this).data('isai') == 'true') { 
                 $('.ai-feature').show(); 
             } else { 
                 $('.ai-feature').hide(); 
             }
             
-            // Sembunyikan menu utama, munculkan menu widget
             $('#context-menu').hide();
             $('#widget-context-menu').css({ display: 'block', left: e.clientX, top: e.clientY });
         });
 
-        // Logika tombol silang (Hapus widget)
         newWidget.find('.widget-close').on('click', function() {
             newWidget.remove();
         });
     }
 
-    // Tangkap klik pada kotak item di Welcome Screen
     $(document).on('click', '.item-btn', function() {
         let id = $(this).data('id');
         let type = $(this).data('type');
@@ -143,42 +167,33 @@ function loadMasterItems() {
         spawnWidget(id, name, type);
     });
 
-    // Tangkap klik pada menu items di Context Menu (Klik Kanan Layar Utama)
     $(document).on('click', '.spawn-item', function() {
         let id = $(this).data('id');
         let type = $(this).data('type');
         let name = $(this).text().trim();
         spawnWidget(id, name, type);
-        $('#context-menu').hide(); // Tutup context menu setelah klik
+        $('#context-menu').hide();
     });
 
-    // Menutup widget-context-menu jika klik sembarang
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.context-menu').length) {
             $('#widget-context-menu').hide();
         }
     });
 
-    // Logika "Toggle Close Button" dari Context Menu Widget
     $('#toggle-close-btn').on('click', function() {
         if(currentTargetWidget) {
             const closeBtn = $(`#${currentTargetWidget} .widget-close`);
-            closeBtn.toggle(); // Munculkan / Sembunyikan
+            closeBtn.toggle();
         }
         $('#widget-context-menu').hide();
     });
 
-    // --- 1. LOGIKA CONTEXT MENU (KLIK KANAN DI KANVAS) ---
+    // --- CONTEXT MENU GLOBAL ---
     $(document).on('contextmenu', function(e) {
         e.preventDefault();
-        
-        // Hanya aktif di workspace
         if (workspaceScreen.is(':visible')) {
-            contextMenu.css({
-                display: 'block',
-                left: e.clientX + 'px',
-                top: e.clientY + 'px'
-            });
+            contextMenu.css({ display: 'block', left: e.clientX, top: e.clientY });
         }
     });
 
@@ -188,7 +203,7 @@ function loadMasterItems() {
         }
     });
 
-// --- 2. LOGIKA AJAX LOGIN / REGISTER ---
+    // --- AUTH LOGIC ---
     function handleAuth(action, btn) {
         let username = $('#username').val();
         let password = $('#password').val();
@@ -199,7 +214,7 @@ function loadMasterItems() {
         }
 
         let originalText = btn.text();
-        btn.text('Memproses...').prop('disabled', true);
+        btn.text('Processing...').prop('disabled', true);
 
         $.ajax({
             url: 'backend/auth.php',
@@ -211,17 +226,13 @@ function loadMasterItems() {
                 
                 if(res.status === 'success') {
                     if (action === 'register') {
-                        // Jika register berhasil, beri tahu user dan kosongkan password
                         $('#auth-message').html('<span style="color:green; font-size:12px; font-weight:bold;">' + res.message + '</span>');
                         $('#password').val('');
                     } else {
-                        // Jika login berhasil
-                        $('#display-user').text(username);
-                        
                         if(res.role === 'admin') {
-                            alert('Selamat datang Admin! (Panel Admin akan segera dibuat)');
+                            window.location.href = 'admin.php'; // Redirect Admin
                         } else {
-                            // Transisi Layar: Login -> Setup Room
+                            $('#display-user').text(username);
                             loginScreen.fadeOut(300, function() {
                                 roomScreen.css('display', 'flex').hide().fadeIn(300);
                             });
@@ -233,28 +244,20 @@ function loadMasterItems() {
             },
             error: function() {
                 btn.text(originalText).prop('disabled', false);
-                $('#auth-message').html('<span style="color:red; font-size:12px;">Koneksi ke server gagal.</span>');
+                $('#auth-message').html('<span style="color:red; font-size:12px;">Connection failed.</span>');
             }
         });
     }
 
-    // Pisahkan event klik berdasarkan tombol
-    $('#btn-login').on('click', function(e) {
-        e.preventDefault();
-        handleAuth('login', $(this));
-    });
+    $('#btn-login').on('click', function(e) { e.preventDefault(); handleAuth('login', $(this)); });
+    $('#btn-register').on('click', function(e) { e.preventDefault(); handleAuth('register', $(this)); });
 
-    $('#btn-register').on('click', function(e) {
-        e.preventDefault();
-        handleAuth('register', $(this));
-    });
-
-    // --- 3. LOGIKA AJAX BUAT ROOM ---
+    // --- CREATE ROOM LOGIC ---
     $('#btn-create-room').on('click', function() {
-        let roomName = $('#room-name').val() || 'Ruang Kosong';
+        let roomName = $('#room-name').val() || 'Empty Room';
         let btn = $(this);
         let originalText = btn.text();
-        btn.text('Menyiapkan...').prop('disabled', true);
+        btn.text('Building...').prop('disabled', true);
 
         $.ajax({
             url: 'backend/create_room.php',
@@ -263,41 +266,36 @@ function loadMasterItems() {
             data: { room_name: roomName },
             success: function(res) {
                 if(res.status === 'success') {
-                    
                     $('#room-selector').html(`<option value="${res.room_id}">${res.room_name}</option><option value="new">+ Create New Room</option>`);
 
-                    // Transisi Layar: Setup Room -> Workspace
                     roomScreen.fadeOut(300, function() {
-                        workspaceScreen.fadeIn(300);
+                        workspaceScreen.fadeIn(300, function() {
+                             // Animate Grid Background Entry
+                             $('.grid-background').addClass('active');
+                        });
                         $('#up-nav-bar').slideDown(300);
-                        setTimeout(() => $('#welcome-screen').fadeIn(500), 200);
+                        setTimeout(() => $('#welcome-screen').fadeIn(800), 500);
                     });
-
                 } else {
                     alert(res.message);
                     btn.text(originalText).prop('disabled', false);
                 }
             },
             error: function() {
-                alert("Gagal menghubungi server.");
+                alert("Server error.");
                 btn.text(originalText).prop('disabled', false);
             }
         });
     });
 
-    // --- 4. LOGIKA LOGOUT ---
-        $('#btn-logout').on('click', function() {
-            if(confirm('Apakah kamu yakin ingin keluar?')) {
-                $.ajax({
-                    url: 'backend/logout.php',
-                    type: 'POST',
-                    success: function() {
-                        location.reload(); // Reload halaman untuk kembali ke layar login
-                    }
-                });
-            }
-        });
-
-
-
+    // --- LOGOUT ---
+    $('#btn-logout').on('click', function() {
+        if(confirm('Are you sure you want to logout?')) {
+            $.ajax({
+                url: 'backend/logout.php',
+                type: 'POST',
+                success: function() { location.reload(); }
+            });
+        }
+    });
 });

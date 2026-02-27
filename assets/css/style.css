@@ -9,23 +9,29 @@
 body, html {
     width: 100%;
     height: 100%;
-    overflow: hidden; /* Mencegah scroll default, full canvas */
+    overflow: hidden; /* Prevent default scroll, full canvas */
     background-color: #ffffff;
 }
 
-/* Kanvas dengan Grid Besar */
+/* --- CANVAS & GRID --- */
 .grid-background {
     width: 100vw;
     height: 100vh;
-    /* Membuat grid dengan linear-gradient */
     background-image: 
         linear-gradient(to right, #e0e0e0 1px, transparent 1px),
         linear-gradient(to bottom, #e0e0e0 1px, transparent 1px);
-    background-size: 80px 80px; /* Ukuran grid besar */
+    background-size: 80px 80px; /* Big grid size */
     position: relative;
+    /* Animation for Room Entry */
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
 }
 
-/* Context Menu ala Windows */
+.grid-background.active {
+    opacity: 1;
+}
+
+/* --- CONTEXT MENU --- */
 .context-menu {
     position: absolute;
     background: #f9f9f9;
@@ -49,89 +55,57 @@ body, html {
 }
 
 .context-menu .menu-item:hover {
-    background: #0078d7; /* Warna biru ala seleksi Windows */
-    color: white;
-}
-
-/* Modal Box & Overlay */
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5); /* Overlay gelap */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-}
-
-.windows-style {
-    background: white;
-    width: 350px;
-    border: 1px solid #999;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-
-.modal-header {
-    background: #f0f0f0;
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ccc;
-    font-weight: 500;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-.close-btn:hover {
-    color: red;
-}
-
-.modal-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.modal-body input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    font-size: 14px;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.btn {
-    flex: 1;
-    padding: 10px;
-    border: none;
     background: #0078d7;
     color: white;
-    cursor: pointer;
-    border-radius: 3px;
 }
 
-.btn-outline {
+/* --- ADVERTISEMENT OVERLAY --- */
+#ad-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 20000;
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: white;
+}
+
+.ad-content {
     background: white;
-    color: #0078d7;
-    border: 1px solid #0078d7;
+    color: black;
+    padding: 40px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 500px;
+    position: relative;
 }
 
-.btn:hover { opacity: 0.9; }
+.ad-timer {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
 
-/* --- SCREEN & BOX CONTAINER (Dari Preview) --- */
+.ad-close-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #ccc;
+    color: #666;
+    border: none;
+    border-radius: 5px;
+    cursor: not-allowed;
+    font-weight: bold;
+}
+
+.ad-close-btn.active {
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+}
+
+/* --- SCREEN & BOX CONTAINER --- */
 .screen {
     position: absolute; width: 100%; height: 100%; top: 0; left: 0;
 }
@@ -166,7 +140,7 @@ body, html {
 .btn-secondary { background: #fff; color: #000; border: 1px solid #ddd; }
 .btn-secondary:hover { background: #f0f0f0; }
 
-/* --- PERBAIKAN NAVBAR --- */
+/* --- NAVBAR --- */
 .navbar {
     position: absolute; 
     top: 0; 
@@ -182,23 +156,22 @@ body, html {
     z-index: 100;
 }
 
-/* Tambahkan ini: Menghias teks LOBE di pojok kiri atas */
 .nav-logo {
     font-size: 1.5rem;
-    font-weight: 900; /* Ini yang membuat LOBE jadi Bold */
+    font-weight: 900;
     letter-spacing: -1px;
     color: #000;
     text-decoration: none;
 }
 
-/* --- TATA LETAK WELCOME SCREEN --- */
+/* --- WELCOME SCREEN --- */
 #welcome-screen {
     position: absolute;
-    top: 55%; /* Kembali ke tengah */
+    top: 55%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 95%;
-    max-width: 1100px; /* Diperlebar agar judul besar tidak pecah */
+    max-width: 1100px;
     text-align: center;
     z-index: 50;
     display: flex;
@@ -209,7 +182,6 @@ body, html {
 
 .ikea-font {
     font-family: 'Arial', sans-serif; 
-    /* Ukuran diperbesar kembali agar gagah */
     font-size: clamp(2.5rem, 8vw, 4.5rem); 
     font-weight: 900; 
     letter-spacing: -3px; 
@@ -218,18 +190,17 @@ body, html {
     line-height: 1;
 }
 
-/* --- OPTIMISASI GRID 4x4 (UKURAN LEBIH KOMPAK) --- */
+/* --- GRID 4x4 OPTIMIZED --- */
 .item-grid-container {
     display: grid !important; 
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 12px; /* Jarak antar kotak diperkecil */
+    gap: 12px;
     width: 100%;
     margin-top: 15px;
 }
 
 .item-btn {
     background: #ffffff; 
-    /* Padding vertikal dikurangi (dari 25px menjadi 18px) */
     padding: 18px 10px; 
     border-radius: 10px; 
     cursor: pointer; 
@@ -238,17 +209,17 @@ body, html {
     flex-direction: column; 
     align-items: center; 
     justify-content: center;
-    border: 1px solid #eee; 
-    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-    /* Tinggi minimal dikurangi agar lebih "slim" */
+    /* Modern "No Border" look with shadow */
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     min-height: 90px; 
 }
 
 .item-btn i { 
-    /* Ukuran ikon disesuaikan agar proporsional dengan tinggi baru */
     font-size: 2rem; 
     margin-bottom: 8px; 
     color: #333; 
+    transition: transform 0.2s;
 }
 
 .item-btn span {
@@ -259,22 +230,27 @@ body, html {
 }
 
 .item-btn:hover { 
-    transform: translateY(-5px); /* Efek hover diperhalus */
-    box-shadow: 0 8px 15px rgba(0,0,0,0.08); 
-    border-color: #000;
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.1);
+    background: #fafafa;
 }
 
-/* Divider untuk Context Menu */
+.item-btn:hover i {
+    transform: scale(1.1);
+    color: #000;
+}
+
+/* Divider Context Menu */
 .context-divider { height: 1px; background: #ddd; margin: 5px 0; }
 .context-title { padding: 5px 15px; font-size: 0.75rem; color: #888; font-weight: bold; }
 
-/* --- WIDGETS / WINDOWS MODULES --- */
+/* --- WIDGETS --- */
 .lobe-widget {
     position: absolute; 
-    background: rgba(255, 255, 255, 0.95); 
-    border: 1px solid #ddd; 
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #e0e0e0;
     border-radius: 8px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     overflow: hidden; 
     display: flex; 
     flex-direction: column;
@@ -282,35 +258,39 @@ body, html {
 }
 
 .widget-header { 
-    background: #f1f1f1; 
-    padding: 8px 12px; 
-    cursor: move; /* Kursor berubah jadi tanda move/drag */
-    font-weight: bold; 
-    font-size: 0.85rem; 
-    border-bottom: 1px solid #ddd; 
+    background: #f8f9fa;
+    padding: 10px 15px;
+    cursor: move;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #eee;
     display: flex; 
     justify-content: space-between; 
     align-items: center;
+    color: #444;
 }
 
 .widget-close { 
     cursor: pointer; 
-    color: red; 
-    font-size: 1rem;
+    color: #ff4d4d;
+    font-size: 1.1rem;
     font-weight: bold;
+    opacity: 0.7;
+    transition: opacity 0.2s;
 }
 
-.widget-close:hover { color: darkred; }
+.widget-close:hover { opacity: 1; }
 
 .widget-content { 
     padding: 15px; 
     flex-grow: 1; 
     overflow: auto; 
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     background: #fff;
+    color: #333;
 }
 
-/* Modifikasi Context Item (Agar lebih rapi dengan icon) */
+/* Modifikasi Context Item */
 .context-item { padding: 8px 15px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; }
 .context-item i { width: 25px; text-align: center; margin-right: 5px; color: #555;}
 .context-item:hover { background: #f0f0f0; color: #000; }

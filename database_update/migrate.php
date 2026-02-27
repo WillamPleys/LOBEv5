@@ -4,8 +4,9 @@ $host = "localhost";
 $user = "root"; // Sesuaikan jika ada password db
 $pass = "";
 $db   = "lobe_v5_db";
+$socket = "/tmp/mysqld/mysql.sock";
 
-$conn = new mysqli($host, $user, $pass);
+$conn = new mysqli($host, $user, $pass, "", 3306, $socket);
 if ($conn->connect_error) die("Koneksi gagal: " . $conn->connect_error);
 
 // Buat database jika belum ada
@@ -19,11 +20,12 @@ $conn->query("CREATE TABLE IF NOT EXISTS migration_history (
     executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
-$files = glob("*.sql");
+$files = glob("database_update/*.sql");
 sort($files); // Pastikan berurutan (01_init, 02_update, dst)
 
 foreach ($files as $file) {
-    $check = $conn->query("SELECT id FROM migration_history WHERE filename = '$file'");
+    $filename = basename($file);
+    $check = $conn->query("SELECT id FROM migration_history WHERE filename = '$filename'");
     if ($check->num_rows == 0) {
         $sql = file_get_contents($file);
         // Eksekusi multi query karena isi file SQL biasanya banyak baris
@@ -35,10 +37,10 @@ foreach ($files as $file) {
             } while ($conn->more_results() && $conn->next_result());
             
             // Catat ke history
-            $conn->query("INSERT INTO migration_history (filename) VALUES ('$file')");
-            echo "Berhasil update: $file <br>";
+            $conn->query("INSERT INTO migration_history (filename) VALUES ('$filename')");
+            echo "Berhasil update: $filename <br>";
         } else {
-            echo "Error pada $file: " . $conn->error . "<br>";
+            echo "Error pada $filename: " . $conn->error . "<br>";
         }
     }
 }
