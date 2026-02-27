@@ -1,3 +1,8 @@
+<?php
+session_start();
+$isLoggedIn = isset($_SESSION['user_id']) ? 'true' : 'false';
+$username = isset($_SESSION['username']) ? $_SESSION['username'] : 'Guest';
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -16,16 +21,42 @@
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script> <!-- CKEditor -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script> <!-- Ace Editor -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
+
+    <script>
+        const INITIAL_STATE = {
+            isLoggedIn: <?php echo $isLoggedIn; ?>,
+            username: "<?php echo htmlspecialchars($username); ?>"
+        };
+    </script>
 </head>
 <body>
 
-    <!-- ADVERTISEMENT OVERLAY -->
-    <div id="ad-overlay">
-        <div class="ad-content">
-            <h2 style="margin-bottom: 20px;">Sponsored Advertisement</h2>
-            <div class="ad-timer" id="ad-timer-count">5</div>
-            <p>This is a simulated advertisement as per requirements.</p>
-            <button id="ad-close-btn" class="ad-close-btn" onclick="$('#ad-overlay').fadeOut();">Wait 5s</button>
+    <!-- ADVERTISEMENT NOTIFICATION (TOAST) -->
+    <div id="ad-notification">
+        <div class="ad-toast">
+            <div class="ad-header">
+                <span><i class="fas fa-bullhorn"></i> Sponsored Ad</span>
+                <span class="ad-close" onclick="$('#ad-notification').fadeOut()">&times;</span>
+            </div>
+            <div class="ad-body">
+                <p>This is a non-intrusive advertisement. <br><small>It appears every 5 minutes.</small></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM ALERT MODAL -->
+    <div id="custom-modal" class="modal-overlay" style="display: none;">
+        <div class="windows-style">
+            <div class="modal-header">
+                <span id="modal-title">Notification</span>
+                <button class="close-btn" onclick="$('#custom-modal').hide()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message"></p>
+                <div class="modal-actions">
+                    <button class="btn" onclick="$('#custom-modal').hide()">OK</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -60,9 +91,17 @@
             <nav id="up-nav-bar" class="navbar" style="display: none;">
                 <div class="nav-logo">LOBE</div>
                 <div class="nav-center">
-                    <select id="room-selector">
-                        <option value="new">+ Create New Room</option>
-                    </select>
+                    <!-- CUSTOM SELECT REPLACEMENT -->
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select-trigger">
+                            <span id="current-room-name">+ Create New Room</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="custom-options">
+                            <span class="custom-option" data-value="new">+ Create New Room</span>
+                            <!-- Rooms loaded dynamically here -->
+                        </div>
+                    </div>
                 </div>
                 <div class="nav-profile">
                     <i class="fas fa-user-circle" style="font-size: 1.2rem; margin-right: 5px;"></i>
