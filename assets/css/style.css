@@ -40,6 +40,9 @@ body, html {
     min-width: 200px;
     z-index: 9999;
     padding: 5px 0;
+    /* Scrollbar Logic */
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .context-menu ul {
@@ -59,50 +62,53 @@ body, html {
     color: white;
 }
 
-/* --- ADVERTISEMENT OVERLAY --- */
-#ad-overlay {
+/* --- ADVERTISEMENT NOTIFICATION (TOAST) --- */
+#ad-notification {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85);
+    bottom: 20px;
+    left: 20px;
     z-index: 20000;
     display: none; /* Hidden by default */
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    color: white;
 }
 
-.ad-content {
+.ad-toast {
     background: white;
-    color: black;
-    padding: 40px;
+    border: 1px solid #ddd;
     border-radius: 8px;
-    text-align: center;
-    max-width: 500px;
-    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    width: 300px;
+    overflow: hidden;
+    animation: slideInLeft 0.5s ease-out;
 }
 
-.ad-timer {
-    font-size: 2rem;
+@keyframes slideInLeft {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.ad-header {
+    background: #f0f0f0;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
     font-weight: bold;
-    margin-bottom: 20px;
+    font-size: 0.9rem;
 }
 
-.ad-close-btn {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background: #ccc;
-    color: #666;
-    border: none;
-    border-radius: 5px;
-    cursor: not-allowed;
-    font-weight: bold;
-}
-
-.ad-close-btn.active {
-    background: #007bff;
-    color: white;
+.ad-close {
     cursor: pointer;
+    font-size: 1.2rem;
+    color: #888;
+}
+
+.ad-close:hover { color: red; }
+
+.ad-body {
+    padding: 15px;
+    font-size: 0.9rem;
+    color: #333;
 }
 
 /* --- SCREEN & BOX CONTAINER --- */
@@ -140,7 +146,7 @@ body, html {
 .btn-secondary { background: #fff; color: #000; border: 1px solid #ddd; }
 .btn-secondary:hover { background: #f0f0f0; }
 
-/* --- NAVBAR --- */
+/* --- NAVBAR & CUSTOM SELECT --- */
 .navbar {
     position: absolute; 
     top: 0; 
@@ -162,6 +168,68 @@ body, html {
     letter-spacing: -1px;
     color: #000;
     text-decoration: none;
+}
+
+.custom-select-wrapper {
+    position: relative;
+    user-select: none;
+    width: 200px;
+}
+
+.custom-select-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+    height: 40px;
+    line-height: 40px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+}
+
+.custom-options {
+    position: absolute;
+    display: block;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 1px solid #ddd;
+    border-top: 0;
+    background: #fff;
+    transition: all 0.3s;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 2;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.custom-select-wrapper .custom-options.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+}
+
+.custom-option {
+    position: relative;
+    display: block;
+    padding: 0 15px;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #333;
+    line-height: 40px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.custom-option:hover {
+    background: #f0f0f0;
 }
 
 /* --- WELCOME SCREEN --- */
@@ -255,6 +323,19 @@ body, html {
     display: flex; 
     flex-direction: column;
     z-index: 500;
+    /* Default transition for fade-in */
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Fade In Animation */
+.lobe-widget.fade-in {
+    opacity: 0;
+    animation: fadeInWidget 0.5s forwards;
+}
+
+@keyframes fadeInWidget {
+    to { opacity: 1; }
 }
 
 .widget-header { 
@@ -294,3 +375,81 @@ body, html {
 .context-item { padding: 8px 15px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; }
 .context-item i { width: 25px; text-align: center; margin-right: 5px; color: #555;}
 .context-item:hover { background: #f0f0f0; color: #000; }
+
+/* Modal Box & Overlay (Custom Alert) */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); /* Overlay gelap */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.windows-style {
+    background: white;
+    width: 350px;
+    border: 1px solid #999;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    background: #f0f0f0;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+    font-weight: 500;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: red;
+}
+
+.modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.modal-body input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: #0078d7;
+    color: white;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.btn-outline {
+    background: white;
+    color: #0078d7;
+    border: 1px solid #0078d7;
+}
+
+.btn:hover { opacity: 0.9; }
