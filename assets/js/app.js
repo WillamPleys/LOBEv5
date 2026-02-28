@@ -452,14 +452,13 @@ $(document).ready(function() {
         if (value === 'new') {
             workspaceScreen.fadeOut(300, function() { roomScreen.fadeIn(300); $('#welcome-screen').hide(); $('.grid-background').removeClass('active'); });
         } else {
-            // Switch room request
-            // For now, assume session update handles via sidebar or create.
-            // Ideally call switchRoom logic here too if we want fully robust switching.
-            // But user asked for "new room/pindah", and creating new room is robust.
-            // Let's make this simple: Reload page to force session check if we had set session.
-            // But we didn't set session yet. So this is visual only for now.
-            $('#current-room-name').text(text);
-            window.showCustomModal("Room Switch", "Switched to: " + text);
+            // Check if not clicking on the delete button span
+            if(!$(event.target).closest('span[title="Delete Room"]').length) {
+                // Remove the text from the delete icon (which has no title but is font-awesome)
+                // Just pass the text before the delete icon
+                let cleanText = $(this).find('span').first().text().trim() || text.trim();
+                window.switchRoom(value, cleanText);
+            }
         }
         $('.custom-options').removeClass('open');
     });

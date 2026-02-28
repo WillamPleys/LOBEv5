@@ -201,7 +201,8 @@ const WidgetRegistry = {
                     res.data.forEach(room => {
                         // Sanitize room name
                         let safeRoom = $('<div/>').text(room.nama_room).html();
-                        list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;" onclick="alert('Switching to room: ${safeRoom}')"><i class="fas fa-door-open"></i> ${safeRoom}</li>`);
+                        // This uses window.switchRoom from app.js without alerts
+                        list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;" onclick="window.switchRoom('${room.id}', '${safeRoom}')"><i class="fas fa-door-open"></i> ${safeRoom}</li>`);
                     });
                 } else {
                     list.html('<li style="color:red;">Failed to load rooms.</li>');
