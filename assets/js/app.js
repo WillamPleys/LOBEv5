@@ -62,6 +62,12 @@ $(document).ready(function() {
                 // BUT user said "tidak tersave... harus klik kanan". This implies content too?
                 // "membuat item baru atau memindahkan item baru... tidak tersave" -> Position/Existence.
 
+                let stateData = {};
+                // Jika memiliki function getState() di WidgetRegistry, ambil data state-nya
+                if ($el.data('customName')) {
+                    stateData.customName = $el.data('customName');
+                }
+
                 widgets.push({
                     id: $el.attr('id'),
                     master_id: $el.data('master-id'),
@@ -69,7 +75,7 @@ $(document).ready(function() {
                     y: pos.top,
                     w: $el.width(),
                     h: $el.height(),
-                    content_data: {} // Placeholder for advanced content persistence
+                    content_data: stateData // Persist custom name and other states
                 });
             });
 
@@ -101,7 +107,7 @@ $(document).ready(function() {
         if (y < 70) y = 70;
 
         let animClass = animate ? 'fade-in' : '';
-        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span>${name}</span><span class="widget-close" style="display: none;">&times;</span></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
+        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span class="widget-title-text">${name}</span><span class="widget-close" style="display: none;">&times;</span></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
         
         $('#workspace-screen').append(html);
         if(animate) setTimeout(() => { $(`#${wId}`).removeClass('fade-in'); }, 500);
@@ -141,7 +147,26 @@ $(document).ready(function() {
         newWidget.on('contextmenu', function(e) {
             e.preventDefault(); e.stopPropagation();
             currentTargetWidget = wId;
-            if($(this).data('isai') == true || $(this).data('isai') == 'true') { $('.ai-feature').show(); } else { $('.ai-feature').hide(); }
+
+            // Default reset
+            $('.ai-feature').hide();
+
+            if($(this).data('isai') == true || $(this).data('isai') == 'true') {
+                // We use the original internal name provided during spawn for logic, not the visual title
+                // We can derive it by matching the master_id if needed, but for now we know
+                // the initial name was passed as 'name'. Let's store the original type as a data attribute.
+                let originalType = $(this).data('original-type') || name.toLowerCase();
+
+                if (originalType.includes('ai assistant')) {
+                    $('#menu-ai-mode').show();
+                }
+                if (originalType.includes('output field')) {
+                    $('#menu-set-output').show();
+                    $('#menu-sort-by').show();
+                    $('#menu-toggle-search').show();
+                }
+            }
+
             $('#context-menu').hide();
 
             // Context Menu Positioning Logic
@@ -161,6 +186,32 @@ $(document).ready(function() {
             menu.css({ display: 'block', left: left, top: top });
         });
 
+        // Double-click to rename widget
+        newWidget.find('.widget-title-text').on('dblclick', function(e) {
+            e.stopPropagation();
+            let $titleSpan = $(this);
+            let currentName = $titleSpan.text();
+            let $input = $(`<input type="text" value="${currentName}" style="color: black; width: 60%; font-size: 0.9em; padding: 2px;">`);
+
+            $titleSpan.empty().append($input);
+            $input.focus();
+
+            function finishRename() {
+                let newName = $input.val().trim();
+                if (newName === '') newName = currentName;
+                $titleSpan.text(newName);
+                newWidget.data('customName', newName); // Save in memory
+                saveWorkspaceState(); // Save to DB
+            }
+
+            $input.on('blur', finishRename);
+            $input.on('keypress', function(e) {
+                if(e.which == 13) {
+                    $input.blur();
+                }
+            });
+        });
+
         newWidget.find('.widget-close').on('click', function() {
             newWidget.remove();
             saveWorkspaceState();
@@ -168,6 +219,8 @@ $(document).ready(function() {
 
         // Only save if this was a user action (animate=true), not a load action
         if(animate && isWorkspaceLoaded) saveWorkspaceState();
+
+        return newWidget;
     }
 
     // --- LOADING WORKSPACE ---
@@ -184,7 +237,13 @@ $(document).ready(function() {
                     if (res.data.length > 0) {
                         $('#welcome-screen').hide();
                         res.data.forEach(w => {
-                            spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false);
+                            let widget = spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false);
+
+                            // Restore custom name
+                            if (w.content_data && w.content_data.customName) {
+                                widget.find('.widget-title-text').text(w.content_data.customName);
+                                widget.data('customName', w.content_data.customName);
+                            }
                         });
                     } else {
                         $('#welcome-screen').show(); // Show welcome if room empty
@@ -372,6 +431,49 @@ $(document).ready(function() {
     $(document).on('click', '.spawn-item', function() { let id = $(this).data('id'); let type = $(this).data('type'); let name = $(this).text().trim(); spawnWidget(id, name, type, contextMenuPos.x, contextMenuPos.y); $('#context-menu').hide(); });
     $(document).on('click', function(e) { if (!$(e.target).closest('.context-menu').length) { $('#widget-context-menu').hide(); } });
     $('#toggle-close-btn').on('click', function() { if(currentTargetWidget) { const closeBtn = $(`#${currentTargetWidget} .widget-close`); closeBtn.toggle(); } $('#widget-context-menu').hide(); });
+
+    // Handle Submenu interactions (AI Modes, Sort, Output Sources)
+    $(document).on('mouseenter', '#menu-set-output', function() {
+        let sourcesMenu = $('#submenu-output-sources');
+        sourcesMenu.empty();
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Find all widgets that could be inputs (for now, any widget that is NOT output field itself)
+        let found = false;
+        $('.lobe-widget').each(function() {
+            let title = $(this).find('.widget-title-text').text();
+            let safeTitle = escapeHtml(title);
+            let safeTitleForJs = title.replace(/'/g, "\\'"); // Escape quotes for the JS onclick handler
+
+            let wId = $(this).attr('id');
+            // Skip self if clicking on output field
+            if (currentTargetWidget !== wId) {
+                found = true;
+                sourcesMenu.append(`<div class="context-item" onclick="$(document).trigger('setOutputSource', ['${currentTargetWidget}', '${wId}', '${safeTitleForJs}'])"><i class="fas fa-plug" style="margin-right:5px;"></i> ${safeTitle}</div>`);
+            }
+        });
+
+        if (!found) {
+            sourcesMenu.append('<div class="context-item" style="color:#888;">No sources available</div>');
+        }
+    });
+
+    // Close context menu on sub-item click
+    $(document).on('click', '.submenu .context-item', function() {
+        $('#widget-context-menu').hide();
+        let mode = $(this).data('mode');
+        let sort = $(this).data('sort');
+
+        if (mode && currentTargetWidget) {
+            $(document).trigger('changeAiMode', [currentTargetWidget, mode]);
+        }
+        if (sort && currentTargetWidget) {
+            $(document).trigger('sortOutputField', [currentTargetWidget, sort]);
+        }
+    });
 
     // Global Context Menu
     $(document).on('contextmenu', function(e) {

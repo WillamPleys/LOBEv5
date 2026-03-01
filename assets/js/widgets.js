@@ -11,7 +11,7 @@ const WidgetRegistry = {
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom:5px; font-size:0.9rem;">Grid Opacity: <span id="${wId}-opacity-val">1.0</span></label>
-                        <input type="range" id="${wId}-grid-opacity" min="0.1" max="1" step="0.1" value="1" style="width: 100%;">
+                        <input type="range" id="${wId}-grid-opacity" min="0" max="1" step="0.1" value="1" style="width: 100%;">
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom:5px; font-size:0.9rem;">Grid Color:</label>
@@ -253,29 +253,114 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="display:flex; flex-direction:column; height:100%;">
-                    <div style="border-bottom:1px solid #ddd; padding:5px; display:flex; justify-content:space-between; align-items:center;">
-                        <input type="text" id="${wId}-search" placeholder="Search..." style="padding:5px; width:60%;">
-                        <select id="${wId}-sort" style="padding:5px;"><option value="newest">Newest</option><option value="name_asc">A-Z</option></select>
+                    <div style="border-bottom:1px solid #ddd; padding:5px; display:flex; justify-content:space-between; align-items:center; background:#f8f9fa;">
+                        <input type="text" id="${wId}-search" placeholder="Search..." style="padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; outline:none; transition:box-shadow 0.2s;">
                     </div>
-                    <div id="${wId}-content-area" style="flex:1; overflow-y:auto; padding:10px;"><p style="text-align:center; color:#888;">No output yet.</p></div>
+                    <div id="${wId}-content-area" style="flex:1; overflow-y:auto; padding:10px; background:white;"><p style="text-align:center; color:#888;">No output yet.</p></div>
                 </div>
             `;
         },
         init: function(wId) {
-            const $area = $(`#${wId}-content-area`); let files = [];
-            $(document).on('fileUploaded', function(e, fileData) { files.push(fileData); renderFiles(); });
-            $(document).on('aiOutput', function(e, data) { files.push({ original_name: 'AI Response.txt', type: 'text/plain', content: data }); renderFiles(); });
+            const $area = $(`#${wId}-content-area`);
+            const $search = $(`#${wId}-search`);
+            let files = [];
+            let currentSort = 'newest';
+
+            $(document).on('fileUploaded', function(e, fileData) {
+                fileData.id = Date.now() + Math.random().toString(36).substr(2, 5); // Add unique ID for renaming
+                files.push(fileData);
+                renderFiles();
+            });
+
+            // Handle Context Menu Actions for this specific widget
+            $(document).on('sortOutputField', function(e, targetWId, sortType) {
+                if (targetWId === wId) {
+                    currentSort = sortType;
+                    renderFiles();
+                }
+            });
+
+            // Custom search filtering
+            $search.on('input', renderFiles);
+
+            function escapeHtml(text) {
+                return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+
             function renderFiles() {
                 $area.empty();
-                if(files.length === 0) { $area.html('<p style="text-align:center; color:#888;">No output yet.</p>'); return; }
-                files.forEach(f => {
-                    let icon = 'fa-file'; if(f.type.includes('image')) icon = 'fa-file-image';
-                    let safeName = $('<div/>').text(f.original_name).html();
-                    let item = $(`<div style="padding:10px; border-bottom:1px solid #eee; display:flex; align-items:center; cursor:pointer;" class="file-item"><i class="fas ${icon}" style="margin-right:10px;"></i><span>${safeName}</span></div>`);
-                    item.click(function() {
-                        if(f.type.includes('image')) $area.html(`<img src="${f.file_path}" style="max-width:100%;"> <button onclick="$(this).parent().html(''); renderFiles();">Back</button>`);
-                        else alert('Preview not available');
+
+                let searchQuery = $search.val().toLowerCase();
+                let filteredFiles = files.filter(f => f.original_name.toLowerCase().includes(searchQuery));
+
+                // Map the original indices to maintain chronological order
+                let mappedFiles = filteredFiles.map((item, index) => ({
+                    originalIndex: files.indexOf(item),
+                    item: item
+                }));
+
+                // Apply Sorting
+                mappedFiles.sort((a, b) => {
+                    if (currentSort === 'asc') return a.item.original_name.localeCompare(b.item.original_name);
+                    if (currentSort === 'desc') return b.item.original_name.localeCompare(a.item.original_name);
+                    if (currentSort === 'oldest') return a.originalIndex - b.originalIndex;
+                    if (currentSort === 'newest') return b.originalIndex - a.originalIndex;
+                    return 0;
+                });
+
+                filteredFiles = mappedFiles.map(m => m.item);
+
+                if(filteredFiles.length === 0) { $area.html('<p style="text-align:center; color:#888;">No output matches.</p>'); return; }
+
+                filteredFiles.forEach((f, idx) => {
+                    let icon = 'fa-file';
+                    if(f.type.includes('image')) icon = 'fa-file-image';
+                    else if(f.type.includes('audio')) icon = 'fa-file-audio';
+                    else if(f.type.includes('text') || f.original_name.endsWith('.txt')) icon = 'fa-file-alt';
+
+                    let safeName = escapeHtml(f.original_name);
+                    let item = $(`<div style="padding:10px; border-bottom:1px solid #eee; display:flex; align-items:center; cursor:pointer;" class="file-item" data-id="${f.id}" title="Double-click to rename"><i class="fas ${icon}" style="margin-right:10px;"></i><span class="file-name-text">${safeName}</span></div>`);
+
+                    // OPEN FILE MODAL
+                    item.click(function(e) {
+                        if ($(e.target).is('input')) return; // Ignore if renaming
+                        $('#file-opener-title').text(f.original_name);
+                        let $content = $('#file-opener-content');
+                        $content.empty();
+
+                        if(f.type.includes('image')) {
+                            $content.html(`<img src="${f.file_path}" style="max-width:100%; max-height:100%; object-fit:contain; margin:auto;">`);
+                        } else if(f.type.includes('audio')) {
+                            $content.html(`<audio controls style="margin:auto; width:80%;"><source src="${f.file_path}" type="${f.type}">Your browser does not support audio.</audio>`);
+                        } else if(f.content) {
+                            let safeContent = escapeHtml(f.content);
+                            $content.html(`<div style="padding:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; color:#333;">${safeContent}</div>`);
+                        } else {
+                            $content.html('<div style="margin:auto; text-align:center;"><i class="fas fa-file-alt" style="font-size:4rem; color:#ccc; margin-bottom:10px;"></i><br>Preview not available for this file type.</div>');
+                        }
+                        $('#file-opener-modal').css('display', 'flex');
                     });
+
+                    // DOUBLE CLICK RENAME
+                    item.find('.file-name-text').on('dblclick', function(e) {
+                        e.stopPropagation();
+                        let $span = $(this);
+                        let currentName = $span.text();
+                        let $input = $(`<input type="text" value="${currentName}" style="width: 80%; padding:2px; font-size:0.9em; border:1px solid #007bff; border-radius:3px;">`);
+                        $span.empty().append($input);
+                        $input.focus();
+
+                        function finishRename() {
+                            let newName = $input.val().trim();
+                            if (newName !== '') {
+                                f.original_name = newName; // Update source data
+                            }
+                            renderFiles(); // Re-render to sort and apply
+                        }
+                        $input.on('blur', finishRename);
+                        $input.on('keypress', function(ev) { if(ev.which == 13) $input.blur(); });
+                    });
+
                     $area.append(item);
                 });
             }
@@ -329,11 +414,23 @@ const WidgetRegistry = {
     'AI Assistant': {
         render: function(wId) {
             return `
-                <div style="display:flex; flex-direction:column; height:100%;">
+                <div style="display:flex; flex-direction:column; height:100%; position:relative;" id="${wId}-ai-container">
+                    <div id="${wId}-dropzone" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); color:white; display:none; align-items:center; justify-content:center; z-index:10; font-size:1.5rem; border-radius:5px;">Drop file here</div>
+                    <div style="padding: 5px; background: #e0f7fa; border-bottom: 1px solid #ccc; font-size: 0.8rem; font-weight: bold; text-align: center;" id="${wId}-mode-indicator">Mode: Chatbot</div>
                     <div style="flex:1; overflow-y:auto; padding:10px; background:#f4f4f4; margin-bottom:10px; border-radius:5px;" id="${wId}-chat-box">
                         <div style="color:#888; font-size:0.8rem; text-align:center;">Gemini 2.5 Flash Ready...</div>
                     </div>
+
+                    <div id="${wId}-file-preview" style="display:none; padding:5px; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px; margin-bottom:5px; font-size:0.8rem; display:flex; justify-content:space-between;">
+                        <span id="${wId}-file-name"></span>
+                        <i class="fas fa-times" style="cursor:pointer;" onclick="$(this).parent().hide(); $('#${wId}-file-data').val('');"></i>
+                    </div>
+
                     <div style="display:flex; gap:5px;">
+                        <input type="hidden" id="${wId}-file-data">
+                        <input type="hidden" id="${wId}-file-mime">
+                        <input type="file" id="${wId}-file-input" style="display:none;">
+                        <button onclick="$('#${wId}-file-input').click()" style="padding:8px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;" title="Upload File"><i class="fas fa-paperclip"></i></button>
                         <input type="text" id="${wId}-msg" placeholder="Ask AI..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
                         <button id="${wId}-send" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
                     </div>
@@ -344,6 +441,25 @@ const WidgetRegistry = {
             const $chat = $(`#${wId}-chat-box`);
             const $msg = $(`#${wId}-msg`);
             const $send = $(`#${wId}-send`);
+            const $fileInput = $(`#${wId}-file-input`);
+            const $fileData = $(`#${wId}-file-data`);
+            const $fileMime = $(`#${wId}-file-mime`);
+            const $filePreview = $(`#${wId}-file-preview`);
+            const $fileName = $(`#${wId}-file-name`);
+            const $dropzone = $(`#${wId}-dropzone`);
+            const $container = $(`#${wId}-ai-container`);
+
+            let currentMode = 'chatbot';
+
+            // Handle Context Menu Mode Change
+            $(document).on('changeAiMode', function(e, targetWId, mode) {
+                if (targetWId === wId) {
+                    currentMode = mode;
+                    let modeNames = { 'chatbot': 'Chatbot', 'transcript': 'Transcript', 'summary': 'File to Summary', 'note': 'Note Generator', 'coding': 'Coding Agent' };
+                    $(`#${wId}-mode-indicator`).text('Mode: ' + modeNames[mode]);
+                    addMessage("Switched to " + modeNames[mode] + " mode.", 'sys');
+                }
+            });
 
             function escapeHtml(text) {
                 return text
@@ -354,27 +470,100 @@ const WidgetRegistry = {
                     .replace(/'/g, "&#039;");
             }
 
-            function addMessage(text, sender) {
-                let align = sender === 'user' ? 'text-align:right;' : 'text-align:left;';
-                let bg = sender === 'user' ? 'background:#dcf8c6; margin-left:20%;' : 'background:white; margin-right:20%;';
-                let safeText = escapeHtml(text);
-                $chat.append(`<div style="${align} margin-bottom:5px;"><span style="display:inline-block; padding:8px; border-radius:8px; ${bg} box-shadow:0 1px 1px rgba(0,0,0,0.1);">${safeText}</span></div>`);
+            function addMessage(text, sender, isHtml = false) {
+                let align = 'text-align:left;';
+                let bg = 'background:white; margin-right:20%;';
+
+                if (sender === 'user') {
+                    align = 'text-align:right;';
+                    bg = 'background:#dcf8c6; margin-left:20%;';
+                } else if (sender === 'sys') {
+                    align = 'text-align:center;';
+                    bg = 'background:transparent; color:#888; font-size:0.8rem; border:none; box-shadow:none; padding:2px;';
+                }
+
+                let outText = isHtml ? text : escapeHtml(text).replace(/\n/g, '<br>');
+
+                let id = 'msg-' + Date.now() + Math.floor(Math.random() * 100);
+
+                $chat.append(`<div style="${align} margin-bottom:5px;" id="${id}"><span style="display:inline-block; padding:8px; border-radius:8px; ${bg} box-shadow:0 1px 1px rgba(0,0,0,0.1);">${outText}</span></div>`);
                 $chat.scrollTop($chat[0].scrollHeight);
+                return id;
             }
+
+            // --- FILE UPLOAD LOGIC ---
+            function processFile(file) {
+                if (file) {
+                    let reader = new FileReader();
+                    reader.onload = function(e) {
+                        let base64 = e.target.result.split(',')[1];
+                        $fileData.val(base64);
+                        $fileMime.val(file.type || 'text/plain');
+                        $fileName.text(file.name);
+                        $filePreview.css('display', 'flex');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            $fileInput.on('change', function() { processFile(this.files[0]); });
+
+            // Drag and drop for AI
+            $container.on('dragover', function(e) { e.preventDefault(); e.stopPropagation(); $dropzone.css('display', 'flex'); });
+            $dropzone.on('dragleave', function(e) { e.preventDefault(); e.stopPropagation(); $dropzone.hide(); });
+            $dropzone.on('drop', function(e) {
+                e.preventDefault(); e.stopPropagation(); $dropzone.hide();
+                if (e.originalEvent.dataTransfer.files.length > 0) {
+                    processFile(e.originalEvent.dataTransfer.files[0]);
+                }
+            });
+
+            // APPROVE FUNCTION (Global so buttons can call it)
+            window.approveAiOutput = function(title, content) {
+                let fileData = {
+                    original_name: title,
+                    type: 'text/plain',
+                    content: content
+                };
+                $(document).trigger('fileUploaded', [fileData]);
+                window.showCustomModal('Success', 'File added to Output Field sources.');
+            };
 
             $send.click(function() {
                 let txt = $msg.val();
-                if(!txt) return;
-                addMessage(txt, 'user');
+                let fileBase64 = $fileData.val();
+                let fileMime = $fileMime.val();
+
+                if(!txt && !fileBase64) return;
+
+                let userMsgHtml = escapeHtml(txt).replace(/\n/g, '<br>');
+                if (fileBase64) {
+                    let safeFileName = escapeHtml($fileName.text());
+                    userMsgHtml = `<i>[Attached File: ${safeFileName}]</i><br>` + userMsgHtml;
+                }
+
+                addMessage(userMsgHtml, 'user', true);
+
                 $msg.val('');
+                $filePreview.hide();
+                $fileData.val('');
+                $fileMime.val('');
+
+                let loadingId = addMessage('<i class="fas fa-spinner fa-spin"></i> Processing...', 'ai', true);
+
+                let payload = { message: txt, mode: currentMode };
+                if (fileBase64) {
+                    payload.file = { data: fileBase64, mimeType: fileMime };
+                }
 
                 // Use the new backend API endpoint
                 $.ajax({
                     url: 'backend/gemini_api.php',
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ message: txt }),
+                    data: JSON.stringify(payload),
                     success: function(res) {
+                        $(`#${loadingId}`).remove();
                         let aiText = "Terjadi kesalahan membaca respon AI.";
 
                         if (res.candidates && res.candidates.length > 0 && res.candidates[0].content && res.candidates[0].content.parts) {
@@ -383,12 +572,20 @@ const WidgetRegistry = {
                             aiText = "API Error: " + res.error.message;
                         }
 
-                        addMessage(aiText, 'ai');
-                        // Broadcast to Output Field
-                        $(document).trigger('aiOutput', [aiText]);
+                        // APPROVAL LOGIC
+                        if (currentMode !== 'chatbot') {
+                            let safeContentForOnClick = encodeURIComponent(aiText).replace(/'/g, "%27");
+                            let title = currentMode + '_' + Date.now() + '.txt';
+                            let htmlContent = escapeHtml(aiText).replace(/\n/g, '<br>') +
+                                `<hr><button onclick="window.approveAiOutput('${title}', decodeURIComponent('${safeContentForOnClick}'))" style="background:#28a745; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">Approve & Send to Output</button>`;
+                            addMessage(htmlContent, 'ai', true);
+                        } else {
+                            addMessage(aiText, 'ai');
+                        }
                     },
                     error: function() {
-                        addMessage("Gagal terhubung ke server (Network Error).", 'ai');
+                        $(`#${loadingId}`).remove();
+                        addMessage("Gagal terhubung ke server (Network Error).", 'sys');
                     }
                 });
             });
