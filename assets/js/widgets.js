@@ -481,7 +481,7 @@ const WidgetRegistry = {
                     <div id="${wId}-calendar-container" style="flex:1; display:flex; flex-direction:column; min-height:0;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <button id="${wId}-prev-month" class="btn btn-sm" style="padding:2px 8px;">&lt;</button>
-                            <h4 id="${wId}-month-year" style="margin:0;">Month Year</h4>
+                            <h4 id="${wId}-month-year" style="margin:0; padding: 0 15px;">Month Year</h4>
                             <button id="${wId}-next-month" class="btn btn-sm" style="padding:2px 8px;">&gt;</button>
                         </div>
                         <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:2px; text-align:center; font-weight:bold; font-size:0.7rem; margin-bottom:5px;">
@@ -543,7 +543,15 @@ const WidgetRegistry = {
                         selectedDateStr = dateStr;
                         $dateLabel.text('Events for ' + dateStr);
                         $eventInput.val(events[dateStr] || '');
-                        $eventEditor.show();
+
+                        if ($eventEditor.is(':hidden')) {
+                            $eventEditor.show();
+                            // Increase widget height permanently to accommodate editor
+                            let currentH = $widget.height();
+                            $widget.css('height', (currentH + 130) + 'px');
+                            if (window.saveWorkspaceState) window.saveWorkspaceState();
+                        }
+
                         renderCalendar();
                     });
 
@@ -1045,9 +1053,10 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; position:relative; overflow:hidden; border:1px solid #ccc; border-radius:4px;" id="${wId}-frame">
-                    <div id="${wId}-placeholder" style="text-align:center; color:#888;">
-                        <i class="fas fa-image" style="font-size:3rem; margin-bottom:10px;"></i>
-                        <p style="font-size:0.8rem;">Click to upload a photo</p>
+                    <div id="${wId}-placeholder" style="text-align:center; color:#888; padding: 20px;">
+                        <i class="fas fa-image" style="font-size:3rem; margin-bottom:15px; color: #ccc;"></i>
+                        <p style="font-size:0.9rem; margin-bottom: 15px;">Drag & Drop or Click below</p>
+                        <button class="btn btn-primary" id="${wId}-upload-btn" style="padding: 8px 20px; font-size: 0.8rem;"><i class="fas fa-upload"></i> Upload Photo</button>
                     </div>
                     <img id="${wId}-img" style="display:none; max-width:100%; max-height:100%; object-fit:contain;">
                     <input type="file" id="${wId}-file" style="display:none;" accept="image/*">
@@ -1062,6 +1071,7 @@ const WidgetRegistry = {
             const $placeholder = $(`#${wId}-placeholder`);
             const $file = $(`#${wId}-file`);
             const $changeBtn = $(`#${wId}-change-btn`);
+            const $uploadBtn = $(`#${wId}-upload-btn`);
 
             $(document).on(`toggleFullScreen.${wId}`, function(e, targetWId, isFull) {
                 if (targetWId === wId) {
@@ -1075,6 +1085,8 @@ const WidgetRegistry = {
                             height: 'calc(100vh - 60px)',
                             zIndex: 9998
                         });
+                        $widget.find('.widget-header').hide();
+                        $widget.find('.widget-content').css('height', '100%');
                         $widget.draggable('disable');
                         $widget.resizable('disable');
                     } else {
@@ -1088,9 +1100,27 @@ const WidgetRegistry = {
                                 height: '300px'
                             });
                         }
+                        $widget.find('.widget-header').show();
+                        $widget.find('.widget-content').css('height', 'calc(100% - 35px)');
                         $widget.draggable('enable');
                         $widget.resizable('enable');
                     }
+                }
+            });
+
+            $(document).on(`detachImage.${wId}`, function(e, targetWId) {
+                if (targetWId === wId) {
+                    $widget.data('photoPath', null);
+                    $img.hide().attr('src', '');
+                    $placeholder.html(`
+                        <i class="fas fa-image" style="font-size:3rem; margin-bottom:15px; color: #ccc;"></i>
+                        <p style="font-size:0.9rem; margin-bottom: 15px;">Drag & Drop or Click below</p>
+                        <button class="btn btn-primary" id="${wId}-upload-btn-new" style="padding: 8px 20px; font-size: 0.8rem;"><i class="fas fa-upload"></i> Upload Photo</button>
+                    `).show();
+                    $changeBtn.hide();
+
+                    // Re-bind upload button since we replaced HTML
+                    $(`#${wId}-upload-btn-new`).on('click', (ev) => { ev.stopPropagation(); $file.click(); });
                 }
             });
 
@@ -1110,11 +1140,12 @@ const WidgetRegistry = {
             }
 
             $frame.on('click', function(e) {
-                if (e.target !== $changeBtn[0] && !$changeBtn.has(e.target).length) {
+                if (e.target !== $changeBtn[0] && !$changeBtn.has(e.target).length && e.target !== $uploadBtn[0] && !$uploadBtn.has(e.target).length) {
                     $file.click();
                 }
             });
 
+            $uploadBtn.on('click', (e) => { e.stopPropagation(); $file.click(); });
             $changeBtn.on('click', function(e) { e.stopPropagation(); $file.click(); });
 
             // Drag and drop support
