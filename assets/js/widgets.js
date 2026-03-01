@@ -499,7 +499,10 @@ const WidgetRegistry = {
             return `
                 <div style="display:flex; flex-direction:column; height:100%; position:relative;" id="${wId}-ai-container">
                     <div id="${wId}-dropzone" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); color:white; display:none; align-items:center; justify-content:center; z-index:10; font-size:1.5rem; border-radius:5px;">Drop file here</div>
-                    <div style="padding: 5px; background: #e0f7fa; border-bottom: 1px solid #ccc; font-size: 0.8rem; font-weight: bold; text-align: center;" id="${wId}-mode-indicator">Mode: Chatbot</div>
+                    <div style="padding: 5px; background: #e0f7fa; border-bottom: 1px solid #ccc; font-size: 0.8rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="${wId}-mode-indicator">Mode: Chatbot</span>
+                        <button id="${wId}-save-chat" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem; display:none;"><i class="fas fa-save"></i> Save Chat</button>
+                    </div>
                     <div style="flex:1; overflow-y:auto; padding:10px; background:#f4f4f4; margin-bottom:10px; border-radius:5px;" id="${wId}-chat-box">
                         <div style="color:#888; font-size:0.8rem; text-align:center;">Gemini 2.5 Flash Ready...</div>
                     </div>
@@ -513,8 +516,8 @@ const WidgetRegistry = {
                         <input type="hidden" id="${wId}-file-data">
                         <input type="hidden" id="${wId}-file-mime">
                         <input type="file" id="${wId}-file-input" style="display:none;">
-                        <button onclick="$('#${wId}-file-input').click()" style="padding:8px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:5px;" title="Upload File">
-                            <i class="fas fa-paperclip"></i> Upload
+                        <button onclick="$('#${wId}-file-input').click()" style="padding:8px 12px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;" title="Upload File">
+                            <i class="fas fa-paperclip"></i>
                         </button>
                         <input type="text" id="${wId}-msg" placeholder="Ask AI..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
                         <button id="${wId}-send" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
@@ -544,6 +547,35 @@ const WidgetRegistry = {
                     $(`#${wId}-mode-indicator`).text('Mode: ' + modeNames[mode]);
                     $(`#${wId}`).data('aiMode', mode);
                     addMessage("Switched to " + modeNames[mode] + " mode.", 'sys');
+
+                    // Show "Save Chat" button if not in chatbot mode
+                    if (mode !== 'chatbot') {
+                        $(`#${wId}-save-chat`).show();
+                    } else {
+                        $(`#${wId}-save-chat`).hide();
+                    }
+                }
+            });
+
+            $(`#${wId}-save-chat`).on('click', function() {
+                let chatHistory = "";
+                $chat.children('div').each(function() {
+                    let msgSpan = $(this).find('span');
+                    // skip system messages which have transparent background
+                    if (msgSpan.css('background') !== 'transparent') {
+                        let text = msgSpan.text();
+                        if (text && text.trim() !== "Processing...") {
+                            let role = $(this).css('text-align') === 'right' ? 'User' : 'AI';
+                            chatHistory += `[${role}] ${text}\n\n`;
+                        }
+                    }
+                });
+
+                if (chatHistory.trim() !== "") {
+                    let title = currentMode + '_chat_' + Date.now() + '.txt';
+                    window.approveAiOutput(title, chatHistory);
+                } else {
+                    window.showCustomModal('Warning', 'Chat history is empty.');
                 }
             });
 
@@ -658,26 +690,8 @@ const WidgetRegistry = {
                             aiText = "API Error: " + res.error.message;
                         }
 
-                        // APPROVAL LOGIC
-                        if (currentMode !== 'chatbot') {
-                            let safeContentForOnClick = encodeURIComponent(aiText).replace(/'/g, "%27");
-                            let title = currentMode + '_' + Date.now() + '.txt';
-                            let htmlContent = `
-                                <div style="padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;">
-                                    <div style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.5;">
-                                        ${escapeHtml(aiText).replace(/\n/g, '<br>')}
-                                    </div>
-                                    <div style="display: flex; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 10px;">
-                                        <button onclick="window.approveAiOutput('${title}', decodeURIComponent('${safeContentForOnClick}'), '${wId}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 5px rgba(40,167,69,0.3); transition: background 0.2s, transform 0.1s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
-                                            <i class="fas fa-save"></i> Save to Output
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-                            addMessage(htmlContent, 'ai', true);
-                        } else {
-                            addMessage(aiText, 'ai');
-                        }
+                        // Now the user only wants the global Save Chat button for these modes, so we just append the text normally
+                        addMessage(aiText, 'ai');
                     },
                     error: function() {
                         $(`#${loadingId}`).remove();

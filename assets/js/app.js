@@ -90,6 +90,10 @@ $(document).ready(function() {
     }
 
     // --- WIDGET SPAWNING LOGIC ---
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
     function spawnWidget(id, name, type, x = 100, y = 100, w = 350, h = 300, animate = true) {
         if ($('#welcome-screen').is(':visible')) { $('#welcome-screen').fadeOut(300); }
         widgetCount++;
@@ -107,7 +111,8 @@ $(document).ready(function() {
         if (y < 70) y = 70;
 
         let animClass = animate ? 'fade-in' : '';
-        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span class="widget-title-text">${name}</span><span class="widget-close" style="display: none;">&times;</span></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
+        let safeOriginalType = escapeHtml(name.toLowerCase());
+        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" data-original-type="${safeOriginalType}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span class="widget-title-text">${escapeHtml(name)}</span><span class="widget-close" style="display: none;">&times;</span></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
         
         $('#workspace-screen').append(html);
         if(animate) setTimeout(() => { $(`#${wId}`).removeClass('fade-in'); }, 500);
@@ -469,7 +474,7 @@ $(document).ready(function() {
     });
 
     // --- POSITIONING UTILITY FOR FLOATING SUBMENUS ---
-    function positionFloatingMenu(menuId, e) {
+    function positionFloatingMenu(menuId, targetElement) {
         let menu = $(`#${menuId}`);
         menu.css('display', 'flex'); // Show first to get dimensions
 
@@ -478,11 +483,29 @@ $(document).ready(function() {
         let winWidth = $(window).width();
         let winHeight = $(window).height();
 
-        let left = e.clientX;
-        let top = e.clientY;
+        let targetOffset = $(targetElement).offset();
+        let targetWidth = $(targetElement).outerWidth();
+        let targetHeight = $(targetElement).outerHeight();
 
-        if (left + menuWidth > winWidth) left = left - menuWidth;
-        if (top + menuHeight > winHeight) top = top - menuHeight;
+        // Default position: Right side of the target menu item
+        let left = targetOffset.left + targetWidth;
+        let top = targetOffset.top;
+
+        // If it overflows right, flip it to the left side
+        if (left + menuWidth > winWidth) {
+            left = targetOffset.left - menuWidth;
+        }
+
+        // If it still overflows left (e.g., small screen), snap to 0
+        if (left < 0) left = 0;
+
+        // If it overflows bottom, adjust top
+        if (top + menuHeight > winHeight) {
+            top = winHeight - menuHeight;
+        }
+
+        // If it still overflows top, snap to 0
+        if (top < 0) top = 0;
 
         menu.css({ left: left + 'px', top: top + 'px' });
     }
@@ -498,14 +521,14 @@ $(document).ready(function() {
     $('.floating-submenu').draggable({ handle: ".modal-header", containment: "window" });
 
     // Handle Modal hovers for context menu options
-    $('#menu-ai-mode').on('mouseenter', function(e) {
+    $('#menu-ai-mode').on('mouseenter', function() {
         $('.floating-submenu').hide(); // Hide others
-        positionFloatingMenu('ai-mode-modal', e);
+        positionFloatingMenu('ai-mode-modal', this);
     });
 
-    $('#menu-sort-by').on('mouseenter', function(e) {
+    $('#menu-sort-by').on('mouseenter', function() {
         $('.floating-submenu').hide(); // Hide others
-        positionFloatingMenu('sort-by-modal', e);
+        positionFloatingMenu('sort-by-modal', this);
     });
 
     // We should also close floating submenus when leaving the parent item or hovering other items
@@ -537,14 +560,10 @@ $(document).ready(function() {
         $('#sort-by-modal').hide();
     };
 
-    $('#menu-set-output').on('mouseenter', function(e) {
+    $('#menu-set-output').on('mouseenter', function() {
         $('.floating-submenu').hide(); // Hide others
         let sourcesMenu = $('#output-source-list');
         sourcesMenu.empty();
-
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
 
         let found = false;
         $('.lobe-widget').each(function() {
@@ -568,7 +587,7 @@ $(document).ready(function() {
             sourcesMenu.append('<div style="color:#888; text-align:center; padding:20px;">No valid input sources available.<br><small>(Needs AI Assistant, Rich Text Note, etc.)</small></div>');
         }
 
-        positionFloatingMenu('output-source-modal', e);
+        positionFloatingMenu('output-source-modal', this);
     });
 
     // Global Context Menu
