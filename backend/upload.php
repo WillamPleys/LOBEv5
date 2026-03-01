@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
     $fileType = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
     // Whitelist allowed extensions
-    $allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'mp3', 'wav', 'txt'];
+    $allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'mp3', 'wav', 'mp4', 'txt'];
 
     if (!in_array($fileType, $allowedTypes)) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Allowed: ' . implode(', ', $allowedTypes)]);

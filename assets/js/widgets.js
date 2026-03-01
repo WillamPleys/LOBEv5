@@ -219,7 +219,7 @@ const WidgetRegistry = {
                     <p style="color:#888;">Drag & Drop files here</p>
                     <input type="file" id="${wId}-file" style="display:none;">
                     <button onclick="$('#${wId}-file').click()" style="margin-top:10px; padding:5px 10px;">Or Click to Upload</button>
-                    <div id="${wId}-status" style="margin-top:10px; font-size:0.8rem; padding-left:15px;"></div>
+                    <div id="${wId}-status" style="margin-top:10px; font-size:0.8rem; padding: 0 15px; text-align:center;"></div>
                 </div>
             `;
         },
@@ -368,7 +368,8 @@ const WidgetRegistry = {
                 filteredFiles.forEach((f, idx) => {
                     let icon = 'fa-file';
                     if(f.type.includes('image')) icon = 'fa-file-image';
-                    else if(f.type.includes('audio')) icon = 'fa-file-audio';
+                    else if(f.type.includes('audio') || f.original_name.endsWith('.mp3')) icon = 'fa-file-audio';
+                    else if(f.type.includes('video') || f.original_name.endsWith('.mp4')) icon = 'fa-file-video';
                     else if(f.original_name.endsWith('.docs')) icon = 'fa-file-word';
                     else if(f.original_name.endsWith('.html')) icon = 'fa-file-code';
                     else if(f.original_name.endsWith('.pdf') || f.type.includes('pdf')) icon = 'fa-file-pdf';
@@ -396,8 +397,10 @@ const WidgetRegistry = {
 
                         if(f.type.includes('image')) {
                             $content.html(`<img src="${f.file_path}" style="max-width:100%; max-height:100%; object-fit:contain; margin:auto;">`);
-                        } else if(f.type.includes('audio')) {
-                            $content.html(`<audio controls style="margin:auto; width:80%;"><source src="${f.file_path}" type="${f.type}">Your browser does not support audio.</audio>`);
+                        } else if(f.type.includes('audio') || f.original_name.endsWith('.mp3')) {
+                            $content.html(`<audio controls style="margin:auto; width:80%;"><source src="${f.file_path}" type="${f.type || 'audio/mpeg'}">Your browser does not support audio.</audio>`);
+                        } else if(f.type.includes('video') || f.original_name.endsWith('.mp4')) {
+                            $content.html(`<video controls style="max-width:100%; max-height:100%; margin:auto;"><source src="${f.file_path}" type="${f.type || 'video/mp4'}">Your browser does not support video.</video>`);
                         } else if(f.original_name.endsWith('.pdf') || f.type.includes('pdf')) {
                             $content.html(`<iframe src="${f.file_path}" style="width:100%; height:100%; border:none;"></iframe>`);
                         } else if(f.content) {
