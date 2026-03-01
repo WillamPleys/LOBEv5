@@ -367,13 +367,14 @@ const WidgetRegistry = {
 
                 filteredFiles.forEach((f, idx) => {
                     let icon = 'fa-file';
+                    let lowerName = f.original_name.toLowerCase();
                     if(f.type.includes('image')) icon = 'fa-file-image';
-                    else if(f.type.includes('audio') || f.original_name.endsWith('.mp3')) icon = 'fa-file-audio';
-                    else if(f.type.includes('video') || f.original_name.endsWith('.mp4')) icon = 'fa-file-video';
-                    else if(f.original_name.endsWith('.docs')) icon = 'fa-file-word';
-                    else if(f.original_name.endsWith('.html')) icon = 'fa-file-code';
-                    else if(f.original_name.endsWith('.pdf') || f.type.includes('pdf')) icon = 'fa-file-pdf';
-                    else if(f.type.includes('text') || f.original_name.endsWith('.txt')) icon = 'fa-file-alt';
+                    else if(f.type.includes('audio') || lowerName.endsWith('.mp3') || lowerName.endsWith('.wav')) icon = 'fa-file-audio';
+                    else if(f.type.includes('video') || lowerName.endsWith('.mp4')) icon = 'fa-file-video';
+                    else if(lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) icon = 'fa-file-word';
+                    else if(lowerName.endsWith('.html')) icon = 'fa-file-code';
+                    else if(lowerName.endsWith('.pdf') || f.type.includes('pdf')) icon = 'fa-file-pdf';
+                    else if(f.type.includes('text') || lowerName.endsWith('.txt')) icon = 'fa-file-alt';
 
                     let safeName = escapeHtml(f.original_name);
                     let item = $(`
@@ -395,14 +396,43 @@ const WidgetRegistry = {
                         let $content = $('#file-opener-content');
                         $content.empty();
 
+                        let lowerName = f.original_name.toLowerCase();
+
                         if(f.type.includes('image')) {
                             $content.html(`<img src="${f.file_path}" style="max-width:100%; max-height:100%; object-fit:contain; margin:auto;">`);
-                        } else if(f.type.includes('audio') || f.original_name.endsWith('.mp3')) {
+                        } else if(f.type.includes('audio') || lowerName.endsWith('.mp3') || lowerName.endsWith('.wav')) {
                             $content.html(`<audio controls style="margin:auto; width:80%;"><source src="${f.file_path}" type="${f.type || 'audio/mpeg'}">Your browser does not support audio.</audio>`);
-                        } else if(f.type.includes('video') || f.original_name.endsWith('.mp4')) {
+                        } else if(f.type.includes('video') || lowerName.endsWith('.mp4')) {
                             $content.html(`<video controls style="max-width:100%; max-height:100%; margin:auto;"><source src="${f.file_path}" type="${f.type || 'video/mp4'}">Your browser does not support video.</video>`);
-                        } else if(f.original_name.endsWith('.pdf') || f.type.includes('pdf')) {
+                        } else if(lowerName.endsWith('.pdf') || f.type.includes('pdf')) {
                             $content.html(`<iframe src="${f.file_path}" style="width:100%; height:100%; border:none;"></iframe>`);
+                        } else if(lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) {
+                            $content.html('<div style="margin:auto; text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading document...</div>');
+                            fetch(f.file_path)
+                                .then(response => response.arrayBuffer())
+                                .then(arrayBuffer => mammoth.convertToHtml({arrayBuffer: arrayBuffer}))
+                                .then(result => {
+                                    $content.html(`<div style="padding:40px; background:white; color:black; max-width:800px; margin:20px auto; box-shadow:0 0 10px rgba(0,0,0,0.1); min-height:100%; box-sizing:border-box; overflow-y:auto; font-family: 'Times New Roman', serif;">${result.value}</div>`);
+                                })
+                                .catch(err => {
+                                    // Fallback for older .doc if mammoth fails (since mammoth mainly supports docx)
+                                    $content.html('<div style="margin:auto; text-align:center;"><i class="fas fa-file-word" style="font-size:4rem; color:#ccc; margin-bottom:10px;"></i><br>Direct preview for old .doc files is limited. Please use .docx for better viewing.<br><br><a href="'+f.file_path+'" download class="btn btn-primary">Download File</a></div>');
+                                });
+                        } else if(lowerName.endsWith('.txt') || lowerName.endsWith('.html') || lowerName.endsWith('.js') || lowerName.endsWith('.css') || lowerName.endsWith('.php')) {
+                            if (f.content) {
+                                let safeContent = escapeHtml(f.content);
+                                $content.html(`<div style="padding:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; color:#333;">${safeContent}</div>`);
+                            } else {
+                                $content.html('<div style="margin:auto; text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading file...</div>');
+                                fetch(f.file_path)
+                                    .then(response => response.text())
+                                    .then(text => {
+                                        $content.html(`<div style="padding:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; color:#333;">${escapeHtml(text)}</div>`);
+                                    })
+                                    .catch(err => {
+                                        $content.html('<div style="margin:auto; color:red; text-align:center;">Error loading file.</div>');
+                                    });
+                            }
                         } else if(f.content) {
                             let safeContent = escapeHtml(f.content);
                             $content.html(`<div style="padding:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; color:#333;">${safeContent}</div>`);
@@ -934,12 +964,50 @@ const WidgetRegistry = {
             const $file = $(`#${wId}-file`);
             const $changeBtn = $(`#${wId}-change-btn`);
 
+            $(document).on(`toggleFullScreen.${wId}`, function(e, targetWId, isFull) {
+                if (targetWId === wId) {
+                    if (isFull) {
+                        $widget.data('oldStyle', $widget.attr('style'));
+                        $widget.css({
+                            position: 'fixed',
+                            top: '60px',
+                            left: '0',
+                            width: '100vw',
+                            height: 'calc(100vh - 60px)',
+                            zIndex: 9998
+                        });
+                        $widget.draggable('disable');
+                        $widget.resizable('disable');
+                    } else {
+                        let oldStyle = $widget.data('oldStyle');
+                        if (oldStyle) {
+                            $widget.attr('style', oldStyle);
+                        } else {
+                            $widget.css({
+                                position: 'absolute',
+                                width: '350px',
+                                height: '300px'
+                            });
+                        }
+                        $widget.draggable('enable');
+                        $widget.resizable('enable');
+                    }
+                }
+            });
+
             // Restore from data
             let savedImg = $widget.data('photoPath');
             if (savedImg) {
                 $img.attr('src', savedImg).show();
                 $placeholder.hide();
                 $changeBtn.show();
+            }
+
+            let isFull = $widget.data('isFullScreen');
+            if (isFull === true || isFull === 'true') {
+                setTimeout(() => {
+                    $(document).trigger('toggleFullScreen', [wId, true]);
+                }, 100);
             }
 
             $frame.on('click', function(e) {
@@ -953,18 +1021,38 @@ const WidgetRegistry = {
             $file.on('change', function() {
                 const file = this.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        let base64 = e.target.result;
-                        $img.attr('src', base64).show();
-                        $placeholder.hide();
-                        $changeBtn.show();
+                    let formData = new FormData();
+                    formData.append('file', file);
 
-                        // Save to persistent data
-                        $widget.data('photoPath', base64);
-                        if (window.saveWorkspaceState) window.saveWorkspaceState();
-                    };
-                    reader.readAsDataURL(file);
+                    // Show loading state
+                    $placeholder.html('<i class="fas fa-spinner fa-spin" style="font-size:3rem; margin-bottom:10px;"></i><p>Uploading...</p>').show();
+                    $img.hide();
+
+                    $.ajax({
+                        url: 'backend/upload.php',
+                        type: 'POST',
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        success: function(res) {
+                            if (res.status === 'success') {
+                                $img.attr('src', res.file_path).show();
+                                $placeholder.hide();
+                                $changeBtn.show();
+
+                                // Save to persistent data
+                                $widget.data('photoPath', res.file_path);
+                                if (window.saveWorkspaceState) window.saveWorkspaceState();
+                            } else {
+                                $placeholder.html('<i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:10px; color:red;"></i><p>Error: '+res.message+'</p>');
+                                window.showCustomModal('Error', res.message);
+                            }
+                        },
+                        error: function() {
+                            $placeholder.html('<i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:10px; color:red;"></i><p>Upload Failed</p>');
+                            window.showCustomModal('Error', 'Failed to upload photo.');
+                        }
+                    });
                 }
             });
         }

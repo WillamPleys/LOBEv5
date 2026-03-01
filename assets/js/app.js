@@ -69,6 +69,7 @@ $(document).ready(function() {
                 if ($el.data('linkedSourceId')) stateData.linkedSourceId = $el.data('linkedSourceId');
                 if ($el.data('outputFiles')) stateData.outputFiles = $el.data('outputFiles');
                 if ($el.data('photoPath')) stateData.photoPath = $el.data('photoPath');
+                if ($el.data('isFullScreen') !== undefined) stateData.isFullScreen = $el.data('isFullScreen');
 
                 widgets.push({
                     id: $el.attr('id'),
@@ -195,6 +196,19 @@ $(document).ready(function() {
                     $('#menu-sort-by').show();
                     $('#menu-toggle-search').show();
                 }
+            }
+
+            let originalType = $(this).data('original-type') || '';
+            if (originalType.includes('photo frame')) {
+                $('#menu-full-screen').show().css('display', 'flex');
+                let isFull = $(this).data('isFullScreen') === true || $(this).data('isFullScreen') === 'true';
+                if (isFull) {
+                    $('#menu-full-screen').find('.checkmark').show();
+                } else {
+                    $('#menu-full-screen').find('.checkmark').hide();
+                }
+            } else {
+                $('#menu-full-screen').hide();
             }
 
             $('#context-menu').hide();
@@ -574,6 +588,26 @@ $(document).ready(function() {
         }
         $('#sort-by-modal').hide();
     };
+
+    $('#menu-full-screen').on('click', function() {
+        if (currentTargetWidget) {
+            let $widget = $(`#${currentTargetWidget}`);
+            let isFull = $widget.data('isFullScreen') === true || $widget.data('isFullScreen') === 'true';
+
+            // Toggle
+            isFull = !isFull;
+            $widget.data('isFullScreen', isFull);
+
+            $(document).trigger('toggleFullScreen', [currentTargetWidget, isFull]);
+
+            // Update checkmark in menu immediately
+            if (isFull) $(this).find('.checkmark').show();
+            else $(this).find('.checkmark').hide();
+
+            saveWorkspaceState();
+        }
+        $('#widget-context-menu').hide();
+    });
 
     $('#menu-set-output').on('mouseenter', function() {
         $('.floating-submenu').hide(); // Hide others
