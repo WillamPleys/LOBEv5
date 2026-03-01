@@ -9,6 +9,17 @@ $(document).ready(function() {
     let saveTimeout = null;
     let isWorkspaceLoaded = false; // Flag to prevent overwriting empty state on load failure
 
+    // --- ACTIVITY TRACKING ---
+    window.trackActivity = function(type, detail) {
+        $.ajax({
+            url: 'backend/track_activity.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ type: type, detail: detail }),
+            success: function() { console.log('Activity tracked:', type); }
+        });
+    }
+
     // --- CUSTOM ALERT ---
     window.showCustomModal = function(title, message) {
         $('#modal-title').text(title);
@@ -70,7 +81,15 @@ $(document).ready(function() {
                 if ($el.data('outputFiles')) stateData.outputFiles = $el.data('outputFiles');
                 if ($el.data('photoPath')) stateData.photoPath = $el.data('photoPath');
                 if ($el.data('isFullScreen') !== undefined) stateData.isFullScreen = $el.data('isFullScreen');
+                if ($el.data('noteColor')) stateData.noteColor = $el.data('noteColor');
+                if ($el.data('noteText')) stateData.noteText = $el.data('noteText');
                 if ($el.data('calendarEvents')) stateData.calendarEvents = $el.data('calendarEvents');
+                if ($el.data('todoTasks')) stateData.todoTasks = $el.data('todoTasks');
+                if ($el.data('timerTitle')) stateData.timerTitle = $el.data('timerTitle');
+                if ($el.data('flashcards')) stateData.flashcards = $el.data('flashcards');
+                if ($el.data('mapperNodes')) stateData.mapperNodes = $el.data('mapperNodes');
+                if ($el.data('mapperLinks')) stateData.mapperLinks = $el.data('mapperLinks');
+                if ($el.data('whiteboardPaths')) stateData.whiteboardPaths = $el.data('whiteboardPaths');
                 if ($el.data('isCalendarExpanded')) stateData.isCalendarExpanded = $el.data('isCalendarExpanded');
 
                 widgets.push({
@@ -99,7 +118,7 @@ $(document).ready(function() {
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    function spawnWidget(id, name, type, x = 100, y = 100, w = 350, h = 300, animate = true, forcedId = null, contentData = null) {
+    window.spawnWidget = function(id, name, type, x = 100, y = 100, w = 350, h = 300, animate = true, forcedId = null, contentData = null) {
         if ($('#welcome-screen').is(':visible')) { $('#welcome-screen').fadeOut(300); }
 
         let wId;
@@ -129,10 +148,14 @@ $(document).ready(function() {
 
         let animClass = animate ? 'fade-in' : '';
         let safeOriginalType = escapeHtml(name.toLowerCase());
-        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" data-original-type="${safeOriginalType}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span class="widget-title-text">${escapeHtml(name)}</span><span class="widget-close" style="display: none;">&times;</span></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
+        let settingsBtn = (name.toLowerCase().includes('flashcard')) ? `<span class="widget-settings" style="margin-right: 10px; cursor: pointer; color: #666;"><i class="fas fa-cog"></i></span>` : '';
+        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" data-original-type="${safeOriginalType}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span class="widget-title-text">${escapeHtml(name)}</span><div style="margin-left: auto; display: flex; align-items: center;">${settingsBtn}<span class="widget-close" style="display: none;">&times;</span></div></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
         
         $('#workspace-screen').append(html);
-        if(animate) setTimeout(() => { $(`#${wId}`).removeClass('fade-in'); }, 500);
+        if(animate) {
+            setTimeout(() => { $(`#${wId}`).removeClass('fade-in'); }, 500);
+            window.trackActivity('create_widget', name);
+        }
 
         let newWidget = $(`#${wId}`);
 
@@ -263,7 +286,12 @@ $(document).ready(function() {
         newWidget.find('.widget-close').on('click', function() {
             $(document).off(`.${wId}`);
             newWidget.remove();
+            window.trackActivity('delete_widget', name);
             saveWorkspaceState();
+        });
+
+        newWidget.find('.widget-settings').on('click', function() {
+            $(document).trigger(`toggleWidgetSettings.${wId}`);
         });
 
         // Only save if this was a user action (animate=true), not a load action
@@ -689,6 +717,7 @@ $(document).ready(function() {
             success: function(res) {
                 btn.text(originalText).prop('disabled', false);
                 if(res.status === 'success') {
+                    if (action === 'login') window.trackActivity('login', username);
                     if (action === 'register') { $('#auth-message').html('<span style="color:green; font-size:12px; font-weight:bold;">' + res.message + '</span>'); $('#password').val(''); }
                     else {
                         if(res.role === 'admin') { window.location.href = 'admin.php'; }
@@ -750,6 +779,7 @@ $(document).ready(function() {
             url: 'backend/create_room.php', type: 'POST', dataType: 'json', data: { room_name: roomName },
             success: function(res) {
                 if(res.status === 'success') {
+                    window.trackActivity('create_room', roomName);
                     // Fix Bug 3: Clear workspace before showing new room
                     $('.lobe-widget').remove();
 
