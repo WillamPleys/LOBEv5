@@ -70,6 +70,7 @@ $(document).ready(function() {
                 if ($el.data('outputFiles')) stateData.outputFiles = $el.data('outputFiles');
                 if ($el.data('photoPath')) stateData.photoPath = $el.data('photoPath');
                 if ($el.data('isFullScreen') !== undefined) stateData.isFullScreen = $el.data('isFullScreen');
+                if ($el.data('calendarEvents')) stateData.calendarEvents = $el.data('calendarEvents');
 
                 widgets.push({
                     id: $el.attr('id'),
@@ -198,7 +199,7 @@ $(document).ready(function() {
                 }
             }
 
-            let originalType = $(this).data('original-type') || '';
+            let originalType = ($(this).data('original-type') || '').toLowerCase();
             if (originalType.includes('photo frame')) {
                 $('#menu-full-screen').show().css('display', 'flex');
                 let isFull = $(this).data('isFullScreen') === true || $(this).data('isFullScreen') === 'true';

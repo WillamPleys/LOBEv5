@@ -475,8 +475,107 @@ const WidgetRegistry = {
     },
     // --- 9. CALENDAR ---
     'Interactive Calendar': {
-        render: function(wId) { return `<div id="${wId}-cal" style="padding:10px;">Calendar Placeholder</div>`; },
-        init: function(wId) { $(`#${wId}-cal`).html('<b>Calendar Widget Active</b>'); }
+        render: function(wId) {
+            return `
+                <div style="height:100%; display:flex; flex-direction:column; padding:10px; box-sizing:border-box;">
+                    <div id="${wId}-calendar-container" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <button id="${wId}-prev-month" class="btn btn-sm" style="padding:2px 8px;">&lt;</button>
+                            <h4 id="${wId}-month-year" style="margin:0;">Month Year</h4>
+                            <button id="${wId}-next-month" class="btn btn-sm" style="padding:2px 8px;">&gt;</button>
+                        </div>
+                        <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:2px; text-align:center; font-weight:bold; font-size:0.7rem; margin-bottom:5px;">
+                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                        </div>
+                        <div id="${wId}-days-grid" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:2px; flex:1; min-height:0;"></div>
+                    </div>
+                    <div id="${wId}-event-editor" style="margin-top:10px; padding-top:10px; border-top:1px solid #ddd; display:none;">
+                        <div style="font-size:0.8rem; font-weight:bold; margin-bottom:5px;" id="${wId}-selected-date-label">Events for ...</div>
+                        <input type="text" id="${wId}-event-input" placeholder="Event name..." style="width:100%; padding:5px; box-sizing:border-box; margin-bottom:5px; border:1px solid #ccc; border-radius:3px;">
+                        <button id="${wId}-save-event" class="btn btn-primary btn-sm" style="width:100%;">Save Event</button>
+                    </div>
+                </div>
+            `;
+        },
+        init: function(wId) {
+            const $widget = $(`#${wId}`);
+            const $grid = $(`#${wId}-days-grid`);
+            const $monthYear = $(`#${wId}-month-year`);
+            const $eventEditor = $(`#${wId}-event-editor`);
+            const $eventInput = $(`#${wId}-event-input`);
+            const $dateLabel = $(`#${wId}-selected-date-label`);
+
+            let currentDate = new Date();
+            let selectedDateStr = null;
+            let events = $widget.data('calendarEvents') || {}; // Format: { "YYYY-MM-DD": "Event Name" }
+
+            function renderCalendar() {
+                $grid.empty();
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+
+                $monthYear.text(new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate));
+
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                // Empty slots before first day
+                for (let i = 0; i < firstDay; i++) {
+                    $grid.append(`<div style="padding:5px;"></div>`);
+                }
+
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const hasEvent = events[dateStr] ? true : false;
+                    const isToday = dateStr === todayStr;
+
+                    let bg = '#fff';
+                    if (hasEvent) bg = '#fff3cd'; // Yellow for events
+                    if (isToday) bg = '#e3f2fd'; // Blue for today
+                    if (selectedDateStr === dateStr) bg = '#dcf8c6'; // Green for selected
+
+                    const dayEl = $(`<div style="padding:5px; text-align:center; cursor:pointer; font-size:0.8rem; border-radius:4px; background:${bg}; border:1px solid #eee; transition: background 0.2s;" class="day-cell">${d}</div>`);
+
+                    dayEl.on('click', () => {
+                        selectedDateStr = dateStr;
+                        $dateLabel.text('Events for ' + dateStr);
+                        $eventInput.val(events[dateStr] || '');
+                        $eventEditor.show();
+                        renderCalendar();
+                    });
+
+                    $grid.append(dayEl);
+                }
+            }
+
+            $(`#${wId}-prev-month`).on('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
+            });
+
+            $(`#${wId}-next-month`).on('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            $(`#${wId}-save-event`).on('click', () => {
+                const val = $eventInput.val().trim();
+                if (val) {
+                    events[selectedDateStr] = val;
+                } else {
+                    delete events[selectedDateStr];
+                }
+                $widget.data('calendarEvents', events);
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+                renderCalendar();
+                window.showCustomModal('Success', 'Event saved for ' + selectedDateStr);
+            });
+
+            renderCalendar();
+        }
     },
     // --- 10. ACTIVITY ---
     'Activity Tracker': {
@@ -1012,47 +1111,74 @@ const WidgetRegistry = {
 
             $frame.on('click', function(e) {
                 if (e.target !== $changeBtn[0] && !$changeBtn.has(e.target).length) {
-                    if (!$img.is(':visible')) $file.click();
+                    $file.click();
                 }
             });
 
             $changeBtn.on('click', function(e) { e.stopPropagation(); $file.click(); });
 
+            // Drag and drop support
+            $frame.on('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).css('border-color', '#007bff');
+            });
+
+            $frame.on('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).css('border-color', '#ccc');
+            });
+
+            $frame.on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).css('border-color', '#ccc');
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0 && files[0].type.startsWith('image/')) {
+                    handlePhotoUpload(files[0]);
+                }
+            });
+
+            function handlePhotoUpload(file) {
+                let formData = new FormData();
+                formData.append('file', file);
+
+                // Show loading state
+                $placeholder.html('<i class="fas fa-spinner fa-spin" style="font-size:3rem; margin-bottom:10px;"></i><p>Uploading...</p>').show();
+                $img.hide();
+
+                $.ajax({
+                    url: 'backend/upload.php',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(res) {
+                        if (res.status === 'success') {
+                            $img.attr('src', res.file_path).show();
+                            $placeholder.hide();
+                            $changeBtn.show();
+
+                            // Save to persistent data
+                            $widget.data('photoPath', res.file_path);
+                            if (window.saveWorkspaceState) window.saveWorkspaceState();
+                        } else {
+                            $placeholder.html('<i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:10px; color:red;"></i><p>Error: '+res.message+'</p>');
+                            window.showCustomModal('Error', res.message);
+                        }
+                    },
+                    error: function() {
+                        $placeholder.html('<i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:10px; color:red;"></i><p>Upload Failed</p>');
+                        window.showCustomModal('Error', 'Failed to upload photo.');
+                    }
+                });
+            }
+
             $file.on('change', function() {
                 const file = this.files[0];
                 if (file) {
-                    let formData = new FormData();
-                    formData.append('file', file);
-
-                    // Show loading state
-                    $placeholder.html('<i class="fas fa-spinner fa-spin" style="font-size:3rem; margin-bottom:10px;"></i><p>Uploading...</p>').show();
-                    $img.hide();
-
-                    $.ajax({
-                        url: 'backend/upload.php',
-                        type: 'POST',
-                        data: formData,
-                        contentType: false,
-                        processData: false,
-                        success: function(res) {
-                            if (res.status === 'success') {
-                                $img.attr('src', res.file_path).show();
-                                $placeholder.hide();
-                                $changeBtn.show();
-
-                                // Save to persistent data
-                                $widget.data('photoPath', res.file_path);
-                                if (window.saveWorkspaceState) window.saveWorkspaceState();
-                            } else {
-                                $placeholder.html('<i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:10px; color:red;"></i><p>Error: '+res.message+'</p>');
-                                window.showCustomModal('Error', res.message);
-                            }
-                        },
-                        error: function() {
-                            $placeholder.html('<i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:10px; color:red;"></i><p>Upload Failed</p>');
-                            window.showCustomModal('Error', 'Failed to upload photo.');
-                        }
-                    });
+                    handlePhotoUpload(file);
                 }
             });
         }
