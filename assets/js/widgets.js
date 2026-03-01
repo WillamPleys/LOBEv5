@@ -219,7 +219,7 @@ const WidgetRegistry = {
                     <p style="color:#888;">Drag & Drop files here</p>
                     <input type="file" id="${wId}-file" style="display:none;">
                     <button onclick="$('#${wId}-file').click()" style="margin-top:10px; padding:5px 10px;">Or Click to Upload</button>
-                    <div id="${wId}-status" style="margin-top:10px; font-size:0.8rem;"></div>
+                    <div id="${wId}-status" style="margin-top:10px; font-size:0.8rem; padding-left:15px;"></div>
                 </div>
             `;
         },
@@ -371,6 +371,7 @@ const WidgetRegistry = {
                     else if(f.type.includes('audio')) icon = 'fa-file-audio';
                     else if(f.original_name.endsWith('.docs')) icon = 'fa-file-word';
                     else if(f.original_name.endsWith('.html')) icon = 'fa-file-code';
+                    else if(f.original_name.endsWith('.pdf') || f.type.includes('pdf')) icon = 'fa-file-pdf';
                     else if(f.type.includes('text') || f.original_name.endsWith('.txt')) icon = 'fa-file-alt';
 
                     let safeName = escapeHtml(f.original_name);
@@ -397,6 +398,8 @@ const WidgetRegistry = {
                             $content.html(`<img src="${f.file_path}" style="max-width:100%; max-height:100%; object-fit:contain; margin:auto;">`);
                         } else if(f.type.includes('audio')) {
                             $content.html(`<audio controls style="margin:auto; width:80%;"><source src="${f.file_path}" type="${f.type}">Your browser does not support audio.</audio>`);
+                        } else if(f.original_name.endsWith('.pdf') || f.type.includes('pdf')) {
+                            $content.html(`<iframe src="${f.file_path}" style="width:100%; height:100%; border:none;"></iframe>`);
                         } else if(f.content) {
                             let safeContent = escapeHtml(f.content);
                             $content.html(`<div style="padding:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; color:#333;">${safeContent}</div>`);
