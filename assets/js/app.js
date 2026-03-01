@@ -68,6 +68,7 @@ $(document).ready(function() {
                 if ($el.data('aiMode')) stateData.aiMode = $el.data('aiMode');
                 if ($el.data('linkedSourceId')) stateData.linkedSourceId = $el.data('linkedSourceId');
                 if ($el.data('outputFiles')) stateData.outputFiles = $el.data('outputFiles');
+                if ($el.data('photoPath')) stateData.photoPath = $el.data('photoPath');
 
                 widgets.push({
                     id: $el.attr('id'),

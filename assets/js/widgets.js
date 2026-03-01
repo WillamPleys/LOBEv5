@@ -909,5 +909,64 @@ const WidgetRegistry = {
                 }
             });
         }
+    },
+
+    // --- 17. PHOTO FRAME ---
+    'Photo Frame': {
+        render: function(wId) {
+            return `
+                <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; position:relative; overflow:hidden; border:1px solid #ccc; border-radius:4px;" id="${wId}-frame">
+                    <div id="${wId}-placeholder" style="text-align:center; color:#888;">
+                        <i class="fas fa-image" style="font-size:3rem; margin-bottom:10px;"></i>
+                        <p style="font-size:0.8rem;">Click to upload a photo</p>
+                    </div>
+                    <img id="${wId}-img" style="display:none; max-width:100%; max-height:100%; object-fit:contain;">
+                    <input type="file" id="${wId}-file" style="display:none;" accept="image/*">
+                    <button id="${wId}-change-btn" style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.5); color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.7rem; display:none;"><i class="fas fa-sync"></i></button>
+                </div>
+            `;
+        },
+        init: function(wId) {
+            const $widget = $(`#${wId}`);
+            const $frame = $(`#${wId}-frame`);
+            const $img = $(`#${wId}-img`);
+            const $placeholder = $(`#${wId}-placeholder`);
+            const $file = $(`#${wId}-file`);
+            const $changeBtn = $(`#${wId}-change-btn`);
+
+            // Restore from data
+            let savedImg = $widget.data('photoPath');
+            if (savedImg) {
+                $img.attr('src', savedImg).show();
+                $placeholder.hide();
+                $changeBtn.show();
+            }
+
+            $frame.on('click', function(e) {
+                if (e.target !== $changeBtn[0] && !$changeBtn.has(e.target).length) {
+                    if (!$img.is(':visible')) $file.click();
+                }
+            });
+
+            $changeBtn.on('click', function(e) { e.stopPropagation(); $file.click(); });
+
+            $file.on('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        let base64 = e.target.result;
+                        $img.attr('src', base64).show();
+                        $placeholder.hide();
+                        $changeBtn.show();
+
+                        // Save to persistent data
+                        $widget.data('photoPath', base64);
+                        if (window.saveWorkspaceState) window.saveWorkspaceState();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
     }
 };
