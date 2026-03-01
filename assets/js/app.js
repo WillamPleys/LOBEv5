@@ -518,7 +518,7 @@ $(document).ready(function() {
     });
 
     // Make floating submenus draggable
-    $('.floating-submenu').draggable({ handle: ".modal-header", containment: "window" });
+    // We removed the header from submenus, so we shouldn't attempt to make them draggable by header anymore.
 
     // Handle Modal hovers for context menu options
     $('#menu-ai-mode').on('mouseenter', function() {
