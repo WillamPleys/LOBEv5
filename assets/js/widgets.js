@@ -377,6 +377,10 @@ const WidgetRegistry = {
                     // OPEN FILE MODAL
                     item.click(function(e) {
                         if ($(e.target).is('input')) return; // Ignore if renaming
+
+                        // Prevent click if it's part of a double-click
+                        if (e.detail > 1) return;
+
                         $('#file-opener-title').text(f.original_name);
                         let $content = $('#file-opener-content');
                         $content.empty();
@@ -462,10 +466,10 @@ const WidgetRegistry = {
             $(`#${wId}-save-btn`).on('click', function() {
                 if (editorInstance) {
                     let content = editorInstance.getData();
-                    let title = "Note_" + Date.now() + ".html";
+                    let title = "Note_" + Date.now() + ".docs";
                     $(document).trigger('fileUploaded', [{
                         original_name: title,
-                        type: 'text/html',
+                        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                         content: content
                     }, wId]); // Pass wId as source
                     window.showCustomModal('Success', 'Note saved and sent to linked Output Fields.');
@@ -494,10 +498,10 @@ const WidgetRegistry = {
 
             $(`#${wId}-save-btn`).on('click', function() {
                 let content = editor.getValue();
-                let title = "Code_" + Date.now() + ".php";
+                let title = "Code_" + Date.now() + ".html";
                 $(document).trigger('fileUploaded', [{
                     original_name: title,
-                    type: 'text/plain',
+                    type: 'text/html',
                     content: content
                 }, wId]); // Pass wId as source
                 window.showCustomModal('Success', 'Code saved and sent to linked Output Fields.');
@@ -571,6 +575,8 @@ const WidgetRegistry = {
 
             $(`#${wId}-save-chat`).on('click', function() {
                 let chatHistory = "";
+                // Force .txt extension for AI Assistant chats
+                let extension = ".txt";
                 $chat.children('div').each(function() {
                     let msgSpan = $(this).find('span');
                     // skip system messages which have transparent background
@@ -584,7 +590,7 @@ const WidgetRegistry = {
                 });
 
                 if (chatHistory.trim() !== "") {
-                    let title = currentMode + '_chat_' + Date.now() + '.txt';
+                    let title = currentMode + '_chat_' + Date.now() + extension;
                     window.approveAiOutput(title, chatHistory, wId);
                 } else {
                     window.showCustomModal('Warning', 'Chat history is empty.');

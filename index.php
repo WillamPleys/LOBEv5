@@ -65,7 +65,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     </div>
 
     <!-- AI MODE MODAL (FLOATING CONTEXT MENU STYLE) -->
-    <div id="ai-mode-modal" class="windows-style floating-submenu" style="display: none; width: 250px; position: absolute; z-index: 9999;">
+    <div id="ai-mode-modal" class="windows-style floating-submenu" style="display: none; position: absolute; z-index: 9999;">
         <div class="modal-body" style="padding: 5px;">
             <div class="modal-list-item" onclick="window.selectAiMode('chatbot')"><i class="fas fa-comments"></i> Chatbot</div>
             <div class="modal-list-item" onclick="window.selectAiMode('transcript')"><i class="fas fa-closed-captioning"></i> Transcript</div>
@@ -83,7 +83,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     </div>
 
     <!-- SORT BY MODAL (FLOATING CONTEXT MENU STYLE) -->
-    <div id="sort-by-modal" class="windows-style floating-submenu" style="display: none; width: 250px; position: absolute; z-index: 9999;">
+    <div id="sort-by-modal" class="windows-style floating-submenu" style="display: none; position: absolute; z-index: 9999;">
         <div class="modal-body" style="padding: 5px;">
             <div class="modal-list-item" onclick="window.selectSortBy('newest')"><i class="fas fa-clock"></i> From Newest</div>
             <div class="modal-list-item" onclick="window.selectSortBy('oldest')"><i class="fas fa-history"></i> From Oldest</div>
