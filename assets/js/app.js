@@ -95,7 +95,7 @@ $(document).ready(function() {
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    function spawnWidget(id, name, type, x = 100, y = 100, w = 350, h = 300, animate = true, forcedId = null) {
+    function spawnWidget(id, name, type, x = 100, y = 100, w = 350, h = 300, animate = true, forcedId = null, contentData = null) {
         if ($('#welcome-screen').is(':visible')) { $('#welcome-screen').fadeOut(300); }
 
         let wId;
@@ -130,11 +130,22 @@ $(document).ready(function() {
         $('#workspace-screen').append(html);
         if(animate) setTimeout(() => { $(`#${wId}`).removeClass('fade-in'); }, 500);
 
+        let newWidget = $(`#${wId}`);
+
+        // Apply content data before init
+        if (contentData) {
+            Object.keys(contentData).forEach(key => {
+                newWidget.data(key, contentData[key]);
+            });
+            // Handle basic UI restoration
+            if (contentData.customName) newWidget.find('.widget-title-text').text(contentData.customName);
+            if (contentData.showClose) newWidget.find('.widget-close').show();
+        }
+
         if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
             if (WidgetRegistry[name].init) WidgetRegistry[name].init(wId);
         }
 
-        let newWidget = $(`#${wId}`);
         newWidget.draggable({
             handle: ".widget-header",
             snap: true,
@@ -256,30 +267,7 @@ $(document).ready(function() {
                     if (res.data.length > 0) {
                         $('#welcome-screen').hide();
                         res.data.forEach(w => {
-                            let widget = spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false, w.widget_dom_id);
-
-                            if (w.content_data) {
-                                // Restore custom name
-                                if (w.content_data.customName) {
-                                    widget.find('.widget-title-text').text(w.content_data.customName);
-                                    widget.data('customName', w.content_data.customName);
-                                }
-
-                                // Restore close button state
-                                if (w.content_data.showClose) {
-                                    widget.find('.widget-close').show();
-                                    widget.data('showClose', true);
-                                } else {
-                                    widget.find('.widget-close').hide();
-                                    widget.data('showClose', false);
-                                }
-
-                                // Restore files data before events trigger
-                                if (w.content_data.outputFiles) {
-                                    widget.data('outputFiles', w.content_data.outputFiles);
-                                }
-
-                            }
+                            spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false, w.widget_dom_id, w.content_data);
                         });
 
                         // Post-spawn: Trigger restoration events for all widgets

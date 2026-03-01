@@ -267,7 +267,7 @@ const WidgetRegistry = {
             const $widget = $(`#${wId}`);
             let files = [];
             let currentSort = 'newest';
-            let linkedSourceId = null;
+            let linkedSourceId = $widget.data('linkedSourceId') || null;
 
             // Load existing files from memory if they exist
             if ($widget.data('outputFiles')) {
@@ -369,10 +369,18 @@ const WidgetRegistry = {
                     let icon = 'fa-file';
                     if(f.type.includes('image')) icon = 'fa-file-image';
                     else if(f.type.includes('audio')) icon = 'fa-file-audio';
+                    else if(f.original_name.endsWith('.docs')) icon = 'fa-file-word';
+                    else if(f.original_name.endsWith('.html')) icon = 'fa-file-code';
                     else if(f.type.includes('text') || f.original_name.endsWith('.txt')) icon = 'fa-file-alt';
 
                     let safeName = escapeHtml(f.original_name);
-                    let item = $(`<div style="padding:10px; border-bottom:1px solid #eee; display:flex; align-items:center; cursor:pointer;" class="file-item" data-id="${f.id}" title="Double-click to rename"><i class="fas ${icon}" style="margin-right:10px;"></i><span class="file-name-text">${safeName}</span></div>`);
+                    let item = $(`
+                        <div style="padding:10px; border-bottom:1px solid #eee; display:flex; align-items:center; cursor:pointer;" class="file-item" data-id="${f.id}">
+                            <i class="fas ${icon}" style="margin-right:10px; color:#555; width:20px; text-align:center;"></i>
+                            <span class="file-name-text" style="flex:1; overflow:hidden; text-overflow:ellipsis;">${safeName}</span>
+                            <i class="fas fa-pencil-alt rename-icon" style="margin-left:10px; color:#ccc; font-size:0.8rem;" title="Rename File"></i>
+                        </div>
+                    `);
 
                     // OPEN FILE MODAL
                     item.click(function(e) {
@@ -398,14 +406,15 @@ const WidgetRegistry = {
                         $('#file-opener-modal').css('display', 'flex');
                     });
 
-                    // DOUBLE CLICK RENAME
-                    item.find('.file-name-text').on('dblclick', function(e) {
+                    // RENAME LOGIC
+                    function startRename(e) {
                         e.stopPropagation();
-                        let $span = $(this);
+                        let $span = item.find('.file-name-text');
                         let currentName = $span.text();
-                        let $input = $(`<input type="text" value="${currentName}" style="width: 80%; padding:2px; font-size:0.9em; border:1px solid #007bff; border-radius:3px;">`);
+                        let $input = $(`<input type="text" value="${currentName}" style="width: 100%; padding:2px; font-size:0.9em; border:1px solid #007bff; border-radius:3px; outline:none;">`);
                         $span.empty().append($input);
                         $input.focus();
+                        $input.select();
 
                         function finishRename() {
                             let newName = $input.val().trim();
@@ -418,7 +427,10 @@ const WidgetRegistry = {
                         }
                         $input.on('blur', finishRename);
                         $input.on('keypress', function(ev) { if(ev.which == 13) $input.blur(); });
-                    });
+                    }
+
+                    item.find('.rename-icon').on('click', startRename);
+                    item.find('.file-name-text').on('dblclick', startRename);
 
                     $area.append(item);
                 });
@@ -466,11 +478,21 @@ const WidgetRegistry = {
             $(`#${wId}-save-btn`).on('click', function() {
                 if (editorInstance) {
                     let content = editorInstance.getData();
+                    // Strip HTML tags for .docs but keep structure/newlines
+                    // Replace block elements with newlines
+                    let plainText = content
+                        .replace(/<\/p>/g, "\n")
+                        .replace(/<\/div>/g, "\n")
+                        .replace(/<\/li>/g, "\n")
+                        .replace(/<br\s*\/?>/g, "\n");
+                    // Remove all other tags
+                    plainText = plainText.replace(/<[^>]+>/g, "");
+
                     let title = "Note_" + Date.now() + ".docs";
                     $(document).trigger('fileUploaded', [{
                         original_name: title,
-                        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                        content: content
+                        type: 'application/msword',
+                        content: plainText
                     }, wId]); // Pass wId as source
                     window.showCustomModal('Success', 'Note saved and sent to linked Output Fields.');
                 }
@@ -493,8 +515,8 @@ const WidgetRegistry = {
         init: function(wId) {
             var editor = ace.edit(`${wId}-ace`);
             editor.setTheme("ace/theme/monokai");
-            editor.session.setMode("ace/mode/php");
-            editor.setValue("<?php\n\necho 'Hello World';\n");
+            editor.session.setMode("ace/mode/html");
+            editor.setValue("<!DOCTYPE html>\n<html>\n<body>\n\n<h1>Hello World</h1>\n\n</body>\n</html>\n");
 
             $(`#${wId}-save-btn`).on('click', function() {
                 let content = editor.getValue();
