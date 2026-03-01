@@ -1052,11 +1052,11 @@ const WidgetRegistry = {
     'Photo Frame': {
         render: function(wId) {
             return `
-                <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; position:relative; overflow:hidden; border:1px solid #ccc; border-radius:4px;" id="${wId}-frame">
+                <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f9f9f9; position:relative; overflow:hidden; border:2px dashed #ccc; border-radius:10px;" id="${wId}-frame">
                     <div id="${wId}-placeholder" style="text-align:center; color:#888; padding: 20px;">
-                        <i class="fas fa-image" style="font-size:3rem; margin-bottom:15px; color: #ccc;"></i>
-                        <p style="font-size:0.9rem; margin-bottom: 15px;">Drag & Drop or Click below</p>
-                        <button class="btn btn-primary" id="${wId}-upload-btn" style="padding: 8px 20px; font-size: 0.8rem;"><i class="fas fa-upload"></i> Upload Photo</button>
+                        <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:10px;"></i>
+                        <p style="color:#888;">Drag & Drop files here</p>
+                        <button id="${wId}-upload-btn" style="margin-top:10px; padding:5px 10px;">Or Click to Upload</button>
                     </div>
                     <img id="${wId}-img" style="display:none; max-width:100%; max-height:100%; object-fit:contain;">
                     <input type="file" id="${wId}-file" style="display:none;" accept="image/*">
@@ -1113,9 +1113,9 @@ const WidgetRegistry = {
                     $widget.data('photoPath', null);
                     $img.hide().attr('src', '');
                     $placeholder.html(`
-                        <i class="fas fa-image" style="font-size:3rem; margin-bottom:15px; color: #ccc;"></i>
-                        <p style="font-size:0.9rem; margin-bottom: 15px;">Drag & Drop or Click below</p>
-                        <button class="btn btn-primary" id="${wId}-upload-btn-new" style="padding: 8px 20px; font-size: 0.8rem;"><i class="fas fa-upload"></i> Upload Photo</button>
+                        <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:10px;"></i>
+                        <p style="color:#888;">Drag & Drop files here</p>
+                        <button id="${wId}-upload-btn-new" style="margin-top:10px; padding:5px 10px;">Or Click to Upload</button>
                     `).show();
                     $changeBtn.hide();
 
