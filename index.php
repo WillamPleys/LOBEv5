@@ -51,6 +51,19 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
         </div>
     </div>
 
+    <!-- FILE OPENER MODAL -->
+    <div id="file-opener-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+        <div class="windows-style" style="width: 80%; max-width: 800px; height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="cursor: move;" id="file-opener-header">
+                <span id="file-opener-title">File Viewer</span>
+                <button class="close-btn" onclick="$('#file-opener-modal').hide()">&times;</button>
+            </div>
+            <div class="modal-body" id="file-opener-content" style="flex: 1; overflow: auto; padding: 0; background: #fff; display: flex; flex-direction: column;">
+                <!-- Content loaded here -->
+            </div>
+        </div>
+    </div>
+
     <!-- CUSTOM ALERT MODAL -->
     <div id="custom-modal" class="modal-overlay" style="display: none;">
         <div class="windows-style">
@@ -140,10 +153,39 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
         <!-- Widget Context Menu -->
         <div id="widget-context-menu" class="context-menu" style="display: none;">
             <div class="context-item" id="toggle-close-btn"><i class="fas fa-power-off"></i> Toggle Close Button</div>
+
             <div class="context-divider ai-feature" style="display:none;"></div>
-            <div class="context-item ai-feature" style="display:none;"><i class="fas fa-link"></i> Set as Output of...</div>
-            <div class="context-item ai-feature" style="display:none;"><i class="fas fa-sort"></i> Sort by...</div>
-            <div class="context-item ai-feature" style="display:none;"><i class="fas fa-search"></i> Toggle Search Autocomplete</div>
+
+            <div class="context-item ai-feature has-submenu" id="menu-ai-mode" style="display:none;">
+                <span><i class="fas fa-robot"></i> AI Mode <i class="fas fa-chevron-right" style="float:right; margin-top:4px;"></i></span>
+                <div class="submenu">
+                    <div class="context-item" data-mode="chatbot">Chatbot</div>
+                    <div class="context-item" data-mode="transcript">Transcript</div>
+                    <div class="context-item" data-mode="summary">File to Summary</div>
+                    <div class="context-item" data-mode="note">Note</div>
+                    <div class="context-item" data-mode="coding">Coding Agent</div>
+                </div>
+            </div>
+
+            <div class="context-item ai-feature has-submenu" id="menu-set-output" style="display:none;">
+                <span><i class="fas fa-link"></i> Set as Output of <i class="fas fa-chevron-right" style="float:right; margin-top:4px;"></i></span>
+                <div class="submenu" id="submenu-output-sources" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Dynamically populated -->
+                    <div class="context-item" style="color:#888;">No sources available</div>
+                </div>
+            </div>
+
+            <div class="context-item ai-feature has-submenu" id="menu-sort-by" style="display:none;">
+                <span><i class="fas fa-sort"></i> Sort by <i class="fas fa-chevron-right" style="float:right; margin-top:4px;"></i></span>
+                <div class="submenu">
+                    <div class="context-item" data-sort="newest">From Newest</div>
+                    <div class="context-item" data-sort="oldest">From Oldest</div>
+                    <div class="context-item" data-sort="asc">Ascending (A-Z)</div>
+                    <div class="context-item" data-sort="desc">Descending (Z-A)</div>
+                </div>
+            </div>
+
+            <div class="context-item ai-feature" id="menu-toggle-search" style="display:none;"><i class="fas fa-search"></i> Toggle Search Autocomplete</div>
         </div>
     </div>
 
