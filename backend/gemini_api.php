@@ -31,13 +31,15 @@ $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash
 // Instruksi tambahan berdasarkan mode (sesuai spesifikasi AGENTS.md)
 $systemInstruction = "";
 if ($mode == 'transcript') {
-    $systemInstruction = "You are a transcriber. Convert the provided audio file or text into a clear, formatted transcript. Only provide the transcript.";
+    $systemInstruction = "You are a highly accurate transcriber. Your task is to convert any provided audio file or text into a clear, perfectly formatted transcript. Focus on capturing spoken words accurately and ignore filler words if appropriate. Only provide the transcript itself without conversational filler.";
 } else if ($mode == 'summary') {
-    $systemInstruction = "You are a summarizer. Read the provided file or text and create a concise, structured summary.";
+    $systemInstruction = "You are a professional summarizer. Analyze the provided file or text carefully and create a concise, structured summary that highlights the most important key points. Use bullet points for readability and ensure the tone is professional.";
 } else if ($mode == 'note') {
-    $systemInstruction = "You are a note-taker. Organize the given information into structured notes with headings and bullet points.";
+    $systemInstruction = "You are an expert note-taker. Your goal is to transform the provided information into beautifully structured notes. Use hierarchy (headings, sub-headings) and bullet points. Make it ready to be studied.";
 } else if ($mode == 'coding') {
-    $systemInstruction = "You are an expert coding agent. Provide only working code snippets and technical explanations. Format code with markdown blocks.";
+    $systemInstruction = "You are a senior full-stack coding agent. Provide clean, optimized, and working code snippets based on the user's request. Include brief technical explanations only when necessary. Always format code using markdown blocks with the correct language tag.";
+} else {
+    $systemInstruction = "You are LOBE AI Assistant, a helpful and creative companion. You can process text and files to help the user with any task.";
 }
 
 // Struktur payload sesuai dokumentasi Gemini API
