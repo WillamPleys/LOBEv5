@@ -63,10 +63,10 @@ $(document).ready(function() {
                 // "membuat item baru atau memindahkan item baru... tidak tersave" -> Position/Existence.
 
                 let stateData = {};
-                // Jika memiliki function getState() di WidgetRegistry, ambil data state-nya
-                if ($el.data('customName')) {
-                    stateData.customName = $el.data('customName');
-                }
+                if ($el.data('customName')) stateData.customName = $el.data('customName');
+                if ($el.data('showClose') !== undefined) stateData.showClose = $el.data('showClose');
+                if ($el.data('aiMode')) stateData.aiMode = $el.data('aiMode');
+                if ($el.data('linkedSourceId')) stateData.linkedSourceId = $el.data('linkedSourceId');
 
                 widgets.push({
                     id: $el.attr('id'),
@@ -239,10 +239,30 @@ $(document).ready(function() {
                         res.data.forEach(w => {
                             let widget = spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false);
 
-                            // Restore custom name
-                            if (w.content_data && w.content_data.customName) {
-                                widget.find('.widget-title-text').text(w.content_data.customName);
-                                widget.data('customName', w.content_data.customName);
+                            if (w.content_data) {
+                                // Restore custom name
+                                if (w.content_data.customName) {
+                                    widget.find('.widget-title-text').text(w.content_data.customName);
+                                    widget.data('customName', w.content_data.customName);
+                                }
+
+                                // Restore close button state
+                                if (w.content_data.showClose) {
+                                    widget.find('.widget-close').show();
+                                    widget.data('showClose', true);
+                                } else {
+                                    widget.find('.widget-close').hide();
+                                    widget.data('showClose', false);
+                                }
+
+                                // Trigger restore events for specific widgets
+                                if (w.content_data.aiMode) {
+                                    $(document).trigger('changeAiMode', [widget.attr('id'), w.content_data.aiMode]);
+                                }
+                                if (w.content_data.linkedSourceId) {
+                                    // Trigger quietly to update internal state without user alerts
+                                    $(document).trigger('restoreOutputSource', [widget.attr('id'), w.content_data.linkedSourceId]);
+                                }
                             }
                         });
                     } else {
@@ -430,49 +450,83 @@ $(document).ready(function() {
     let contextMenuPos = { x: 0, y: 0 };
     $(document).on('click', '.spawn-item', function() { let id = $(this).data('id'); let type = $(this).data('type'); let name = $(this).text().trim(); spawnWidget(id, name, type, contextMenuPos.x, contextMenuPos.y); $('#context-menu').hide(); });
     $(document).on('click', function(e) { if (!$(e.target).closest('.context-menu').length) { $('#widget-context-menu').hide(); } });
-    $('#toggle-close-btn').on('click', function() { if(currentTargetWidget) { const closeBtn = $(`#${currentTargetWidget} .widget-close`); closeBtn.toggle(); } $('#widget-context-menu').hide(); });
+    $('#toggle-close-btn').on('click', function() {
+        if(currentTargetWidget) {
+            let $widget = $(`#${currentTargetWidget}`);
+            const closeBtn = $widget.find('.widget-close');
+            let isVisible = closeBtn.is(':visible');
 
-    // Handle Submenu interactions (AI Modes, Sort, Output Sources)
-    $(document).on('mouseenter', '#menu-set-output', function() {
-        let sourcesMenu = $('#submenu-output-sources');
+            if (isVisible) {
+                closeBtn.hide();
+                $widget.data('showClose', false);
+            } else {
+                closeBtn.show();
+                $widget.data('showClose', true);
+            }
+            saveWorkspaceState();
+        }
+        $('#widget-context-menu').hide();
+    });
+
+    // Handle Modal clicks for context menu options
+    $('#menu-ai-mode').on('click', function() {
+        $('#widget-context-menu').hide();
+        $('#ai-mode-modal').css('display', 'flex');
+    });
+
+    $('#menu-sort-by').on('click', function() {
+        $('#widget-context-menu').hide();
+        $('#sort-by-modal').css('display', 'flex');
+    });
+
+    window.selectAiMode = function(mode) {
+        if (currentTargetWidget) {
+            $(document).trigger('changeAiMode', [currentTargetWidget, mode]);
+            saveWorkspaceState();
+        }
+        $('#ai-mode-modal').hide();
+    };
+
+    window.selectSortBy = function(sort) {
+        if (currentTargetWidget) {
+            $(document).trigger('sortOutputField', [currentTargetWidget, sort]);
+            saveWorkspaceState();
+        }
+        $('#sort-by-modal').hide();
+    };
+
+    $('#menu-set-output').on('click', function() {
+        $('#widget-context-menu').hide();
+        let sourcesMenu = $('#output-source-list');
         sourcesMenu.empty();
 
         function escapeHtml(text) {
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
-        // Find all widgets that could be inputs (for now, any widget that is NOT output field itself)
         let found = false;
         $('.lobe-widget').each(function() {
             let title = $(this).find('.widget-title-text').text();
+            let originalType = $(this).data('original-type') || '';
             let safeTitle = escapeHtml(title);
-            let safeTitleForJs = title.replace(/'/g, "\\'"); // Escape quotes for the JS onclick handler
-
+            let safeTitleForJs = title.replace(/'/g, "\\'");
             let wId = $(this).attr('id');
-            // Skip self if clicking on output field
-            if (currentTargetWidget !== wId) {
+
+            // Filter allowed sources: AI Assistant, Rich Text Note, Code Editor, Voice Memo
+            let allowedTypes = ['ai assistant', 'rich text note', 'code editor', 'voice memo recorder'];
+            let isAllowed = allowedTypes.some(type => originalType.includes(type));
+
+            if (currentTargetWidget !== wId && isAllowed) {
                 found = true;
-                sourcesMenu.append(`<div class="context-item" onclick="$(document).trigger('setOutputSource', ['${currentTargetWidget}', '${wId}', '${safeTitleForJs}'])"><i class="fas fa-plug" style="margin-right:5px;"></i> ${safeTitle}</div>`);
+                sourcesMenu.append(`<div class="modal-list-item" onclick="$(document).trigger('setOutputSource', ['${currentTargetWidget}', '${wId}', '${safeTitleForJs}']); $('#output-source-modal').hide(); saveWorkspaceState();"><i class="fas fa-plug" style="margin-right:10px; color:#007bff;"></i> ${safeTitle}</div>`);
             }
         });
 
         if (!found) {
-            sourcesMenu.append('<div class="context-item" style="color:#888;">No sources available</div>');
+            sourcesMenu.append('<div style="color:#888; text-align:center; padding:20px;">No valid input sources available.<br><small>(Needs AI Assistant, Rich Text Note, etc.)</small></div>');
         }
-    });
 
-    // Close context menu on sub-item click
-    $(document).on('click', '.submenu .context-item', function() {
-        $('#widget-context-menu').hide();
-        let mode = $(this).data('mode');
-        let sort = $(this).data('sort');
-
-        if (mode && currentTargetWidget) {
-            $(document).trigger('changeAiMode', [currentTargetWidget, mode]);
-        }
-        if (sort && currentTargetWidget) {
-            $(document).trigger('sortOutputField', [currentTargetWidget, sort]);
-        }
+        $('#output-source-modal').css('display', 'flex');
     });
 
     // Global Context Menu
