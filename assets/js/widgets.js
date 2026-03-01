@@ -277,7 +277,7 @@ const WidgetRegistry = {
                 $widget.data('outputFiles', files);
             }
 
-            $(document).on('fileUploaded', function(e, fileData, sourceWId) {
+            $(document).on(`fileUploaded.${wId}`, function(e, fileData, sourceWId) {
                 // Only process if no source linked (accept all) OR source matches linked source
                 if (!linkedSourceId || linkedSourceId === sourceWId) {
                     fileData.id = Date.now() + Math.random().toString(36).substr(2, 5); // Add unique ID for renaming
@@ -288,7 +288,7 @@ const WidgetRegistry = {
                 }
             });
 
-            $(document).on('setOutputSource', function(e, targetWId, sourceWId, sourceName) {
+            $(document).on(`setOutputSource.${wId}`, function(e, targetWId, sourceWId, sourceName) {
                 if (targetWId === wId) {
                     linkedSourceId = sourceWId;
                     $widget.data('linkedSourceId', linkedSourceId);
@@ -298,11 +298,11 @@ const WidgetRegistry = {
                 }
             });
 
-            $(document).on('restoreOutputSource', function(e, targetWId, sourceWId) {
+            $(document).on(`restoreOutputSource.${wId}`, function(e, targetWId, sourceWId) {
                 if (targetWId === wId) {
                     linkedSourceId = sourceWId;
                     $widget.data('linkedSourceId', linkedSourceId);
-                    // Name might not be accurate after restore, but we'll try to find it
+
                     let sourceName = $(`#${sourceWId}`).find('.widget-title-text').text() || 'Source';
                     $(`#${wId}-link-status`).show();
                     $(`#${wId}-source-name`).text(sourceName);
@@ -310,14 +310,14 @@ const WidgetRegistry = {
             });
 
             // Handle Context Menu Actions for this specific widget
-            $(document).on('sortOutputField', function(e, targetWId, sortType) {
+            $(document).on(`sortOutputField.${wId}`, function(e, targetWId, sortType) {
                 if (targetWId === wId) {
                     currentSort = sortType;
                     renderFiles();
                 }
             });
 
-            $(document).on('toggleSearchAutocomplete', function(e, targetWId) {
+            $(document).on(`toggleSearchAutocomplete.${wId}`, function(e, targetWId) {
                 if (targetWId === wId) {
                     let currentAutocomplete = $search.attr('autocomplete');
                     if (currentAutocomplete === 'off') {
@@ -552,7 +552,7 @@ const WidgetRegistry = {
             let currentMode = 'chatbot';
 
             // Handle Context Menu Mode Change
-            $(document).on('changeAiMode', function(e, targetWId, mode) {
+            $(document).on(`changeAiMode.${wId}`, function(e, targetWId, mode) {
                 if (targetWId === wId) {
                     currentMode = mode;
                     let modeNames = { 'chatbot': 'Chatbot', 'transcript': 'Transcript', 'summary': 'File to Summary', 'note': 'Note Generator', 'coding': 'Coding Agent' };
