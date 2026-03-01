@@ -23,6 +23,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script> <!-- CKEditor -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script> <!-- Ace Editor -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script> <!-- Mammoth.js for .docx -->
 
     <script>
         const APP_IS_LOGGED_IN = <?php echo $isLoggedIn; ?>;
@@ -189,6 +190,11 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
             <div class="context-item ai-feature" id="menu-sort-by" style="display:none;"><i class="fas fa-sort"></i> Sort by</div>
 
             <div class="context-item ai-feature" id="menu-toggle-search" style="display:none;"><i class="fas fa-search"></i> Toggle Search Autocomplete</div>
+
+            <div class="context-item" id="menu-full-screen" style="display:none; justify-content: space-between; align-items: center;">
+                <span><i class="fas fa-expand"></i> Full screen</span>
+                <i class="fas fa-check checkmark" style="display:none; font-size: 0.8rem; color: #28a745;"></i>
+            </div>
         </div>
     </div>
 
