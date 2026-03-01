@@ -64,49 +64,43 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
         </div>
     </div>
 
-    <!-- AI MODE MODAL -->
-    <div id="ai-mode-modal" class="modal-overlay" style="display: none; z-index: 9999;">
-        <div class="windows-style" style="width: 300px;">
-            <div class="modal-header">
-                <span>Select AI Mode</span>
-                <button class="close-btn" onclick="$('#ai-mode-modal').hide()">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 10px;">
-                <div class="modal-list-item" onclick="window.selectAiMode('chatbot')"><i class="fas fa-comments"></i> Chatbot</div>
-                <div class="modal-list-item" onclick="window.selectAiMode('transcript')"><i class="fas fa-closed-captioning"></i> Transcript</div>
-                <div class="modal-list-item" onclick="window.selectAiMode('summary')"><i class="fas fa-file-alt"></i> File to Summary</div>
-                <div class="modal-list-item" onclick="window.selectAiMode('note')"><i class="fas fa-sticky-note"></i> Note Generator</div>
-                <div class="modal-list-item" onclick="window.selectAiMode('coding')"><i class="fas fa-code"></i> Coding Agent</div>
-            </div>
+    <!-- AI MODE MODAL (FLOATING CONTEXT MENU STYLE) -->
+    <div id="ai-mode-modal" class="windows-style floating-submenu" style="display: none; width: 250px; position: absolute; z-index: 9999;">
+        <div class="modal-header" style="cursor: move;">
+            <span>Select AI Mode</span>
+            <button class="close-btn" onclick="$('#ai-mode-modal').hide()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 5px;">
+            <div class="modal-list-item" onclick="window.selectAiMode('chatbot')"><i class="fas fa-comments"></i> Chatbot</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('transcript')"><i class="fas fa-closed-captioning"></i> Transcript</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('summary')"><i class="fas fa-file-alt"></i> File to Summary</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('note')"><i class="fas fa-sticky-note"></i> Note Generator</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('coding')"><i class="fas fa-code"></i> Coding Agent</div>
         </div>
     </div>
 
-    <!-- SET OUTPUT SOURCE MODAL -->
-    <div id="output-source-modal" class="modal-overlay" style="display: none; z-index: 9999;">
-        <div class="windows-style" style="width: 300px; max-height: 400px; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <span>Set Source Input</span>
-                <button class="close-btn" onclick="$('#output-source-modal').hide()">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 10px; overflow-y: auto;" id="output-source-list">
-                <!-- Sources loaded here -->
-            </div>
+    <!-- SET OUTPUT SOURCE MODAL (FLOATING CONTEXT MENU STYLE) -->
+    <div id="output-source-modal" class="windows-style floating-submenu" style="display: none; width: 280px; max-height: 350px; position: absolute; z-index: 9999; flex-direction: column;">
+        <div class="modal-header" style="cursor: move;">
+            <span>Set Source Input</span>
+            <button class="close-btn" onclick="$('#output-source-modal').hide()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 5px; overflow-y: auto; flex: 1;" id="output-source-list">
+            <!-- Sources loaded here -->
         </div>
     </div>
 
-    <!-- SORT BY MODAL -->
-    <div id="sort-by-modal" class="modal-overlay" style="display: none; z-index: 9999;">
-        <div class="windows-style" style="width: 250px;">
-            <div class="modal-header">
-                <span>Sort Items By</span>
-                <button class="close-btn" onclick="$('#sort-by-modal').hide()">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 10px;">
-                <div class="modal-list-item" onclick="window.selectSortBy('newest')"><i class="fas fa-clock"></i> From Newest</div>
-                <div class="modal-list-item" onclick="window.selectSortBy('oldest')"><i class="fas fa-history"></i> From Oldest</div>
-                <div class="modal-list-item" onclick="window.selectSortBy('asc')"><i class="fas fa-sort-alpha-down"></i> Ascending (A-Z)</div>
-                <div class="modal-list-item" onclick="window.selectSortBy('desc')"><i class="fas fa-sort-alpha-up"></i> Descending (Z-A)</div>
-            </div>
+    <!-- SORT BY MODAL (FLOATING CONTEXT MENU STYLE) -->
+    <div id="sort-by-modal" class="windows-style floating-submenu" style="display: none; width: 250px; position: absolute; z-index: 9999;">
+        <div class="modal-header" style="cursor: move;">
+            <span>Sort Items By</span>
+            <button class="close-btn" onclick="$('#sort-by-modal').hide()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 5px;">
+            <div class="modal-list-item" onclick="window.selectSortBy('newest')"><i class="fas fa-clock"></i> From Newest</div>
+            <div class="modal-list-item" onclick="window.selectSortBy('oldest')"><i class="fas fa-history"></i> From Oldest</div>
+            <div class="modal-list-item" onclick="window.selectSortBy('asc')"><i class="fas fa-sort-alpha-down"></i> Ascending (A-Z)</div>
+            <div class="modal-list-item" onclick="window.selectSortBy('desc')"><i class="fas fa-sort-alpha-up"></i> Descending (Z-A)</div>
         </div>
     </div>
 

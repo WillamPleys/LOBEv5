@@ -468,15 +468,44 @@ $(document).ready(function() {
         $('#widget-context-menu').hide();
     });
 
-    // Handle Modal clicks for context menu options
-    $('#menu-ai-mode').on('click', function() {
-        $('#widget-context-menu').hide();
-        $('#ai-mode-modal').css('display', 'flex');
+    // --- POSITIONING UTILITY FOR FLOATING SUBMENUS ---
+    function positionFloatingMenu(menuId, e) {
+        let menu = $(`#${menuId}`);
+        menu.css('display', 'flex'); // Show first to get dimensions
+
+        let menuWidth = menu.outerWidth();
+        let menuHeight = menu.outerHeight();
+        let winWidth = $(window).width();
+        let winHeight = $(window).height();
+
+        let left = e.clientX;
+        let top = e.clientY;
+
+        if (left + menuWidth > winWidth) left = left - menuWidth;
+        if (top + menuHeight > winHeight) top = top - menuHeight;
+
+        menu.css({ left: left + 'px', top: top + 'px' });
+    }
+
+    // Hide floating submenus when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.floating-submenu').length && !$(e.target).closest('.context-menu').length) {
+            $('.floating-submenu').hide();
+        }
     });
 
-    $('#menu-sort-by').on('click', function() {
+    // Make floating submenus draggable
+    $('.floating-submenu').draggable({ handle: ".modal-header", containment: "window" });
+
+    // Handle Modal clicks for context menu options
+    $('#menu-ai-mode').on('click', function(e) {
         $('#widget-context-menu').hide();
-        $('#sort-by-modal').css('display', 'flex');
+        positionFloatingMenu('ai-mode-modal', e);
+    });
+
+    $('#menu-sort-by').on('click', function(e) {
+        $('#widget-context-menu').hide();
+        positionFloatingMenu('sort-by-modal', e);
     });
 
     window.selectAiMode = function(mode) {
@@ -495,7 +524,7 @@ $(document).ready(function() {
         $('#sort-by-modal').hide();
     };
 
-    $('#menu-set-output').on('click', function() {
+    $('#menu-set-output').on('click', function(e) {
         $('#widget-context-menu').hide();
         let sourcesMenu = $('#output-source-list');
         sourcesMenu.empty();
@@ -526,7 +555,7 @@ $(document).ready(function() {
             sourcesMenu.append('<div style="color:#888; text-align:center; padding:20px;">No valid input sources available.<br><small>(Needs AI Assistant, Rich Text Note, etc.)</small></div>');
         }
 
-        $('#output-source-modal').css('display', 'flex');
+        positionFloatingMenu('output-source-modal', e);
     });
 
     // Global Context Menu
