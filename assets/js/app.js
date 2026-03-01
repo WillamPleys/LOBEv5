@@ -497,15 +497,28 @@ $(document).ready(function() {
     // Make floating submenus draggable
     $('.floating-submenu').draggable({ handle: ".modal-header", containment: "window" });
 
-    // Handle Modal clicks for context menu options
-    $('#menu-ai-mode').on('click', function(e) {
-        $('#widget-context-menu').hide();
+    // Handle Modal hovers for context menu options
+    $('#menu-ai-mode').on('mouseenter', function(e) {
+        $('.floating-submenu').hide(); // Hide others
         positionFloatingMenu('ai-mode-modal', e);
     });
 
-    $('#menu-sort-by').on('click', function(e) {
-        $('#widget-context-menu').hide();
+    $('#menu-sort-by').on('mouseenter', function(e) {
+        $('.floating-submenu').hide(); // Hide others
         positionFloatingMenu('sort-by-modal', e);
+    });
+
+    // We should also close floating submenus when leaving the parent item or hovering other items
+    $('.context-item').not('#menu-ai-mode, #menu-sort-by, #menu-set-output').on('mouseenter', function() {
+        $('.floating-submenu').hide();
+    });
+
+    $('#menu-toggle-search').on('click', function() {
+        if (currentTargetWidget) {
+            $(document).trigger('toggleSearchAutocomplete', [currentTargetWidget]);
+            $('#widget-context-menu').hide();
+            saveWorkspaceState();
+        }
     });
 
     window.selectAiMode = function(mode) {
@@ -524,8 +537,8 @@ $(document).ready(function() {
         $('#sort-by-modal').hide();
     };
 
-    $('#menu-set-output').on('click', function(e) {
-        $('#widget-context-menu').hide();
+    $('#menu-set-output').on('mouseenter', function(e) {
+        $('.floating-submenu').hide(); // Hide others
         let sourcesMenu = $('#output-source-list');
         sourcesMenu.empty();
 
@@ -541,8 +554,8 @@ $(document).ready(function() {
             let safeTitleForJs = title.replace(/'/g, "\\'");
             let wId = $(this).attr('id');
 
-            // Filter allowed sources: AI Assistant, Rich Text Note, Code Editor, Voice Memo
-            let allowedTypes = ['ai assistant', 'rich text note', 'code editor', 'voice memo recorder'];
+            // Filter allowed sources: AI Assistant, Rich Text Note, Code Editor, Voice Memo Recorder, Upload File
+            let allowedTypes = ['ai assistant', 'rich text note', 'code editor', 'voice memo recorder', 'upload file'];
             let isAllowed = allowedTypes.some(type => originalType.includes(type));
 
             if (currentTargetWidget !== wId && isAllowed) {

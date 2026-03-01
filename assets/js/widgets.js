@@ -307,8 +307,24 @@ const WidgetRegistry = {
                 }
             });
 
+            $(document).on('toggleSearchAutocomplete', function(e, targetWId) {
+                if (targetWId === wId) {
+                    let currentAutocomplete = $search.attr('autocomplete');
+                    if (currentAutocomplete === 'off') {
+                        $search.attr('autocomplete', 'on');
+                        window.showCustomModal('Success', 'Search autocomplete enabled.');
+                    } else {
+                        $search.attr('autocomplete', 'off');
+                        window.showCustomModal('Success', 'Search autocomplete disabled.');
+                    }
+                }
+            });
+
+            // Set default autocomplete off
+            $search.attr('autocomplete', 'off');
+
             // Custom search filtering
-            $search.on('input', renderFiles);
+            $search.on('input keyup', renderFiles);
 
             function escapeHtml(text) {
                 return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -497,7 +513,9 @@ const WidgetRegistry = {
                         <input type="hidden" id="${wId}-file-data">
                         <input type="hidden" id="${wId}-file-mime">
                         <input type="file" id="${wId}-file-input" style="display:none;">
-                        <button onclick="$('#${wId}-file-input').click()" style="padding:8px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;" title="Upload File"><i class="fas fa-paperclip"></i></button>
+                        <button onclick="$('#${wId}-file-input').click()" style="padding:8px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:5px;" title="Upload File">
+                            <i class="fas fa-paperclip"></i> Upload
+                        </button>
                         <input type="text" id="${wId}-msg" placeholder="Ask AI..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
                         <button id="${wId}-send" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
                     </div>
@@ -644,8 +662,18 @@ const WidgetRegistry = {
                         if (currentMode !== 'chatbot') {
                             let safeContentForOnClick = encodeURIComponent(aiText).replace(/'/g, "%27");
                             let title = currentMode + '_' + Date.now() + '.txt';
-                            let htmlContent = escapeHtml(aiText).replace(/\n/g, '<br>') +
-                                `<hr><div style="text-align:right; margin-top:10px;"><button onclick="window.approveAiOutput('${title}', decodeURIComponent('${safeContentForOnClick}'), '${wId}')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2);"><i class="fas fa-save"></i> Save to Output</button></div>`;
+                            let htmlContent = `
+                                <div style="padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;">
+                                    <div style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.5;">
+                                        ${escapeHtml(aiText).replace(/\n/g, '<br>')}
+                                    </div>
+                                    <div style="display: flex; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 10px;">
+                                        <button onclick="window.approveAiOutput('${title}', decodeURIComponent('${safeContentForOnClick}'), '${wId}')" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 5px rgba(40,167,69,0.3); transition: background 0.2s, transform 0.1s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='#218838'" onmouseout="this.style.background='#28a745'" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                                            <i class="fas fa-save"></i> Save to Output
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
                             addMessage(htmlContent, 'ai', true);
                         } else {
                             addMessage(aiText, 'ai');
