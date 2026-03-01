@@ -249,14 +249,14 @@ const WidgetRegistry = {
         }
     },
     // --- 8. OUTPUT FIELD & EXPLORER ---
-    'Output Field': {
+    'Output Field & Explorer': {
         render: function(wId) {
             return `
                 <div style="display:flex; flex-direction:column; height:100%;">
                     <div style="border-bottom:1px solid #ddd; padding:5px; display:flex; justify-content:space-between; align-items:center; background:#f8f9fa;">
                         <input type="text" id="${wId}-search" placeholder="Search..." style="padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; outline:none; transition:box-shadow 0.2s;">
                     </div>
-                    <div id="${wId}-link-status" style="padding:3px; font-size:10px; text-align:center; background:#ffeb3b; display:none;">Linked to: <span id="${wId}-source-name">None</span></div>
+                    <div id="${wId}-link-status" style="padding:3px; font-size:10px; text-align:center; background:#e3f2fd; color:#1976d2; font-weight:bold; display:none; border-bottom:1px solid #bbdefb;">Connected to: <span id="${wId}-source-name">None</span></div>
                     <div id="${wId}-content-area" style="flex:1; overflow-y:auto; padding:10px; background:white;"><p style="text-align:center; color:#888;">No output yet.</p></div>
                 </div>
             `;
@@ -294,7 +294,7 @@ const WidgetRegistry = {
                     $widget.data('linkedSourceId', linkedSourceId);
                     $(`#${wId}-link-status`).show();
                     $(`#${wId}-source-name`).text(sourceName);
-                    window.showCustomModal('Success', 'Output Field linked to ' + sourceName);
+                    window.showCustomModal('Success', 'Output Field connected to ' + sourceName);
                 }
             });
 
