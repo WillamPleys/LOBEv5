@@ -542,7 +542,10 @@ const WidgetRegistry = {
                     <div id="${wId}-dropzone" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); color:white; display:none; align-items:center; justify-content:center; z-index:10; font-size:1.5rem; border-radius:5px;">Drop file here</div>
                     <div style="padding: 5px; background: #e0f7fa; border-bottom: 1px solid #ccc; font-size: 0.8rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
                         <span id="${wId}-mode-indicator">Mode: Chatbot</span>
-                        <button id="${wId}-save-chat" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem; display:none;"><i class="fas fa-save"></i> Save Chat</button>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label id="${wId}-select-all-wrap" style="display:none; font-weight:normal; font-size:0.7rem; cursor:pointer;"><input type="checkbox" id="${wId}-select-all" checked> All</label>
+                            <button id="${wId}-save-chat" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem; display:none;"><i class="fas fa-save"></i> Save Chat</button>
+                        </div>
                     </div>
                     <div style="flex:1; overflow-y:auto; padding:10px; background:#f4f4f4; margin-bottom:10px; border-radius:5px;" id="${wId}-chat-box">
                         <div style="color:#888; font-size:0.8rem; text-align:center;">Gemini 2.5 Flash Ready...</div>
@@ -592,23 +595,36 @@ const WidgetRegistry = {
                     // Show "Save Chat" button if not in chatbot mode
                     if (mode !== 'chatbot') {
                         $(`#${wId}-save-chat`).show();
+                        $(`#${wId}-select-all-wrap`).show();
                     } else {
                         $(`#${wId}-save-chat`).hide();
+                        $(`#${wId}-select-all-wrap`).hide();
                     }
                 }
+            });
+
+            $(`#${wId}-select-all`).on('change', function() {
+                let isChecked = $(this).is(':checked');
+                $chat.find('.msg-select').prop('checked', isChecked);
             });
 
             $(`#${wId}-save-chat`).on('click', function() {
                 let chatHistory = "";
                 // Force .txt extension for AI Assistant chats
                 let extension = ".txt";
+
                 $chat.children('div').each(function() {
-                    let msgSpan = $(this).find('span');
-                    // skip system messages which have transparent background
-                    if (msgSpan.css('background') !== 'transparent') {
+                    let $row = $(this);
+                    let $checkbox = $row.find('.msg-select');
+
+                    // Only include if checkbox exists and is checked
+                    if ($checkbox.length && $checkbox.is(':checked')) {
+                        let msgSpan = $row.find('span');
                         let text = msgSpan.text();
                         if (text && text.trim() !== "Processing...") {
-                            let role = $(this).css('text-align') === 'right' ? 'User' : 'AI';
+                            // Check flex justify-content or alignment to determine role
+                            let isUser = $row.css('justify-content') === 'flex-end' || $row.css('text-align') === 'right';
+                            let role = isUser ? 'User' : 'AI';
                             chatHistory += `[${role}] ${text}\n\n`;
                         }
                     }
@@ -634,6 +650,7 @@ const WidgetRegistry = {
             function addMessage(text, sender, isHtml = false) {
                 let align = 'text-align:left;';
                 let bg = 'background:white; margin-right:20%;';
+                let isSelectable = (sender === 'user' || sender === 'ai');
 
                 if (sender === 'user') {
                     align = 'text-align:right;';
@@ -644,10 +661,20 @@ const WidgetRegistry = {
                 }
 
                 let outText = isHtml ? text : escapeHtml(text).replace(/\n/g, '<br>');
-
                 let id = 'msg-' + Date.now() + Math.floor(Math.random() * 100);
 
-                $chat.append(`<div style="${align} margin-bottom:5px;" id="${id}"><span style="display:inline-block; padding:8px; border-radius:8px; ${bg} box-shadow:0 1px 1px rgba(0,0,0,0.1);">${outText}</span></div>`);
+                let checkbox = isSelectable ? `<input type="checkbox" class="msg-select" checked style="margin: 0 8px; cursor:pointer;" title="Select for saving">` : '';
+
+                let html;
+                if (sender === 'user') {
+                    html = `<div style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:5px;" id="${id}">${checkbox}<span style="display:inline-block; padding:8px; border-radius:8px; ${bg} box-shadow:0 1px 1px rgba(0,0,0,0.1);">${outText}</span></div>`;
+                } else if (sender === 'ai') {
+                    html = `<div style="display:flex; justify-content:flex-start; align-items:center; margin-bottom:5px;" id="${id}"><span style="display:inline-block; padding:8px; border-radius:8px; ${bg} box-shadow:0 1px 1px rgba(0,0,0,0.1);">${outText}</span>${checkbox}</div>`;
+                } else {
+                    html = `<div style="${align} margin-bottom:5px;" id="${id}"><span style="display:inline-block; padding:8px; border-radius:8px; ${bg} box-shadow:0 1px 1px rgba(0,0,0,0.1);">${outText}</span></div>`;
+                }
+
+                $chat.append(html);
                 $chat.scrollTop($chat[0].scrollHeight);
                 return id;
             }
