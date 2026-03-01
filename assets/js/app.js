@@ -71,6 +71,7 @@ $(document).ready(function() {
                 if ($el.data('photoPath')) stateData.photoPath = $el.data('photoPath');
                 if ($el.data('isFullScreen') !== undefined) stateData.isFullScreen = $el.data('isFullScreen');
                 if ($el.data('calendarEvents')) stateData.calendarEvents = $el.data('calendarEvents');
+                if ($el.data('isCalendarExpanded')) stateData.isCalendarExpanded = $el.data('isCalendarExpanded');
 
                 widgets.push({
                     id: $el.attr('id'),
