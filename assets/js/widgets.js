@@ -52,16 +52,32 @@ const WidgetRegistry = {
                         <button class="color-btn" style="background:#f48fb1; width:20px; height:20px; border:none; cursor:pointer;" data-color="#f48fb1"></button>
                         <button class="color-btn" style="background:#ffffff; width:20px; height:20px; border:1px solid #ddd; cursor:pointer;" data-color="#ffffff"></button>
                     </div>
-                    <textarea style="flex:1; width:100%; border:none; background:transparent; resize:none; outline:none; font-family:'Comic Sans MS', cursive, sans-serif; font-size:1.1rem; padding:10px;" placeholder="Don't forget..."></textarea>
+                    <textarea style="flex:1; width:100%; border:none; background:transparent; resize:none; outline:none; font-family:'Comic Sans MS', cursive, sans-serif; font-size:1.1rem; padding:10px;" placeholder="Don't forget..." id="${wId}-textarea"></textarea>
                 </div>
             `;
         },
         init: function(wId) {
             const $widget = $(`#${wId}`);
-            $widget.find('.widget-content').css('background-color', '#ffeb3b');
+            const $textarea = $(`#${wId}-textarea`);
+
+            // Restore color
+            let savedColor = $widget.data('noteColor') || '#ffeb3b';
+            $widget.find('.widget-content').css('background-color', savedColor);
+
+            // Restore text
+            let savedText = $widget.data('noteText') || '';
+            $textarea.val(savedText);
+
             $widget.find('.color-btn').on('click', function() {
                 let color = $(this).data('color');
                 $widget.find('.widget-content').css('background-color', color);
+                $widget.data('noteColor', color);
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+            });
+
+            $textarea.on('input', function() {
+                $widget.data('noteText', $(this).val());
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
             });
         }
     },
@@ -94,9 +110,20 @@ const WidgetRegistry = {
                     .replace(/'/g, "&#039;");
             }
 
-            function addTask() {
-                let text = $input.val();
-                let time = $time.val();
+            function saveTasks() {
+                let tasks = [];
+                $list.find('li').each(function() {
+                    tasks.push({
+                        text: $(this).find('.task-text').text(),
+                        time: $(this).find('.task-time').text().replace('@ ', ''),
+                        checked: $(this).find('input').is(':checked')
+                    });
+                });
+                $widget.data('todoTasks', tasks);
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+            }
+
+            function addTask(text, time, checked = false) {
                 if(!text) return;
 
                 let safeText = escapeHtml(text);
@@ -104,22 +131,41 @@ const WidgetRegistry = {
 
                 let li = $(`
                     <li style="border-bottom:1px solid #eee; padding:5px 0; display:flex; align-items:center; gap:10px;">
-                        <input type="checkbox">
-                        <span style="flex:1;">${safeText} <small style="color:#888;">${safeTime ? '@ '+safeTime : ''}</small></span>
-                        <i class="fas fa-times" style="cursor:pointer; color:#ccc;"></i>
+                        <input type="checkbox" ${checked ? 'checked' : ''}>
+                        <span style="flex:1; ${checked ? 'text-decoration:line-through;' : ''}">
+                            <span class="task-text">${safeText}</span>
+                            <small style="color:#888;" class="task-time-wrap">${safeTime ? '@ <span class="task-time">'+safeTime+'</span>' : '<span class="task-time" style="display:none;"></span>'}</small>
+                        </span>
+                        <i class="fas fa-times delete-task" style="cursor:pointer; color:#ccc;"></i>
                     </li>
                 `);
 
-                li.find('.fas-times').click(function() { li.remove(); });
+                li.find('.delete-task').click(function() {
+                    li.remove();
+                    saveTasks();
+                });
                 li.find('input').change(function() {
-                    if($(this).is(':checked')) li.find('span').css('text-decoration', 'line-through');
-                    else li.find('span').css('text-decoration', 'none');
+                    if($(this).is(':checked')) li.find('span').first().css('text-decoration', 'line-through');
+                    else li.find('span').first().css('text-decoration', 'none');
+                    saveTasks();
                 });
                 $list.append(li);
-                $input.val(''); $time.val('');
             }
-            $btn.click(addTask);
-            $input.keypress(function(e) { if(e.which == 13) addTask(); });
+
+            // Restore tasks
+            let savedTasks = $widget.data('todoTasks') || [];
+            savedTasks.forEach(t => addTask(t.text, t.time, t.checked));
+
+            $btn.click(() => {
+                let text = $input.val();
+                let time = $time.val();
+                if (text) {
+                    addTask(text, time);
+                    $input.val(''); $time.val('');
+                    saveTasks();
+                }
+            });
+            $input.keypress(function(e) { if(e.which == 13) $btn.click(); });
         }
     },
     // --- 4. TIMER ---
@@ -127,7 +173,7 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="text-align:center; padding-top:20px;">
-                    <input type="text" placeholder="Timer Title" style="text-align:center; border:none; border-bottom:1px solid #ccc; width:80%; margin-bottom:15px; outline:none;">
+                    <input type="text" placeholder="Timer Title" id="${wId}-title" style="text-align:center; border:none; border-bottom:1px solid #ccc; width:80%; margin-bottom:15px; outline:none;">
                     <div id="${wId}-display" style="font-size:3rem; font-family:monospace; font-weight:bold; margin-bottom:20px;">00:00:00</div>
                     <div>
                         <button id="${wId}-start" style="padding:10px 20px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;">Start</button>
@@ -137,8 +183,19 @@ const WidgetRegistry = {
             `;
         },
         init: function(wId) {
+            const $widget = $(`#${wId}`);
+            const $title = $(`#${wId}-title`);
             let seconds = 0; let interval = null;
             const $display = $(`#${wId}-display`); const $startBtn = $(`#${wId}-start`);
+
+            // Restore title
+            $title.val($widget.data('timerTitle') || '');
+
+            $title.on('input', function() {
+                $widget.data('timerTitle', $(this).val());
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+            });
+
             function formatTime(s) {
                 let h = Math.floor(s / 3600); let m = Math.floor((s % 3600) / 60); let sec = s % 60;
                 return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
@@ -154,33 +211,119 @@ const WidgetRegistry = {
     'Flashcard': {
         render: function(wId) {
             return `
-                <div style="height:100%; display:flex; flex-direction:column;">
-                    <div class="card-area" style="flex:1; perspective:1000px; cursor:pointer; position:relative; margin-bottom:10px;">
-                        <div class="card-inner" style="width:100%; height:100%; position:relative; text-align:center; transition:transform 0.6s; transform-style:preserve-3d; box-shadow:0 4px 8px rgba(0,0,0,0.1); border-radius:8px; background:white; border:1px solid #ddd;">
-                            <div class="card-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; align-items:center; justify-content:center; padding:20px; font-weight:bold; font-size:1.2rem;">Question?</div>
-                            <div class="card-back" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; padding:20px; color:blue;">Answer!</div>
+                <div style="height:100%; display:flex; flex-direction:column; position:relative;">
+                    <div id="${wId}-play-area" style="flex:1; display:flex; flex-direction:column;">
+                        <div class="card-area" style="flex:1; perspective:1000px; cursor:pointer; position:relative; margin-bottom:10px;">
+                            <div class="card-inner" style="width:100%; height:100%; position:relative; text-align:center; transition:transform 0.6s; transform-style:preserve-3d; box-shadow:0 4px 8px rgba(0,0,0,0.1); border-radius:8px; background:white; border:1px solid #ddd;">
+                                <div class="card-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; align-items:center; justify-content:center; padding:20px; font-weight:bold; font-size:1.2rem;">Question?</div>
+                                <div class="card-back" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; padding:20px; color:blue;">Answer!</div>
+                            </div>
                         </div>
+                        <div style="display:flex; justify-content:space-between; gap:5px;">
+                            <button id="${wId}-prev" style="flex:1; padding:10px;">&lt; Prev</button>
+                            <button id="${wId}-next" style="flex:1; padding:10px;">Next &gt;</button>
+                        </div>
+                        <div style="text-align:center; margin-top:5px; font-size:0.8rem; color:#888;">Card <span id="${wId}-index-display">1</span> of <span id="${wId}-total-display">1</span></div>
                     </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <button id="${wId}-prev" style="flex:1; margin-right:5px; padding:10px;">&lt; Prev</button>
-                        <button id="${wId}-next" style="flex:1; margin-left:5px; padding:10px;">Next &gt;</button>
+
+                    <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:10px; box-sizing:border-box; z-index:5;">
+                        <h4 style="margin-bottom:10px;">Card Editor</h4>
+                        <div id="${wId}-editor-list" style="flex:1; overflow-y:auto; margin-bottom:10px; border:1px solid #eee; padding:5px;"></div>
+                        <div style="display:flex; gap:5px;">
+                            <button id="${wId}-add-card" class="btn btn-secondary btn-sm" style="flex:1;">+ Add Card</button>
+                            <button id="${wId}-save-settings" class="btn btn-primary btn-sm" style="flex:1;">Save & Close</button>
+                        </div>
                     </div>
                 </div>
             `;
         },
         init: function(wId) {
-            const $widget = $(`#${wId}`); let isFlipped = false;
-            const cards = [{q: "What is LOBE?", a: "Design Your Needs"}, {q: "Who is the teacher?", a: "Pak David"}, {q: "What is 2 + 2?", a: "4"}];
+            const $widget = $(`#${wId}`);
+            const $playArea = $(`#${wId}-play-area`);
+            const $settingsArea = $(`#${wId}-settings-area`);
+            const $editorList = $(`#${wId}-editor-list`);
+            const $indexDisplay = $(`#${wId}-index-display`);
+            const $totalDisplay = $(`#${wId}-total-display`);
+
+            let isFlipped = false;
             let currentIdx = 0;
+            let cards = $widget.data('flashcards') || [{q: "Sample Question?", a: "Sample Answer!"}];
+
             function updateCard() {
+                if (cards.length === 0) {
+                    $widget.find('.card-front').text("No cards. Click Cog to add!");
+                    $widget.find('.card-back').text("No cards.");
+                    $indexDisplay.text(0);
+                    $totalDisplay.text(0);
+                    return;
+                }
+                if (currentIdx >= cards.length) currentIdx = 0;
                 $widget.find('.card-front').text(cards[currentIdx].q);
                 $widget.find('.card-back').text(cards[currentIdx].a);
+                $indexDisplay.text(currentIdx + 1);
+                $totalDisplay.text(cards.length);
                 if(isFlipped) { $widget.find('.card-inner').css('transform', 'rotateY(0deg)'); isFlipped = false; }
             }
+
+            function renderEditor() {
+                $editorList.empty();
+                cards.forEach((c, i) => {
+                    let item = $(`
+                        <div style="margin-bottom:10px; padding:5px; border:1px solid #eee; position:relative;">
+                            <input type="text" class="card-q" placeholder="Question" value="${escapeHtml(c.q)}" style="width:100%; margin-bottom:2px; font-size:0.8rem;">
+                            <input type="text" class="card-a" placeholder="Answer" value="${escapeHtml(c.a)}" style="width:100%; font-size:0.8rem;">
+                            <i class="fas fa-trash remove-card" style="position:absolute; top:5px; right:5px; color:#ff4d4d; cursor:pointer; font-size:0.7rem;"></i>
+                        </div>
+                    `);
+                    item.find('.remove-card').click(() => { item.remove(); });
+                    $editorList.append(item);
+                });
+            }
+
+            $(document).on(`toggleWidgetSettings.${wId}`, function() {
+                if ($settingsArea.is(':visible')) {
+                    $settingsArea.hide();
+                } else {
+                    renderEditor();
+                    $settingsArea.show();
+                }
+            });
+
+            $(`#${wId}-add-card`).click(() => {
+                $editorList.append(`
+                    <div style="margin-bottom:10px; padding:5px; border:1px solid #eee; position:relative;">
+                        <input type="text" class="card-q" placeholder="Question" style="width:100%; margin-bottom:2px; font-size:0.8rem;">
+                        <input type="text" class="card-a" placeholder="Answer" style="width:100%; font-size:0.8rem;">
+                        <i class="fas fa-trash remove-card" style="position:absolute; top:5px; right:5px; color:#ff4d4d; cursor:pointer; font-size:0.7rem;" onclick="$(this).parent().remove()"></i>
+                    </div>
+                `);
+                $editorList.scrollTop($editorList[0].scrollHeight);
+            });
+
+            $(`#${wId}-save-settings`).click(() => {
+                let newCards = [];
+                $editorList.children().each(function() {
+                    let q = $(this).find('.card-q').val().trim();
+                    let a = $(this).find('.card-a').val().trim();
+                    if (q || a) newCards.push({q: q, a: a});
+                });
+                cards = newCards;
+                $widget.data('flashcards', cards);
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+                updateCard();
+                $settingsArea.hide();
+            });
+
+            $widget.find('.card-area').click(function() {
+                if (cards.length > 0) {
+                    isFlipped = !isFlipped;
+                    $widget.find('.card-inner').css('transform', isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)');
+                }
+            });
+            $widget.find(`#${wId}-next`).click(function() { if (cards.length > 0) { currentIdx = (currentIdx + 1) % cards.length; updateCard(); } });
+            $widget.find(`#${wId}-prev`).click(function() { if (cards.length > 0) { currentIdx = (currentIdx - 1 + cards.length) % cards.length; updateCard(); } });
+
             updateCard();
-            $widget.find('.card-area').click(function() { isFlipped = !isFlipped; $widget.find('.card-inner').css('transform', isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'); });
-            $widget.find(`#${wId}-next`).click(function() { currentIdx = (currentIdx + 1) % cards.length; updateCard(); });
-            $widget.find(`#${wId}-prev`).click(function() { currentIdx = (currentIdx - 1 + cards.length) % cards.length; updateCard(); });
         }
     },
     // --- 6. CREATE SIDEBAR ---
@@ -393,6 +536,7 @@ const WidgetRegistry = {
                         if (e.detail > 1) return;
 
                         $('#file-opener-title').text(f.original_name);
+                        window.trackActivity('open_file', f.original_name);
                         let $content = $('#file-opener-content');
                         $content.empty();
 
@@ -609,11 +753,72 @@ const WidgetRegistry = {
     },
     // --- 10. ACTIVITY ---
     'Activity Tracker': {
-        render: function(wId) { return `<canvas id="${wId}-chart"></canvas>`; },
+        render: function(wId) {
+            return `
+                <div style="height:100%; display:flex; flex-direction:column; padding:10px; box-sizing:border-box;">
+                    <div style="height:150px; margin-bottom:10px;">
+                        <canvas id="${wId}-chart"></canvas>
+                    </div>
+                    <h5 style="margin-bottom:5px;">Recent Actions</h5>
+                    <div id="${wId}-activity-list" style="flex:1; overflow-y:auto; font-size:0.75rem; border-top:1px solid #eee; padding-top:5px;">
+                        <p style="color:#888; text-align:center;">Loading history...</p>
+                    </div>
+                </div>
+            `;
+        },
         init: function(wId) {
-             new Chart(document.getElementById(`${wId}-chart`), {
-                type: 'line', data: { labels: ['M','T','W'], datasets: [{ label: 'Activity', data: [10, 20, 15] }] }
-            });
+            const $list = $(`#${wId}-activity-list`);
+
+            function refreshActivity() {
+                $.get('backend/get_activity.php', function(res) {
+                    if (res.status === 'success') {
+                        // 1. Update List
+                        $list.empty();
+                        if (res.list.length === 0) {
+                            $list.html('<p style="color:#888; text-align:center;">No activity yet.</p>');
+                        } else {
+                            res.list.forEach(a => {
+                                let time = new Date(a.waktu_transaksi).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                                $list.append(`
+                                    <div style="padding:4px 0; border-bottom:1px solid #f9f9f9; display:flex; justify-content:space-between;">
+                                        <span style="font-weight:500;">${a.jenis_aktivitas.replace('_',' ')}</span>
+                                        <span style="color:#888;">${time}</span>
+                                    </div>
+                                    <div style="font-size:0.7rem; color:#666; margin-bottom:4px;">${escapeHtml(a.detail_aktivitas)}</div>
+                                `);
+                            });
+                        }
+
+                        // 2. Update Chart
+                        const labels = res.chart.map(d => d.date.split('-').slice(1).join('/'));
+                        const data = res.chart.map(d => d.count);
+
+                        new Chart(document.getElementById(`${wId}-chart`), {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Daily Actions',
+                                    data: data,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                maintainAspectRatio: false,
+                                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                                plugins: { legend: { display: false } }
+                            }
+                        });
+                    }
+                });
+            }
+
+            refreshActivity();
+            // Optional: poll every minute
+            const poll = setInterval(refreshActivity, 60000);
+            $(`#${wId}`).on('remove', () => clearInterval(poll));
         }
     },
 
@@ -936,93 +1141,269 @@ const WidgetRegistry = {
         }
     },
 
-    // --- 14. CONCEPT MAPPER (CANVAS) ---
+    // --- 14. CONCEPT MAPPER (NODES) ---
     'Concept Mapper': {
         render: function(wId) {
             return `
-                <div style="width:100%; height:100%; overflow:hidden; position:relative;">
-                    <button onclick="document.getElementById('${wId}-canvas').getContext('2d').clearRect(0,0,1000,1000)" style="position:absolute; top:5px; right:5px; padding:2px 5px; font-size:10px; z-index:10;">Clear</button>
-                    <canvas id="${wId}-canvas" style="border:1px solid #eee; background:white; cursor:crosshair; width:100%; height:100%;"></canvas>
+                <div style="height:100%; display:flex; flex-direction:column; background:#f5f5f5;">
+                    <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center;">
+                        <button id="${wId}-add-node" class="btn btn-sm" title="Add Node"><i class="fas fa-plus-circle"></i></button>
+                        <button id="${wId}-clear" class="btn btn-sm" title="Clear All"><i class="fas fa-trash-alt"></i></button>
+                        <button id="${wId}-save-upload" class="btn btn-primary btn-sm" style="margin-left:auto;"><i class="fas fa-file-upload"></i> Save & Upload</button>
+                    </div>
+                    <div id="${wId}-canvas-area" style="flex:1; position:relative; overflow:hidden; background:white; cursor:crosshair;">
+                        <canvas id="${wId}-link-canvas" style="position:absolute; top:0; left:0; pointer-events:none;"></canvas>
+                    </div>
                 </div>
             `;
         },
         init: function(wId) {
-            const canvas = document.getElementById(`${wId}-canvas`);
+            const $widget = $(`#${wId}`);
+            const $area = $(`#${wId}-canvas-area`);
+            const canvas = document.getElementById(`${wId}-link-canvas`);
+            const ctx = canvas.getContext('2d');
 
-            // Wait for layout
+            let nodes = $widget.data('mapperNodes') || [];
+            let connections = $widget.data('mapperLinks') || [];
+            let draggingNode = null;
+
+            function updateCanvasSize() {
+                canvas.width = $area.width();
+                canvas.height = $area.height();
+                drawLinks();
+            }
+
+            function drawLinks() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 2;
+                connections.forEach(conn => {
+                    let from = nodes.find(n => n.id === conn.from);
+                    let to = nodes.find(n => n.id === conn.to);
+                    if (from && to) {
+                        ctx.beginPath();
+                        ctx.moveTo(from.x + 50, from.y + 25);
+                        ctx.lineTo(to.x + 50, to.y + 25);
+                        ctx.stroke();
+                    }
+                });
+            }
+
+            function createNodeEl(node) {
+                let el = $(`
+                    <div class="mapper-node" id="${wId}-node-${node.id}" style="position:absolute; left:${node.x}px; top:${node.y}px; width:100px; height:50px; background:#fff; border:2px solid #007bff; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:move; z-index:10; font-size:0.8rem; text-align:center; padding:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                        <span contenteditable="true" style="outline:none; width:100%;">${escapeHtml(node.text)}</span>
+                    </div>
+                `);
+
+                el.draggable({
+                    containment: "parent",
+                    drag: function(e, ui) {
+                        node.x = ui.position.left;
+                        node.y = ui.position.top;
+                        drawLinks();
+                    },
+                    stop: function() {
+                        $widget.data('mapperNodes', nodes);
+                        if (window.saveWorkspaceState) window.saveWorkspaceState();
+                    }
+                });
+
+                el.find('span').on('blur', function() {
+                    node.text = $(this).text();
+                    $widget.data('mapperNodes', nodes);
+                    if (window.saveWorkspaceState) window.saveWorkspaceState();
+                });
+
+                // Simple linking: click one then another
+                el.on('click', function(e) {
+                    if (e.shiftKey) {
+                        // Delete node
+                        nodes = nodes.filter(n => n.id !== node.id);
+                        connections = connections.filter(c => c.from !== node.id && c.to !== node.id);
+                        el.remove();
+                        drawLinks();
+                        saveData();
+                        return;
+                    }
+                    if (window._mapperPendingSource && window._mapperPendingSource.wId === wId) {
+                        if (window._mapperPendingSource.nodeId !== node.id) {
+                            connections.push({from: window._mapperPendingSource.nodeId, to: node.id});
+                            drawLinks();
+                            saveData();
+                        }
+                        window._mapperPendingSource = null;
+                        $('.mapper-node').css('border-color', '#007bff');
+                    } else {
+                        window._mapperPendingSource = { wId: wId, nodeId: node.id };
+                        el.css('border-color', '#28a745');
+                    }
+                });
+
+                $area.append(el);
+            }
+
+            function saveData() {
+                $widget.data('mapperNodes', nodes);
+                $widget.data('mapperLinks', connections);
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+            }
+
+            $(`#${wId}-add-node`).click(() => {
+                let node = { id: Date.now(), x: 50, y: 50, text: 'New Concept' };
+                nodes.push(node);
+                createNodeEl(node);
+                saveData();
+            });
+
+            $(`#${wId}-clear`).click(() => {
+                nodes = [];
+                connections = [];
+                $area.find('.mapper-node').remove();
+                drawLinks();
+                saveData();
+            });
+
+            $(`#${wId}-save-upload`).click(() => {
+                // Convert nodes + links to image
+                // For simplicity, we capture the $area div
+                html2canvas($area[0], { useCORS: true, backgroundColor: '#ffffff' }).then(canvasCapture => {
+                    canvasCapture.toBlob(blob => {
+                        let file = new File([blob], "ConceptMap_" + Date.now() + ".png", {type: "image/png"});
+                        let formData = new FormData();
+                        formData.append('file', file);
+                        $.ajax({
+                            url: 'backend/upload.php', type: 'POST', data: formData, contentType: false, processData: false,
+                            success: function(res) {
+                                if(res.status === 'success') {
+                                    $(document).trigger('fileUploaded', [res, wId]);
+                                    window.showCustomModal('Success', 'Concept Map saved and uploaded to Output Field.');
+                                }
+                            }
+                        });
+                    });
+                });
+            });
+
             setTimeout(() => {
-                const parent = canvas.parentElement;
-                canvas.width = parent.clientWidth;
-                canvas.height = parent.clientHeight;
+                updateCanvasSize();
+                nodes.forEach(n => createNodeEl(n));
+            }, 200);
 
-                const ctx = canvas.getContext('2d');
-                let painting = false;
-
-                function startPosition(e) {
-                    painting = true;
-                    draw(e);
-                }
-                function finishedPosition() {
-                    painting = false;
-                    ctx.beginPath();
-                }
-                function draw(e) {
-                    if (!painting) return;
-                    const rect = canvas.getBoundingClientRect();
-                    ctx.lineWidth = 2;
-                    ctx.lineCap = 'round';
-                    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-                }
-
-                canvas.addEventListener('mousedown', startPosition);
-                canvas.addEventListener('mouseup', finishedPosition);
-                canvas.addEventListener('mousemove', draw);
-            }, 100);
+            $widget.on('resize', updateCanvasSize);
         }
     },
 
-    // --- 15. INTERACTIVE WHITEBOARD (Similar to Mapper but larger default) ---
+    // --- 15. INTERACTIVE WHITEBOARD ---
     'Interactive Whiteboard': {
         render: function(wId) {
             return `
-                <div style="display:flex; flex-direction:column; height:100%; position:relative;">
-                     <button onclick="document.getElementById('${wId}-wb').getContext('2d').clearRect(0,0,1000,1000)" style="position:absolute; top:5px; right:5px; padding:2px 5px; font-size:10px; z-index:10;">Clear</button>
-                    <canvas id="${wId}-wb" style="flex:1; border:1px solid #ccc; background:#fff; cursor:pen; width:100%; height:100%;"></canvas>
+                <div style="display:flex; flex-direction:column; height:100%; background:white;">
+                    <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center;">
+                        <input type="color" id="${wId}-color" value="#0000ff" style="width:30px; height:30px; border:none; padding:0; background:transparent; cursor:pointer;">
+                        <button id="${wId}-clear-wb" class="btn btn-sm" title="Clear Canvas"><i class="fas fa-eraser"></i></button>
+                        <button id="${wId}-save-upload-wb" class="btn btn-primary btn-sm" style="margin-left:auto;"><i class="fas fa-file-upload"></i> Save & Upload</button>
+                    </div>
+                    <canvas id="${wId}-wb" style="flex:1; cursor:crosshair; background:white;"></canvas>
                 </div>
             `;
         },
         init: function(wId) {
-             const canvas = document.getElementById(`${wId}-wb`);
+            const $widget = $(`#${wId}`);
+            const canvas = document.getElementById(`${wId}-wb`);
+            const ctx = canvas.getContext('2d');
+            const $color = $(`#${wId}-color`);
 
-             setTimeout(() => {
+            let paths = $widget.data('whiteboardPaths') || [];
+            let currentPath = [];
+            let painting = false;
+
+            function initCanvas() {
                 const parent = canvas.parentElement;
                 canvas.width = parent.clientWidth;
                 canvas.height = parent.clientHeight;
+                redraw();
+            }
 
-                const ctx = canvas.getContext('2d');
-                let painting = false;
-
-                function startPosition(e) { painting = true; draw(e); }
-                function finishedPosition() { painting = false; ctx.beginPath(); }
-                function draw(e) {
-                    if (!painting) return;
-                    const rect = canvas.getBoundingClientRect();
-                    ctx.lineWidth = 3;
-                    ctx.lineCap = 'round';
-                    ctx.strokeStyle = "blue";
-                    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-                    ctx.stroke();
+            function redraw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                paths.forEach(path => {
+                    if (path.points.length < 2) return;
                     ctx.beginPath();
-                    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-                }
+                    ctx.strokeStyle = path.color || '#000';
+                    ctx.lineWidth = path.width || 3;
+                    ctx.moveTo(path.points[0].x, path.points[0].y);
+                    for (let i = 1; i < path.points.length; i++) {
+                        ctx.lineTo(path.points[i].x, path.points[i].y);
+                    }
+                    ctx.stroke();
+                });
+            }
 
-                canvas.addEventListener('mousedown', startPosition);
-                canvas.addEventListener('mouseup', finishedPosition);
-                canvas.addEventListener('mousemove', draw);
-            }, 100);
+            function startPosition(e) {
+                painting = true;
+                const rect = canvas.getBoundingClientRect();
+                currentPath = { color: $color.val(), width: 3, points: [{ x: e.clientX - rect.left, y: e.clientY - rect.top }] };
+                paths.push(currentPath);
+            }
+
+            function finishedPosition() {
+                painting = false;
+                ctx.beginPath();
+                $widget.data('whiteboardPaths', paths);
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+            }
+
+            function draw(e) {
+                if (!painting) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                currentPath.points.push({ x, y });
+
+                ctx.lineWidth = currentPath.width;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = currentPath.color;
+
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
+
+            canvas.addEventListener('mousedown', startPosition);
+            canvas.addEventListener('mouseup', finishedPosition);
+            canvas.addEventListener('mousemove', draw);
+
+            $(`#${wId}-clear-wb`).click(() => {
+                paths = [];
+                $widget.data('whiteboardPaths', paths);
+                redraw();
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+            });
+
+            $(`#${wId}-save-upload-wb`).click(() => {
+                canvas.toBlob(blob => {
+                    let file = new File([blob], "Whiteboard_" + Date.now() + ".png", {type: "image/png"});
+                    let formData = new FormData();
+                    formData.append('file', file);
+                    $.ajax({
+                        url: 'backend/upload.php', type: 'POST', data: formData, contentType: false, processData: false,
+                        success: function(res) {
+                            if(res.status === 'success') {
+                                $(document).trigger('fileUploaded', [res, wId]);
+                                window.showCustomModal('Success', 'Whiteboard progress uploaded to Output Field.');
+                            }
+                        }
+                    });
+                });
+            });
+
+            setTimeout(initCanvas, 200);
+            $widget.on('resize', initCanvas);
         }
     },
 
@@ -1043,28 +1424,60 @@ const WidgetRegistry = {
             const $rec = $(`#${wId}-rec`);
             const $status = $(`#${wId}-status`);
             const $icon = $(`#${wId}-mic-icon`);
+
+            let mediaRecorder;
+            let audioChunks = [];
             let isRecording = false;
 
-            $rec.click(function() {
+            $rec.click(async function() {
                 if(!isRecording) {
-                    // Start Fake Recording
-                    isRecording = true;
-                    $(this).text('Stop').css('background', '#333');
-                    $icon.css('color', 'red');
-                    $status.text('Recording...');
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+
+                        mediaRecorder.ondataavailable = (event) => {
+                            audioChunks.push(event.data);
+                        };
+
+                        mediaRecorder.onstop = () => {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+                            let file = new File([audioBlob], "VoiceMemo_" + Date.now() + ".mp3", {type: "audio/mpeg"});
+                            let formData = new FormData();
+                            formData.append('file', file);
+
+                            $status.text('Saving...');
+                            $.ajax({
+                                url: 'backend/upload.php', type: 'POST', data: formData, contentType: false, processData: false,
+                                success: function(res) {
+                                    if(res.status === 'success') {
+                                        $(document).trigger('fileUploaded', [res, wId]);
+                                        $status.text('Saved to Output Field!');
+                                    } else {
+                                        $status.text('Upload Error: ' + res.message);
+                                    }
+                                },
+                                error: function() { $status.text('Server Error.'); }
+                            });
+
+                            // Stop all tracks to release mic
+                            stream.getTracks().forEach(track => track.stop());
+                        };
+
+                        mediaRecorder.start();
+                        isRecording = true;
+                        $(this).text('Stop').css('background', '#333');
+                        $icon.css('color', 'red');
+                        $status.text('Recording...');
+                    } catch (err) {
+                        console.error("Mic access denied:", err);
+                        window.showCustomModal('Error', 'Microphone access denied or not available.');
+                    }
                 } else {
-                    // Stop
+                    mediaRecorder.stop();
                     isRecording = false;
                     $(this).text('Record').css('background', '#f44336');
                     $icon.css('color', '#ccc');
-                    $status.text('Saved to Output Field!');
-
-                    // Simulate File Save
-                    $(document).trigger('fileUploaded', [{
-                        original_name: 'Voice Memo ' + new Date().toLocaleTimeString() + '.mp3',
-                        type: 'audio/mp3',
-                        file_path: '#' // Dummy path
-                    }, wId]);
                 }
             });
         }
@@ -1136,8 +1549,9 @@ const WidgetRegistry = {
             }
 
             $frame.on('click', function(e) {
-                // If clicking the empty frame (not the image or buttons), trigger upload
-                if (!$img.is(':visible') && (e.target === $frame[0] || e.target === $placeholder[0])) {
+                // If clicking anywhere in the frame while no image is visible, trigger upload
+                // except if clicking the change button (though it's hidden)
+                if (!$img.is(':visible')) {
                     $file.click();
                 }
             });
