@@ -56,6 +56,8 @@ $(document).ready(function() {
     // --- STATE MANAGEMENT & SAVING ---
     // Debounce save function to auto-save changes
     window.saveWorkspaceState = function() {
+        // Log to verify global accessibility
+        console.log('Attempting to save workspace state...');
         if (!isWorkspaceLoaded) return; // Don't save if we haven't successfully loaded yet
 
         if (saveTimeout) clearTimeout(saveTimeout);
@@ -91,6 +93,7 @@ $(document).ready(function() {
                 if ($el.data('mapperLinks')) stateData.mapperLinks = $el.data('mapperLinks');
                 if ($el.data('whiteboardPaths')) stateData.whiteboardPaths = $el.data('whiteboardPaths');
                 if ($el.data('isCalendarExpanded')) stateData.isCalendarExpanded = $el.data('isCalendarExpanded');
+                if ($el.data('expandedHeight')) stateData.expandedHeight = $el.data('expandedHeight');
 
                 widgets.push({
                     id: $el.attr('id'),
@@ -270,6 +273,9 @@ $(document).ready(function() {
             function finishRename() {
                 let newName = $input.val().trim();
                 if (newName === '') newName = currentName;
+                if (newName !== currentName) {
+                    window.trackActivity('rename_widget', `${currentName} -> ${newName}`);
+                }
                 $titleSpan.text(newName);
                 newWidget.data('customName', newName); // Save in memory
                 saveWorkspaceState(); // Save to DB
@@ -785,6 +791,7 @@ $(document).ready(function() {
 
                     // Mark as loaded so we can save new widgets
                     isWorkspaceLoaded = true;
+                    console.log('isWorkspaceLoaded set to true (Room Created)');
 
                     $('#current-room-name').text(res.room_name);
                     roomScreen.fadeOut(300, function() { workspaceScreen.fadeIn(300, function() { $('.grid-background').addClass('active'); }); $('#up-nav-bar').slideDown(300); setTimeout(() => $('#welcome-screen').fadeIn(800), 500); });

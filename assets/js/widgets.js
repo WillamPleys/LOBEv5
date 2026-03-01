@@ -633,8 +633,8 @@ const WidgetRegistry = {
                         </div>
                         <div id="${wId}-days-grid" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:2px; flex:1; min-height:0;"></div>
                     </div>
-                    <div id="${wId}-event-editor-wrapper" style="margin-top:10px; padding-top:10px; border-top:1px solid #ddd; min-height:110px; display:none; background:white;">
-                        <div id="${wId}-event-editor-content">
+                    <div id="${wId}-event-editor-wrapper" style="margin-top:10px; padding-top:10px; border-top:1px solid #ddd; min-height:120px; display:none; background:white;">
+                        <div id="${wId}-event-editor-content" style="background:white;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                                 <div style="font-size:0.8rem; font-weight:bold;" id="${wId}-selected-date-label">Events for ...</div>
                                 <i class="fas fa-times" id="${wId}-close-editor" style="cursor:pointer; color:#888; padding: 2px 5px;"></i>
@@ -663,6 +663,9 @@ const WidgetRegistry = {
             if ($widget.data('isCalendarExpanded') === true || $widget.data('isCalendarExpanded') === 'true') {
                 $eventEditorWrapper.show();
                 $eventEditorContent.css('visibility', 'hidden');
+
+                let savedH = $widget.data('expandedHeight');
+                if (savedH) $widget.css('height', savedH + 'px');
             }
 
             function renderCalendar() {
@@ -706,6 +709,7 @@ const WidgetRegistry = {
                             // Increase widget height permanently to accommodate editor
                             let currentH = $widget.height();
                             $widget.css('height', (currentH + 130) + 'px');
+                            $widget.data('expandedHeight', currentH + 130);
                             if (window.saveWorkspaceState) window.saveWorkspaceState();
                         }
 
@@ -768,6 +772,7 @@ const WidgetRegistry = {
         },
         init: function(wId) {
             const $list = $(`#${wId}-activity-list`);
+            let chartInstance = null;
 
             function refreshActivity() {
                 $.get('backend/get_activity.php', function(res) {
@@ -778,7 +783,9 @@ const WidgetRegistry = {
                             $list.html('<p style="color:#888; text-align:center;">No activity yet.</p>');
                         } else {
                             res.list.forEach(a => {
-                                let time = new Date(a.waktu_transaksi).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                                // Better date parsing for various formats
+                                let timeStr = a.waktu_transaksi.replace(/-/g, "/");
+                                let time = new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                                 $list.append(`
                                     <div style="padding:4px 0; border-bottom:1px solid #f9f9f9; display:flex; justify-content:space-between;">
                                         <span style="font-weight:500;">${a.jenis_aktivitas.replace('_',' ')}</span>
@@ -793,7 +800,8 @@ const WidgetRegistry = {
                         const labels = res.chart.map(d => d.date.split('-').slice(1).join('/'));
                         const data = res.chart.map(d => d.count);
 
-                        new Chart(document.getElementById(`${wId}-chart`), {
+                        if (chartInstance) chartInstance.destroy();
+                        chartInstance = new Chart(document.getElementById(`${wId}-chart`), {
                             type: 'bar',
                             data: {
                                 labels: labels,
@@ -1265,6 +1273,7 @@ const WidgetRegistry = {
             });
 
             $(`#${wId}-save-upload`).click(() => {
+                window.trackActivity('export_concept_map', 'PNG Export');
                 // Convert nodes + links to image
                 // For simplicity, we capture the $area div
                 html2canvas($area[0], { useCORS: true, backgroundColor: '#ffffff' }).then(canvasCapture => {
@@ -1386,6 +1395,7 @@ const WidgetRegistry = {
             });
 
             $(`#${wId}-save-upload-wb`).click(() => {
+                window.trackActivity('export_whiteboard', 'PNG Export');
                 canvas.toBlob(blob => {
                     let file = new File([blob], "Whiteboard_" + Date.now() + ".png", {type: "image/png"});
                     let formData = new FormData();
@@ -1488,12 +1498,12 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f9f9f9; position:relative; overflow:hidden; border:2px dashed #ccc; border-radius:10px;" id="${wId}-frame">
-                    <div id="${wId}-placeholder" style="text-align:center; color:#888; padding: 20px;">
+                    <div id="${wId}-placeholder" style="text-align:center; color:#888; padding: 20px; width: 100%;">
                         <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:10px;"></i>
                         <p style="color:#888;">Drag & Drop files here</p>
-                        <button onclick="$('#${wId}-file').click()" style="margin-top:10px; padding:5px 10px;">Or Click to Upload</button>
+                        <button class="upload-trigger-btn" style="margin-top:10px; padding:5px 10px; cursor: pointer;">Or Click to Upload</button>
                     </div>
-                    <img id="${wId}-img" style="display:none; max-width:100%; max-height:100%; object-fit:contain;">
+                    <img id="${wId}-img" style="display:none; width:100%; height:100%; object-fit:contain;">
                     <input type="file" id="${wId}-file" style="display:none;" accept="image/*">
                     <button id="${wId}-change-btn" style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.5); color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.7rem; display:none;"><i class="fas fa-sync"></i></button>
                 </div>
@@ -1527,9 +1537,10 @@ const WidgetRegistry = {
                     $placeholder.html(`
                         <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:10px;"></i>
                         <p style="color:#888;">Drag & Drop files here</p>
-                        <button onclick="$('#${wId}-file').click()" style="margin-top:10px; padding:5px 10px;">Or Click to Upload</button>
+                        <button class="upload-trigger-btn" style="margin-top:10px; padding:5px 10px; cursor: pointer;">Or Click to Upload</button>
                     `).show();
                     $changeBtn.hide();
+                    if (window.saveWorkspaceState) window.saveWorkspaceState();
                 }
             });
 
@@ -1548,11 +1559,17 @@ const WidgetRegistry = {
                 }, 100);
             }
 
+            // Single delegated click listener for all upload triggers
+            $widget.on('click', '.upload-trigger-btn', function(e) {
+                e.stopPropagation();
+                $file[0].click(); // Use native click for reliability
+            });
+
             $frame.on('click', function(e) {
-                // If clicking anywhere in the frame while no image is visible, trigger upload
-                // except if clicking the change button (though it's hidden)
-                if (!$img.is(':visible')) {
-                    $file.click();
+                // If frame is empty, any click on background triggers upload
+                // except if clicking a button (though changeBtn is hidden when empty)
+                if (!$img.is(':visible') && !$(e.target).is('button') && !$(e.target).closest('button').length) {
+                    $file[0].click();
                 }
             });
 
