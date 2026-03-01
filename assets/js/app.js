@@ -95,10 +95,22 @@ $(document).ready(function() {
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    function spawnWidget(id, name, type, x = 100, y = 100, w = 350, h = 300, animate = true) {
+    function spawnWidget(id, name, type, x = 100, y = 100, w = 350, h = 300, animate = true, forcedId = null) {
         if ($('#welcome-screen').is(':visible')) { $('#welcome-screen').fadeOut(300); }
-        widgetCount++;
-        let wId = `widget-${widgetCount}`;
+
+        let wId;
+        if (forcedId) {
+            wId = forcedId;
+            // Update widgetCount to avoid future collisions
+            let numericId = parseInt(forcedId.replace('widget-', ''));
+            if (!isNaN(numericId) && numericId > widgetCount) {
+                widgetCount = numericId;
+            }
+        } else {
+            widgetCount++;
+            wId = `widget-${widgetCount}`;
+        }
+
         let isAI = (type === 'api' || type === 'output') ? 'true' : 'false';
 
         let widgetContent = `Modul: ${name} (ID: ${id})<br><small>Loading content...</small>`;
@@ -219,6 +231,7 @@ $(document).ready(function() {
         });
 
         newWidget.find('.widget-close').on('click', function() {
+            $(document).off(`.${wId}`);
             newWidget.remove();
             saveWorkspaceState();
         });
@@ -243,7 +256,7 @@ $(document).ready(function() {
                     if (res.data.length > 0) {
                         $('#welcome-screen').hide();
                         res.data.forEach(w => {
-                            let widget = spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false);
+                            let widget = spawnWidget(w.master_item_id, w.nama_item, w.tipe_item, w.pos_x, w.pos_y, w.width, w.height, false, w.widget_dom_id);
 
                             if (w.content_data) {
                                 // Restore custom name
@@ -266,13 +279,20 @@ $(document).ready(function() {
                                     widget.data('outputFiles', w.content_data.outputFiles);
                                 }
 
-                                // Trigger restore events for specific widgets
+                            }
+                        });
+
+                        // Post-spawn: Trigger restoration events for all widgets
+                        res.data.forEach(w => {
+                            if (w.content_data) {
+                                let wId = w.widget_dom_id;
                                 if (w.content_data.aiMode) {
-                                    $(document).trigger('changeAiMode', [widget.attr('id'), w.content_data.aiMode]);
+                                    $(document).trigger('changeAiMode', [wId, w.content_data.aiMode]);
                                 }
                                 if (w.content_data.linkedSourceId) {
+                                    $(`#${wId}`).data('linkedSourceId', w.content_data.linkedSourceId);
                                     // Trigger quietly to update internal state without user alerts
-                                    $(document).trigger('restoreOutputSource', [widget.attr('id'), w.content_data.linkedSourceId]);
+                                    $(document).trigger('restoreOutputSource', [wId, w.content_data.linkedSourceId]);
                                 }
                             }
                         });
@@ -414,8 +434,8 @@ $(document).ready(function() {
                     contextList.append('<div class="context-divider"></div><div class="context-title">Add Item:</div>');
                     res.data.forEach(item => {
                         let iconClass = item.gambar;
-                        welcomeContainer.append(`<div class="item-btn" data-id="${item.id}" data-type="${item.tipe_item}"><i class="fas ${iconClass}"></i><span>${item.nama_item}</span></div>`);
-                        contextList.append(`<li class="menu-item spawn-item" data-id="${item.id}" data-type="${item.tipe_item}"><i class="fas ${iconClass}" style="width: 25px;"></i> ${item.nama_item}</li>`);
+                        welcomeContainer.append(`<div class="item-btn" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><i class="fas ${iconClass}"></i><span>${item.nama_item}</span></div>`);
+                        contextList.append(`<li class="menu-item spawn-item" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><i class="fas ${iconClass}" style="width: 25px;"></i> ${item.nama_item}</li>`);
                     });
                 }
             }
@@ -457,9 +477,9 @@ $(document).ready(function() {
     }
 
     // --- EVENT HANDLERS ---
-    $(document).on('click', '.item-btn', function() { let id = $(this).data('id'); let type = $(this).data('type'); let name = $(this).find('span').text().trim(); spawnWidget(id, name, type, 200, 200); });
+    $(document).on('click', '.item-btn', function() { let id = $(this).data('id'); let type = $(this).data('type'); let name = $(this).data('name'); spawnWidget(id, name, type, 200, 200); });
     let contextMenuPos = { x: 0, y: 0 };
-    $(document).on('click', '.spawn-item', function() { let id = $(this).data('id'); let type = $(this).data('type'); let name = $(this).text().trim(); spawnWidget(id, name, type, contextMenuPos.x, contextMenuPos.y); $('#context-menu').hide(); });
+    $(document).on('click', '.spawn-item', function() { let id = $(this).data('id'); let type = $(this).data('type'); let name = $(this).data('name'); spawnWidget(id, name, type, contextMenuPos.x, contextMenuPos.y); $('#context-menu').hide(); });
     $(document).on('click', function(e) { if (!$(e.target).closest('.context-menu').length) { $('#widget-context-menu').hide(); } });
     $('#toggle-close-btn').on('click', function() {
         if(currentTargetWidget) {
