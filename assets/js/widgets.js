@@ -249,13 +249,14 @@ const WidgetRegistry = {
         }
     },
     // --- 8. OUTPUT FIELD & EXPLORER ---
-    'Output Field & Explorer': {
+    'Output Field': {
         render: function(wId) {
             return `
                 <div style="display:flex; flex-direction:column; height:100%;">
                     <div style="border-bottom:1px solid #ddd; padding:5px; display:flex; justify-content:space-between; align-items:center; background:#f8f9fa;">
                         <input type="text" id="${wId}-search" placeholder="Search..." style="padding:6px; width:100%; border:1px solid #ccc; border-radius:4px; outline:none; transition:box-shadow 0.2s;">
                     </div>
+                    <div id="${wId}-link-status" style="padding:3px; font-size:10px; text-align:center; background:#ffeb3b; display:none;">Linked to: <span id="${wId}-source-name">None</span></div>
                     <div id="${wId}-content-area" style="flex:1; overflow-y:auto; padding:10px; background:white;"><p style="text-align:center; color:#888;">No output yet.</p></div>
                 </div>
             `;
@@ -263,13 +264,39 @@ const WidgetRegistry = {
         init: function(wId) {
             const $area = $(`#${wId}-content-area`);
             const $search = $(`#${wId}-search`);
+            const $widget = $(`#${wId}`);
             let files = [];
             let currentSort = 'newest';
+            let linkedSourceId = null;
 
-            $(document).on('fileUploaded', function(e, fileData) {
-                fileData.id = Date.now() + Math.random().toString(36).substr(2, 5); // Add unique ID for renaming
-                files.push(fileData);
-                renderFiles();
+            $(document).on('fileUploaded', function(e, fileData, sourceWId) {
+                // Only process if no source linked (accept all) OR source matches linked source
+                if (!linkedSourceId || linkedSourceId === sourceWId) {
+                    fileData.id = Date.now() + Math.random().toString(36).substr(2, 5); // Add unique ID for renaming
+                    files.push(fileData);
+                    renderFiles();
+                }
+            });
+
+            $(document).on('setOutputSource', function(e, targetWId, sourceWId, sourceName) {
+                if (targetWId === wId) {
+                    linkedSourceId = sourceWId;
+                    $widget.data('linkedSourceId', linkedSourceId);
+                    $(`#${wId}-link-status`).show();
+                    $(`#${wId}-source-name`).text(sourceName);
+                    window.showCustomModal('Success', 'Output Field linked to ' + sourceName);
+                }
+            });
+
+            $(document).on('restoreOutputSource', function(e, targetWId, sourceWId) {
+                if (targetWId === wId) {
+                    linkedSourceId = sourceWId;
+                    $widget.data('linkedSourceId', linkedSourceId);
+                    // Name might not be accurate after restore, but we'll try to find it
+                    let sourceName = $(`#${sourceWId}`).find('.widget-title-text').text() || 'Source';
+                    $(`#${wId}-link-status`).show();
+                    $(`#${wId}-source-name`).text(sourceName);
+                }
             });
 
             // Handle Context Menu Actions for this specific widget
@@ -388,25 +415,65 @@ const WidgetRegistry = {
     // --- 11. RICH TEXT NOTE (CKEDITOR) ---
     'Rich Text Note': {
         render: function(wId) {
-            return `<div id="${wId}-editor" style="height:100%; color:#000;"></div>`;
+            return `
+                <div style="display:flex; flex-direction:column; height:100%;">
+                    <div style="display:flex; justify-content:flex-end; padding:5px; background:#f4f4f4; border-bottom:1px solid #ddd;">
+                        <button id="${wId}-save-btn" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer;"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                    <div id="${wId}-editor" style="flex:1; color:#000;"></div>
+                </div>
+            `;
         },
         init: function(wId) {
+            let editorInstance;
             ClassicEditor
                 .create(document.querySelector(`#${wId}-editor`))
+                .then(editor => { editorInstance = editor; })
                 .catch(error => { console.error(error); });
+
+            $(`#${wId}-save-btn`).on('click', function() {
+                if (editorInstance) {
+                    let content = editorInstance.getData();
+                    let title = "Note_" + Date.now() + ".html";
+                    $(document).trigger('fileUploaded', [{
+                        original_name: title,
+                        type: 'text/html',
+                        content: content
+                    }, wId]); // Pass wId as source
+                    window.showCustomModal('Success', 'Note saved and sent to linked Output Fields.');
+                }
+            });
         }
     },
 
     // --- 12. CODE EDITOR (ACE) ---
     'Code Editor': {
         render: function(wId) {
-            return `<div id="${wId}-ace" style="width:100%; height:100%;"></div>`;
+            return `
+                <div style="display:flex; flex-direction:column; height:100%;">
+                    <div style="display:flex; justify-content:flex-end; padding:5px; background:#272822; border-bottom:1px solid #000;">
+                        <button id="${wId}-save-btn" style="padding:5px 15px; background:#007bff; color:white; border:none; border-radius:3px; cursor:pointer;"><i class="fas fa-save"></i> Save Code</button>
+                    </div>
+                    <div id="${wId}-ace" style="flex:1;"></div>
+                </div>
+            `;
         },
         init: function(wId) {
             var editor = ace.edit(`${wId}-ace`);
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/php");
             editor.setValue("<?php\n\necho 'Hello World';\n");
+
+            $(`#${wId}-save-btn`).on('click', function() {
+                let content = editor.getValue();
+                let title = "Code_" + Date.now() + ".php";
+                $(document).trigger('fileUploaded', [{
+                    original_name: title,
+                    type: 'text/plain',
+                    content: content
+                }, wId]); // Pass wId as source
+                window.showCustomModal('Success', 'Code saved and sent to linked Output Fields.');
+            });
         }
     },
 
@@ -457,6 +524,7 @@ const WidgetRegistry = {
                     currentMode = mode;
                     let modeNames = { 'chatbot': 'Chatbot', 'transcript': 'Transcript', 'summary': 'File to Summary', 'note': 'Note Generator', 'coding': 'Coding Agent' };
                     $(`#${wId}-mode-indicator`).text('Mode: ' + modeNames[mode]);
+                    $(`#${wId}`).data('aiMode', mode);
                     addMessage("Switched to " + modeNames[mode] + " mode.", 'sys');
                 }
             });
@@ -577,7 +645,7 @@ const WidgetRegistry = {
                             let safeContentForOnClick = encodeURIComponent(aiText).replace(/'/g, "%27");
                             let title = currentMode + '_' + Date.now() + '.txt';
                             let htmlContent = escapeHtml(aiText).replace(/\n/g, '<br>') +
-                                `<hr><button onclick="window.approveAiOutput('${title}', decodeURIComponent('${safeContentForOnClick}'))" style="background:#28a745; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">Approve & Send to Output</button>`;
+                                `<hr><div style="text-align:right; margin-top:10px;"><button onclick="window.approveAiOutput('${title}', decodeURIComponent('${safeContentForOnClick}'), '${wId}')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.2);"><i class="fas fa-save"></i> Save to Output</button></div>`;
                             addMessage(htmlContent, 'ai', true);
                         } else {
                             addMessage(aiText, 'ai');
