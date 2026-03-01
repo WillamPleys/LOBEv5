@@ -269,12 +269,22 @@ const WidgetRegistry = {
             let currentSort = 'newest';
             let linkedSourceId = null;
 
+            // Load existing files from memory if they exist
+            if ($widget.data('outputFiles')) {
+                files = $widget.data('outputFiles');
+                renderFiles();
+            } else {
+                $widget.data('outputFiles', files);
+            }
+
             $(document).on('fileUploaded', function(e, fileData, sourceWId) {
                 // Only process if no source linked (accept all) OR source matches linked source
                 if (!linkedSourceId || linkedSourceId === sourceWId) {
                     fileData.id = Date.now() + Math.random().toString(36).substr(2, 5); // Add unique ID for renaming
                     files.push(fileData);
+                    $widget.data('outputFiles', files); // Update widget data
                     renderFiles();
+                    if (window.saveWorkspaceState) window.saveWorkspaceState();
                 }
             });
 
@@ -398,7 +408,9 @@ const WidgetRegistry = {
                             if (newName !== '') {
                                 f.original_name = newName; // Update source data
                             }
+                            $widget.data('outputFiles', files); // Update widget data
                             renderFiles(); // Re-render to sort and apply
+                            if (window.saveWorkspaceState) window.saveWorkspaceState();
                         }
                         $input.on('blur', finishRename);
                         $input.on('keypress', function(ev) { if(ev.which == 13) $input.blur(); });

@@ -67,6 +67,7 @@ $(document).ready(function() {
                 if ($el.data('showClose') !== undefined) stateData.showClose = $el.data('showClose');
                 if ($el.data('aiMode')) stateData.aiMode = $el.data('aiMode');
                 if ($el.data('linkedSourceId')) stateData.linkedSourceId = $el.data('linkedSourceId');
+                if ($el.data('outputFiles')) stateData.outputFiles = $el.data('outputFiles');
 
                 widgets.push({
                     id: $el.attr('id'),
@@ -258,6 +259,11 @@ $(document).ready(function() {
                                 } else {
                                     widget.find('.widget-close').hide();
                                     widget.data('showClose', false);
+                                }
+
+                                // Restore files data before events trigger
+                                if (w.content_data.outputFiles) {
+                                    widget.data('outputFiles', w.content_data.outputFiles);
                                 }
 
                                 // Trigger restore events for specific widgets
