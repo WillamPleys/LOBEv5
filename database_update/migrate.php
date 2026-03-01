@@ -20,7 +20,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS migration_history (
     executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )");
 
-$files = glob("database_update/*.sql");
+$files = glob(__DIR__ . "/*.sql");
 sort($files); // Pastikan berurutan (01_init, 02_update, dst)
 
 foreach ($files as $file) {
