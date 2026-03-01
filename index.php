@@ -66,10 +66,6 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
 
     <!-- AI MODE MODAL (FLOATING CONTEXT MENU STYLE) -->
     <div id="ai-mode-modal" class="windows-style floating-submenu" style="display: none; width: 250px; position: absolute; z-index: 9999;">
-        <div class="modal-header" style="cursor: move;">
-            <span>Select AI Mode</span>
-            <button class="close-btn" onclick="$('#ai-mode-modal').hide()">&times;</button>
-        </div>
         <div class="modal-body" style="padding: 5px;">
             <div class="modal-list-item" onclick="window.selectAiMode('chatbot')"><i class="fas fa-comments"></i> Chatbot</div>
             <div class="modal-list-item" onclick="window.selectAiMode('transcript')"><i class="fas fa-closed-captioning"></i> Transcript</div>
@@ -81,10 +77,6 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
 
     <!-- SET OUTPUT SOURCE MODAL (FLOATING CONTEXT MENU STYLE) -->
     <div id="output-source-modal" class="windows-style floating-submenu" style="display: none; width: 280px; max-height: 350px; position: absolute; z-index: 9999; flex-direction: column;">
-        <div class="modal-header" style="cursor: move;">
-            <span>Set Source Input</span>
-            <button class="close-btn" onclick="$('#output-source-modal').hide()">&times;</button>
-        </div>
         <div class="modal-body" style="padding: 5px; overflow-y: auto; flex: 1;" id="output-source-list">
             <!-- Sources loaded here -->
         </div>
@@ -92,10 +84,6 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
 
     <!-- SORT BY MODAL (FLOATING CONTEXT MENU STYLE) -->
     <div id="sort-by-modal" class="windows-style floating-submenu" style="display: none; width: 250px; position: absolute; z-index: 9999;">
-        <div class="modal-header" style="cursor: move;">
-            <span>Sort Items By</span>
-            <button class="close-btn" onclick="$('#sort-by-modal').hide()">&times;</button>
-        </div>
         <div class="modal-body" style="padding: 5px;">
             <div class="modal-list-item" onclick="window.selectSortBy('newest')"><i class="fas fa-clock"></i> From Newest</div>
             <div class="modal-list-item" onclick="window.selectSortBy('oldest')"><i class="fas fa-history"></i> From Oldest</div>
@@ -196,9 +184,9 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
 
             <div class="context-divider ai-feature" style="display:none;"></div>
 
-            <div class="context-item ai-feature" id="menu-ai-mode" style="display:none;"><i class="fas fa-robot"></i> AI Mode...</div>
-            <div class="context-item ai-feature" id="menu-set-output" style="display:none;"><i class="fas fa-link"></i> Set as Output of...</div>
-            <div class="context-item ai-feature" id="menu-sort-by" style="display:none;"><i class="fas fa-sort"></i> Sort by...</div>
+            <div class="context-item ai-feature" id="menu-ai-mode" style="display:none;"><i class="fas fa-robot"></i> AI Mode</div>
+            <div class="context-item ai-feature" id="menu-set-output" style="display:none;"><i class="fas fa-link"></i> Set as Output of</div>
+            <div class="context-item ai-feature" id="menu-sort-by" style="display:none;"><i class="fas fa-sort"></i> Sort by</div>
 
             <div class="context-item ai-feature" id="menu-toggle-search" style="display:none;"><i class="fas fa-search"></i> Toggle Search Autocomplete</div>
         </div>

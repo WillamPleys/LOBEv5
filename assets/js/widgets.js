@@ -240,7 +240,7 @@ const WidgetRegistry = {
                     $.ajax({
                         url: 'backend/upload.php', type: 'POST', data: formData, contentType: false, processData: false,
                         success: function(res) {
-                            if(res.status === 'success') { $status.html(`<span style="color:green;">Uploaded: ${res.original_name}</span>`); $(document).trigger('fileUploaded', [res]); }
+                            if(res.status === 'success') { $status.html(`<span style="color:green;">Uploaded: ${res.original_name}</span>`); $(document).trigger('fileUploaded', [res, wId]); }
                             else { $status.html(`<span style="color:red;">Error: ${res.message}</span>`); }
                         }
                     });
@@ -573,7 +573,7 @@ const WidgetRegistry = {
 
                 if (chatHistory.trim() !== "") {
                     let title = currentMode + '_chat_' + Date.now() + '.txt';
-                    window.approveAiOutput(title, chatHistory);
+                    window.approveAiOutput(title, chatHistory, wId);
                 } else {
                     window.showCustomModal('Warning', 'Chat history is empty.');
                 }
@@ -637,13 +637,13 @@ const WidgetRegistry = {
             });
 
             // APPROVE FUNCTION (Global so buttons can call it)
-            window.approveAiOutput = function(title, content) {
+            window.approveAiOutput = function(title, content, sourceWId) {
                 let fileData = {
                     original_name: title,
                     type: 'text/plain',
                     content: content
                 };
-                $(document).trigger('fileUploaded', [fileData]);
+                $(document).trigger('fileUploaded', [fileData, sourceWId]);
                 window.showCustomModal('Success', 'File added to Output Field sources.');
             };
 
@@ -832,7 +832,7 @@ const WidgetRegistry = {
                         original_name: 'Voice Memo ' + new Date().toLocaleTimeString() + '.mp3',
                         type: 'audio/mp3',
                         file_path: '#' // Dummy path
-                    }]);
+                    }, wId]);
                 }
             });
         }
