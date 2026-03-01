@@ -368,13 +368,29 @@ const WidgetRegistry = {
                 addMessage(txt, 'user');
                 $msg.val('');
 
-                // Simulate AI Response (Placeholder API)
-                setTimeout(() => {
-                    let response = "I am Gemini 2.5 Flash (Simulated). I received: " + txt;
-                    addMessage(response, 'ai');
-                    // Broadcast to Output Field
-                    $(document).trigger('aiOutput', [response]);
-                }, 1000);
+                // Use the new backend API endpoint
+                $.ajax({
+                    url: 'backend/gemini_api.php',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ message: txt }),
+                    success: function(res) {
+                        let aiText = "Terjadi kesalahan membaca respon AI.";
+
+                        if (res.candidates && res.candidates.length > 0 && res.candidates[0].content && res.candidates[0].content.parts) {
+                            aiText = res.candidates[0].content.parts[0].text;
+                        } else if (res.error) {
+                            aiText = "API Error: " + res.error.message;
+                        }
+
+                        addMessage(aiText, 'ai');
+                        // Broadcast to Output Field
+                        $(document).trigger('aiOutput', [aiText]);
+                    },
+                    error: function() {
+                        addMessage("Gagal terhubung ke server (Network Error).", 'ai');
+                    }
+                });
             });
 
             $msg.keypress(function(e) { if(e.which == 13) $send.click(); });
