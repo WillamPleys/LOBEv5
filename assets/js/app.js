@@ -202,6 +202,7 @@ $(document).ready(function() {
             let originalType = ($(this).data('original-type') || '').toLowerCase();
             if (originalType.includes('photo frame')) {
                 $('#menu-full-screen').show().css('display', 'flex');
+                $('#menu-detach-image').show();
                 let isFull = $(this).data('isFullScreen') === true || $(this).data('isFullScreen') === 'true';
                 if (isFull) {
                     $('#menu-full-screen').find('.checkmark').show();
@@ -210,6 +211,7 @@ $(document).ready(function() {
                 }
             } else {
                 $('#menu-full-screen').hide();
+                $('#menu-detach-image').hide();
             }
 
             $('#context-menu').hide();
@@ -498,6 +500,14 @@ $(document).ready(function() {
                 closeBtn.show();
                 $widget.data('showClose', true);
             }
+            saveWorkspaceState();
+        }
+        $('#widget-context-menu').hide();
+    });
+
+    $('#menu-detach-image').on('click', function() {
+        if (currentTargetWidget) {
+            $(document).trigger('detachImage', [currentTargetWidget]);
             saveWorkspaceState();
         }
         $('#widget-context-menu').hide();

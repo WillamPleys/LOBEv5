@@ -195,6 +195,10 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
                 <span><i class="fas fa-expand"></i> Full screen</span>
                 <i class="fas fa-check checkmark" style="display:none; font-size: 0.8rem; color: #28a745;"></i>
             </div>
+
+            <div class="context-item" id="menu-detach-image" style="display:none;">
+                <i class="fas fa-unlink"></i> Detach image
+            </div>
         </div>
     </div>
 
