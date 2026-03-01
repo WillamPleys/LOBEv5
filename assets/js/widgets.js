@@ -377,6 +377,10 @@ const WidgetRegistry = {
                     // OPEN FILE MODAL
                     item.click(function(e) {
                         if ($(e.target).is('input')) return; // Ignore if renaming
+
+                        // Prevent click if it's part of a double-click
+                        if (e.detail > 1) return;
+
                         $('#file-opener-title').text(f.original_name);
                         let $content = $('#file-opener-content');
                         $content.empty();
