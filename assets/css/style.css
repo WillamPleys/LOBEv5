@@ -389,6 +389,12 @@ body, html {
     color: #333;
 }
 
+/* CKEditor Padding for lists */
+.ck-content ol, .ck-content ul {
+    padding-left: 25px !important;
+    margin-bottom: 10px;
+}
+
 /* Modifikasi Context Item */
 .context-item { padding: 8px 15px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; }
 .context-item i { width: 25px; text-align: center; margin-right: 5px; color: #555;}

@@ -131,7 +131,7 @@ $(document).ready(function() {
         if(animate) setTimeout(() => { $(`#${wId}`).removeClass('fade-in'); }, 500);
 
         if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
-            if (WidgetRegistry[name].init) setTimeout(() => { WidgetRegistry[name].init(wId); }, 10);
+            if (WidgetRegistry[name].init) WidgetRegistry[name].init(wId);
         }
 
         let newWidget = $(`#${wId}`);
