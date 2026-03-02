@@ -103,6 +103,15 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
         </div>
     </div>
 
+    <!-- CLOCK MODE MODAL (FLOATING CONTEXT MENU STYLE) -->
+    <div id="clock-mode-modal" class="windows-style floating-submenu" style="display: none; position: absolute; z-index: 9999;">
+        <div class="modal-body" style="padding: 5px;">
+            <div class="modal-list-item" onclick="window.selectClockMode('clock')"><i class="fas fa-clock"></i> Clock</div>
+            <div class="modal-list-item" onclick="window.selectClockMode('timer')"><i class="fas fa-hourglass-start"></i> Timer</div>
+            <div class="modal-list-item" onclick="window.selectClockMode('stopwatch')"><i class="fas fa-stopwatch"></i> Stopwatch</div>
+        </div>
+    </div>
+
     <!-- CUSTOM ALERT MODAL -->
     <div id="custom-modal" class="modal-overlay" style="display: none;">
         <div class="windows-style">
@@ -198,6 +207,8 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
             <div class="context-item ai-feature" id="menu-ai-mode" style="display:none;"><i class="fas fa-robot"></i> AI Mode</div>
             <div class="context-item ai-feature" id="menu-set-output" style="display:none;"><i class="fas fa-link"></i> Set as Output of</div>
             <div class="context-item ai-feature" id="menu-sort-by" style="display:none;"><i class="fas fa-sort"></i> Sort by</div>
+
+            <div class="context-item" id="menu-clock-mode" style="display:none;"><i class="fas fa-stopwatch"></i> Set as</div>
 
             <div class="context-item ai-feature" id="menu-toggle-search" style="display:none;"><i class="fas fa-search"></i> Toggle Search Autocomplete</div>
 

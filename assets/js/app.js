@@ -91,6 +91,8 @@ $(document).ready(function() {
                 if ($el.data('timerSeconds') !== undefined) stateData.timerSeconds = $el.data('timerSeconds');
                 if ($el.data('timerMode')) stateData.timerMode = $el.data('timerMode');
                 if ($el.data('timerTargetMins')) stateData.timerTargetMins = $el.data('timerTargetMins');
+                if ($el.data('clockMode')) stateData.clockMode = $el.data('clockMode');
+                if ($el.data('stopwatchSeconds') !== undefined) stateData.stopwatchSeconds = $el.data('stopwatchSeconds');
                 if ($el.data('flashcards')) stateData.flashcards = $el.data('flashcards');
                 if ($el.data('fcTitle')) stateData.fcTitle = $el.data('fcTitle');
                 if ($el.data('fcDesc')) stateData.fcDesc = $el.data('fcDesc');
@@ -245,6 +247,12 @@ $(document).ready(function() {
                 $('#menu-show-data').show();
             } else {
                 $('#menu-show-data').hide();
+            }
+
+            if (originalType.includes('clock') || originalType === 'timer') {
+                $('#menu-clock-mode').show();
+            } else {
+                $('#menu-clock-mode').hide();
             }
 
             if (originalType.includes('photo frame')) {
@@ -641,8 +649,13 @@ $(document).ready(function() {
         positionFloatingMenu('activity-scope-modal', this);
     });
 
+    $('#menu-clock-mode').on('mouseenter', function() {
+        $('.floating-submenu').hide(); // Hide others
+        positionFloatingMenu('clock-mode-modal', this);
+    });
+
     // We should also close floating submenus when leaving the parent item or hovering other items
-    $('.context-item').not('#menu-ai-mode, #menu-sort-by, #menu-set-output, #menu-show-data').on('mouseenter', function() {
+    $('.context-item').not('#menu-ai-mode, #menu-sort-by, #menu-set-output, #menu-show-data, #menu-clock-mode').on('mouseenter', function() {
         $('.floating-submenu').hide();
     });
 
@@ -676,6 +689,15 @@ $(document).ready(function() {
             saveWorkspaceState();
         }
         $('#activity-scope-modal').hide();
+        $('#widget-context-menu').hide();
+    };
+
+    window.selectClockMode = function(mode) {
+        if (currentTargetWidget) {
+            $(document).trigger('changeClockMode', [currentTargetWidget, mode]);
+            saveWorkspaceState();
+        }
+        $('#clock-mode-modal').hide();
         $('#widget-context-menu').hide();
     };
 

@@ -177,138 +177,231 @@ const WidgetRegistry = {
             $input.keypress(function(e) { if(e.which == 13) $btn.click(); });
         }
     },
-    // --- 4. TIMER ---
-    'Timer': {
+    // --- 4. CLOCK (JAM, TIMER, STOPWATCH) ---
+    'Clock': {
         render: function(wId) {
             return `
-                <div style="text-align:center; padding: 10px; height:100%; display:flex; flex-direction:column; justify-content:center;">
-                    <input type="text" placeholder="Timer Title" id="${wId}-title" style="text-align:center; border:none; border-bottom:1px solid #ccc; width:90%; margin: 0 auto 10px auto; outline:none; font-size:1.1rem; font-weight:bold;">
+                <div style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:15px; position:relative; transition: border-color 0.5s;" id="${wId}-clock-container">
+                    <style>
+                        .clock-mode-view { width: 100%; text-align: center; }
+                        .clock-display { font-size: 3.8rem; font-weight: 900; color: #333; font-family: monospace; }
+                        .adjustable-unit { cursor: ns-resize; user-select: none; display: inline-block; transition: color 0.2s; }
+                        .adjustable-unit:hover { color: #007bff; }
+                        .clock-btn-row { display: flex; gap: 10px; margin-top: 20px; width: 100%; justify-content: center; }
+                        .clock-btn { flex: 1; max-width: 100px; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+                        .btn-start { background: #28a745; color: white; }
+                        .btn-pause { background: #fd7e14; color: white; }
+                        .btn-reset { background: #6c757d; color: white; }
+                    </style>
 
-                    <div style="display:flex; justify-content:center; gap:10px; margin-bottom:10px;">
-                        <select id="${wId}-mode" style="padding:2px 5px; font-size:0.8rem; border-radius:4px; border:1px solid #ccc;">
-                            <option value="stopwatch">Stopwatch</option>
-                            <option value="countdown">Countdown</option>
-                        </select>
-                        <div id="${wId}-set-area" style="display:none; align-items:center; gap:5px;">
-                            <input type="number" id="${wId}-mins" min="0" max="999" value="5" style="width:50px; padding:2px; font-size:0.8rem;">
-                            <span style="font-size:0.8rem;">m</span>
+                    <!-- 1. LIVE CLOCK MODE -->
+                    <div id="${wId}-mode-clock" class="clock-mode-view">
+                        <div class="clock-display" id="${wId}-live-display">00:00:00</div>
+                        <div style="font-size:0.9rem; color:#888; margin-top:5px; font-weight:bold;">LIVE TIME</div>
+                    </div>
+
+                    <!-- 2. TIMER MODE -->
+                    <div id="${wId}-mode-timer" class="clock-mode-view" style="display:none;">
+                        <div class="clock-display">
+                            <span class="adjustable-unit" data-unit="h" id="${wId}-timer-h">00</span>:<span class="adjustable-unit" data-unit="m" id="${wId}-timer-m">00</span>:<span class="adjustable-unit" data-unit="s" id="${wId}-timer-s">00</span>
+                        </div>
+                        <div style="font-size:0.7rem; color:#999; margin-top:5px;">DRAG UP/DOWN TO ADJUST</div>
+                        <div class="clock-btn-row">
+                            <button class="clock-btn btn-start" id="${wId}-timer-start">Start</button>
+                            <button class="clock-btn btn-reset" id="${wId}-timer-reset">Reset</button>
                         </div>
                     </div>
 
-                    <div id="${wId}-display" style="font-size:3.5rem; font-family:monospace; font-weight:bold; margin-bottom:15px; color:#333;">00:00:00</div>
-
-                    <div style="display:flex; justify-content:center; gap:10px;">
-                        <button id="${wId}-start" style="flex:1; max-width:100px; padding:10px; background:#28a745; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition: background 0.2s;">Start</button>
-                        <button id="${wId}-reset" style="flex:1; max-width:100px; padding:10px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition: background 0.2s;">Reset</button>
+                    <!-- 3. STOPWATCH MODE -->
+                    <div id="${wId}-mode-stopwatch" class="clock-mode-view" style="display:none;">
+                        <div class="clock-display" id="${wId}-stopwatch-display">00:00:00</div>
+                        <div class="clock-btn-row">
+                            <button class="clock-btn btn-start" id="${wId}-stopwatch-start">Start</button>
+                            <button class="clock-btn btn-reset" id="${wId}-stopwatch-reset">Reset</button>
+                        </div>
                     </div>
                 </div>
             `;
         },
         init: function(wId) {
             const $widget = $(`#${wId}`);
-            const $title = $(`#${wId}-title`);
-            const $display = $(`#${wId}-display`);
-            const $startBtn = $(`#${wId}-start`);
-            const $mode = $(`#${wId}-mode`);
-            const $setArea = $(`#${wId}-set-area`);
-            const $minsInput = $(`#${wId}-mins`);
+            const $container = $(`#${wId}-clock-container`);
 
-            let seconds = parseInt($widget.data('timerSeconds')) || 0;
+            let currentMode = $widget.data('clockMode') || 'clock';
+            let timerSeconds = parseInt($widget.data('timerSeconds')) || 0;
+            let stopwatchSeconds = parseInt($widget.data('stopwatchSeconds')) || 0;
+            let isRunning = false;
             let interval = null;
-            let currentMode = $widget.data('timerMode') || 'stopwatch';
 
             function formatTime(s) {
                 let h = Math.floor(s / 3600); let m = Math.floor((s % 3600) / 60); let sec = s % 60;
                 return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
             }
 
-            function updateDisplay() {
-                $display.text(formatTime(seconds));
-                if (currentMode === 'countdown' && seconds <= 0 && interval) {
-                    stopTimer();
-                    window.showCustomModal('Timer Finished', ($title.val() || 'Timer') + ' has reached zero!');
+            function updateUI() {
+                $('.clock-mode-view').hide();
+                $(`#${wId}-mode-${currentMode}`).show();
+                $container.css('border', 'none'); // Reset border
+
+                if (currentMode === 'clock') {
+                    updateLiveClock();
+                    if (!interval) interval = setInterval(updateLiveClock, 1000);
+                } else if (currentMode === 'timer') {
+                    updateTimerDisplay();
+                } else if (currentMode === 'stopwatch') {
+                    $(`#${wId}-stopwatch-display`).text(formatTime(stopwatchSeconds));
+                }
+            }
+
+            function updateLiveClock() {
+                if (currentMode !== 'clock') return;
+                const now = new Date();
+                $(`#${wId}-live-display`).text(now.toTimeString().split(' ')[0]);
+            }
+
+            function updateTimerDisplay() {
+                let h = Math.floor(timerSeconds / 3600);
+                let m = Math.floor((timerSeconds % 3600) / 60);
+                let s = timerSeconds % 60;
+                $(`#${wId}-timer-h`).text(h.toString().padStart(2,'0'));
+                $(`#${wId}-timer-m`).text(m.toString().padStart(2,'0'));
+                $(`#${wId}-timer-s`).text(s.toString().padStart(2,'0'));
+
+                if (timerSeconds <= 0 && isRunning) {
+                    stopEngine();
+                    $container.css('border', '2px solid #dc3545');
+                    window.showCustomModal('Timer Finished', 'Time is up!');
                 }
             }
 
             function saveState() {
-                $widget.data('timerTitle', $title.val());
-                $widget.data('timerSeconds', seconds);
-                $widget.data('timerMode', currentMode);
-                $widget.data('timerTargetMins', $minsInput.val());
+                $widget.data('clockMode', currentMode);
+                $widget.data('timerSeconds', timerSeconds);
+                $widget.data('stopwatchSeconds', stopwatchSeconds);
                 if (window.saveWorkspaceState) window.saveWorkspaceState();
             }
 
-            function startTimer() {
-                if (interval) return;
+            function startEngine() {
+                if (isRunning) return;
+                isRunning = true;
 
-                if (currentMode === 'countdown' && seconds <= 0) {
-                    seconds = parseInt($minsInput.val() || 0) * 60;
-                    if (seconds <= 0) return;
-                }
+                if (interval) clearInterval(interval);
 
-                $startBtn.text('Pause').css('background', '#fd7e14');
+                const startBtnId = (currentMode === 'timer') ? `#${wId}-timer-start` : `#${wId}-stopwatch-start`;
+                $(startBtnId).text('Pause').addClass('btn-pause').removeClass('btn-start');
+
                 interval = setInterval(() => {
-                    if (currentMode === 'stopwatch') seconds++;
-                    else seconds--;
-
-                    updateDisplay();
-                    // Save state periodically if running? Or just on stop.
-                    // To prevent loss on refresh while running, maybe save every 10s.
-                    if (seconds % 10 === 0) saveState();
+                    if (currentMode === 'timer') {
+                        if (timerSeconds > 0) timerSeconds--;
+                        updateTimerDisplay();
+                    } else if (currentMode === 'stopwatch') {
+                        stopwatchSeconds++;
+                        $(`#${wId}-stopwatch-display`).text(formatTime(stopwatchSeconds));
+                    }
+                    // Periodic save
+                    if (timerSeconds % 5 === 0 || stopwatchSeconds % 5 === 0) saveState();
                 }, 1000);
             }
 
-            function stopTimer() {
-                clearInterval(interval);
+            function stopEngine() {
+                isRunning = false;
+                if (interval) clearInterval(interval);
                 interval = null;
-                $startBtn.text('Start').css('background', '#28a745');
+
+                const startBtnId = (currentMode === 'timer') ? `#${wId}-timer-start` : `#${wId}-stopwatch-start`;
+                $(startBtnId).text('Start').addClass('btn-start').removeClass('btn-pause');
+
+                if (currentMode === 'clock') {
+                    interval = setInterval(updateLiveClock, 1000);
+                }
                 saveState();
             }
 
-            // Restore
-            $title.val($widget.data('timerTitle') || '');
-            $mode.val(currentMode);
-            $minsInput.val($widget.data('timerTargetMins') || 5);
-            if (currentMode === 'countdown') $setArea.css('display', 'flex');
-            updateDisplay();
+            // --- DRAG TO ADJUST LOGIC ---
+            let isDragging = false;
+            let startY = 0;
+            let startVal = 0;
+            let activeUnit = null;
 
-            $title.on('input', saveState);
-            $minsInput.on('input', function() {
-                if (currentMode === 'countdown' && !interval) {
-                    seconds = parseInt($(this).val() || 0) * 60;
-                    updateDisplay();
+            $widget.on('mousedown', '.adjustable-unit', function(e) {
+                if (isRunning) return;
+                isDragging = true;
+                startY = e.clientY;
+                activeUnit = $(this).data('unit');
+
+                let h = Math.floor(timerSeconds / 3600);
+                let m = Math.floor((timerSeconds % 3600) / 60);
+                let s = timerSeconds % 60;
+
+                if (activeUnit === 'h') startVal = h;
+                else if (activeUnit === 'm') startVal = m;
+                else if (activeUnit === 's') startVal = s;
+
+                $(document).on('mousemove.clockdrag', function(me) {
+                    let diff = Math.floor((startY - me.clientY) / 5); // 5px per unit
+                    let newVal = startVal + diff;
+
+                    if (activeUnit === 'h') {
+                        if (newVal < 0) newVal = 0;
+                        if (newVal > 99) newVal = 99;
+                        timerSeconds = (newVal * 3600) + (m * 60) + s;
+                    } else {
+                        if (newVal < 0) newVal = 0;
+                        if (newVal > 59) newVal = 59;
+                        if (activeUnit === 'm') timerSeconds = (h * 3600) + (newVal * 60) + s;
+                        else timerSeconds = (h * 3600) + (m * 60) + newVal;
+                    }
+                    updateTimerDisplay();
+                });
+
+                $(document).on('mouseup.clockdrag', function() {
+                    isDragging = false;
+                    $(document).off('.clockdrag');
+                    saveState();
+                });
+            });
+
+            // --- EVENTS ---
+            $(`#${wId}-timer-start, #${wId}-stopwatch-start`).click(function() {
+                if (isRunning) stopEngine();
+                else startEngine();
+            });
+
+            $(`#${wId}-timer-reset`).click(function() {
+                stopEngine();
+                timerSeconds = 0;
+                updateTimerDisplay();
+                $container.css('border', 'none');
+            });
+
+            $(`#${wId}-stopwatch-reset`).click(function() {
+                stopEngine();
+                stopwatchSeconds = 0;
+                $(`#${wId}-stopwatch-display`).text(formatTime(0));
+            });
+
+            $(document).on(`changeClockMode.${wId}`, function(e, targetWId, mode) {
+                if (targetWId === wId) {
+                    stopEngine();
+                    currentMode = mode;
+                    updateUI();
+                    saveState();
                 }
-                saveState();
             });
 
-            $mode.on('change', function() {
-                currentMode = $(this).val();
-                if (currentMode === 'countdown') {
-                    $setArea.css('display', 'flex');
-                    seconds = parseInt($minsInput.val() || 0) * 60;
-                } else {
-                    $setArea.hide();
-                    seconds = 0;
-                }
-                updateDisplay();
-                saveState();
-            });
+            updateUI();
 
-            $startBtn.click(function() {
-                if(interval) stopTimer();
-                else startTimer();
-            });
-
-            $(`#${wId}-reset`).click(function() {
-                stopTimer();
-                if (currentMode === 'countdown') seconds = parseInt($minsInput.val() || 0) * 60;
-                else seconds = 0;
-                updateDisplay();
-                saveState();
+            $widget.on('remove', () => {
+                if (interval) clearInterval(interval);
+                $(document).off(`.${wId}`);
             });
         }
     },
     // --- 5. FLASHCARD ---
+    'Timer': {
+        render: function(wId) { return WidgetRegistry['Clock'].render(wId); },
+        init: function(wId) { WidgetRegistry['Clock'].init(wId); }
+    },
     'Flashcard': {
         render: function(wId) {
             return `
