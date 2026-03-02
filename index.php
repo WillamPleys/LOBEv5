@@ -221,7 +221,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
             <nav id="up-nav-bar" class="navbar" style="display: none;">
                 <div class="nav-logo" style="display:flex; align-items:center;">
                     LOBE
-                    <span id="admin-badge" style="display:none; margin-left:10px; background:#343a40; color:white; font-size:10px; padding:2px 8px; border-radius:20px; font-weight:900; text-transform:uppercase; letter-spacing:1px;">Admin</span>
+                    <span id="admin-badge" class="badge-admin-global" style="display:none;">ADMIN</span>
                     <span id="premium-badge" style="display:none; margin-left:10px; background:linear-gradient(45deg, #FFD700, #FFA500); color:white; font-size:10px; padding:2px 8px; border-radius:20px; font-weight:900; box-shadow:0 2px 5px rgba(255,165,0,0.3); text-transform:uppercase; letter-spacing:1px;">Premium</span>
                 </div>
                 <div class="nav-center">

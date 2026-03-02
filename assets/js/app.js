@@ -416,6 +416,17 @@ $(document).ready(function() {
     };
 
     window.switchRoom = function(roomId, roomName) {
+        // Redirect if on admin panel and not switching to admin panel
+        if (window.location.pathname.includes('admin.php') && roomName !== 'Admin Panel') {
+            $.ajax({
+                url: 'backend/set_active_room.php',
+                type: 'POST',
+                data: { room_id: roomId, room_name: roomName },
+                success: function() { window.location.href = 'index.php'; }
+            });
+            return;
+        }
+
         // 1. Save current state before switching
         saveWorkspaceState();
 
@@ -832,7 +843,7 @@ $(document).ready(function() {
                     if (action === 'login') window.trackActivity('login', username);
                     if (action === 'register') { $('#auth-message').html('<span style="color:green; font-size:12px; font-weight:bold;">' + res.message + '</span>'); $('#password').val(''); }
                     else {
-                        if(res.role === 'admin') { window.location.href = 'admin.php'; }
+                        if(false) { /* redirect logic removed */ }
                         else {
                             $('#display-user').text(username);
                             loginScreen.fadeOut(300, function() {
