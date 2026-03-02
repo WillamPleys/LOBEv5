@@ -24,12 +24,14 @@ if ($check->num_rows === 0) {
     exit;
 }
 
-// 2. Prevent deleting the last room?
-// User request: "jika hanya ada 1 room maka user dilarang menghapus".
+// 2. Prevent deleting the last room for regular users
 $count_query = $conn->query("SELECT COUNT(*) as total FROM rooms WHERE user_id = '$user_id'");
 $count = $count_query->fetch_assoc()['total'];
 
-if ($count <= 1) {
+// Special case for admin: they can delete all rooms except "Admin Panel" (which is virtual/forced)
+$isAdmin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+
+if ($count <= 1 && !$isAdmin) {
     echo json_encode(['status' => 'error', 'message' => 'Cannot delete the last room.']);
     exit;
 }
@@ -59,9 +61,21 @@ if ($conn->query("DELETE FROM rooms WHERE id = '$room_id'")) {
     $detail = "Deleted room ID $room_id";
     $conn->query("INSERT INTO transactions (user_id, jenis_aktivitas, detail_aktivitas, ip_address) VALUES ('$user_id', 'Delete Room', '$detail', '$ip')");
 
+    // If admin has 0 rooms left, signal redirect to admin panel
+    $redirect_admin = false;
+    if ($isAdmin) {
+        $count_rem = $conn->query("SELECT COUNT(*) as total FROM rooms WHERE user_id = '$user_id'")->fetch_assoc()['total'];
+        if ($count_rem === 0) {
+            $redirect_admin = true;
+            unset($_SESSION['active_room_id']);
+            unset($_SESSION['active_room_name']);
+        }
+    }
+
     echo json_encode([
         'status' => 'success',
-        'switched_to' => $new_room // Will be null if we didn't switch
+        'switched_to' => $new_room,
+        'redirect_admin' => $redirect_admin
     ]);
 
 } else {

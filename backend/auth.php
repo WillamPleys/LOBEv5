@@ -51,11 +51,18 @@ if ($action === 'login') {
                 $_SESSION['active_room_name'] = $existing_room['nama_room'];
             }
 
+            // Special check for admin redirect
+            $redirect_url = null;
+            if ($user['role'] === 'admin' && !$existing_room) {
+                $redirect_url = 'admin.php';
+            }
+
             echo json_encode([
                 'status' => 'success',
                 'role' => $user['role'],
                 'message' => 'Login berhasil.',
-                'active_room' => $existing_room
+                'active_room' => $existing_room,
+                'redirect_url' => $redirect_url
             ]);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Password salah.']);
