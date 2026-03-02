@@ -1410,6 +1410,7 @@ const WidgetRegistry = {
                             transition: all 0.2s;
                         }
                         .wb-toolbar-btn:hover { background: #f0f0f0; }
+                        .wb-toolbar-btn.active { background: #e3f2fd; border-color: #2196f3; color: #2196f3; }
                         .wb-save-btn {
                             height: 32px;
                             padding: 0 15px;
@@ -1425,10 +1426,17 @@ const WidgetRegistry = {
                             gap: 5px;
                         }
                     </style>
-                    <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center;">
-                        <input type="color" id="${wId}-color" value="#0000ff" style="width:30px; height:32px; border:1px solid #ccc; padding:0; background:white; cursor:pointer; border-radius:3px;">
-                        <button id="${wId}-clear-wb" class="wb-toolbar-btn" title="Clear Canvas"><i class="fas fa-eraser"></i></button>
-                        <button id="${wId}-save-upload-wb" class="wb-save-btn"><i class="fas fa-file-upload"></i> Save & Upload</button>
+                    <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
+                        <input type="color" id="${wId}-color" value="#0000ff" style="width:30px; height:32px; border:1px solid #ccc; padding:0; background:white; cursor:pointer; border-radius:3px;" title="Pick Color">
+                        <button id="${wId}-pen" class="wb-toolbar-btn active" title="Pen"><i class="fas fa-pen"></i></button>
+                        <button id="${wId}-highlighter" class="wb-toolbar-btn" title="Highlighter"><i class="fas fa-marker"></i></button>
+                        <button id="${wId}-eraser" class="wb-toolbar-btn" title="Eraser"><i class="fas fa-eraser"></i></button>
+                        <div style="display:flex; align-items:center; gap:5px; margin-left:5px;">
+                            <label style="font-size:0.7rem; color:#666;">Size:</label>
+                            <input type="range" id="${wId}-size" min="1" max="50" value="3" style="width:60px;">
+                        </div>
+                        <button id="${wId}-clear-wb" class="wb-toolbar-btn" title="Clear All" style="margin-left:5px;"><i class="fas fa-trash-alt"></i></button>
+                        <button id="${wId}-save-upload-wb" class="wb-save-btn"><i class="fas fa-file-upload"></i> Save</button>
                     </div>
                     <canvas id="${wId}-wb" style="flex:1; cursor:crosshair; background:white;"></canvas>
                 </div>
@@ -1439,10 +1447,12 @@ const WidgetRegistry = {
             const canvas = document.getElementById(`${wId}-wb`);
             const ctx = canvas.getContext('2d');
             const $color = $(`#${wId}-color`);
+            const $size = $(`#${wId}-size`);
 
             let paths = $widget.data('whiteboardPaths') || [];
             let currentPath = [];
             let painting = false;
+            let currentMode = 'pen'; // pen, highlighter, eraser
 
             function initCanvas() {
                 const parent = canvas.parentElement;
@@ -1458,6 +1468,13 @@ const WidgetRegistry = {
                 paths.forEach(path => {
                     if (path.points.length < 2) return;
                     ctx.beginPath();
+
+                    if (path.mode === 'eraser') {
+                        ctx.globalCompositeOperation = 'destination-out';
+                    } else {
+                        ctx.globalCompositeOperation = 'source-over';
+                    }
+
                     ctx.strokeStyle = path.color || '#000';
                     ctx.lineWidth = path.width || 3;
                     ctx.moveTo(path.points[0].x, path.points[0].y);
@@ -1466,12 +1483,30 @@ const WidgetRegistry = {
                     }
                     ctx.stroke();
                 });
+                ctx.globalCompositeOperation = 'source-over'; // Reset
             }
 
             function startPosition(e) {
                 painting = true;
                 const rect = canvas.getBoundingClientRect();
-                currentPath = { color: $color.val(), width: 3, points: [{ x: e.clientX - rect.left, y: e.clientY - rect.top }] };
+                let color = $color.val();
+                let width = parseInt($size.val());
+
+                if (currentMode === 'highlighter') {
+                    // Semi-transparent
+                    let r = parseInt(color.substring(1,3), 16);
+                    let g = parseInt(color.substring(3,5), 16);
+                    let b = parseInt(color.substring(5,7), 16);
+                    color = `rgba(${r}, ${g}, ${b}, 0.3)`;
+                    width = width * 3; // Highlighter usually broader
+                }
+
+                currentPath = {
+                    mode: currentMode,
+                    color: color,
+                    width: width,
+                    points: [{ x: e.clientX - rect.left, y: e.clientY - rect.top }]
+                };
                 paths.push(currentPath);
             }
 
@@ -1492,13 +1527,38 @@ const WidgetRegistry = {
 
                 ctx.lineWidth = currentPath.width;
                 ctx.lineCap = 'round';
-                ctx.strokeStyle = currentPath.color;
+
+                if (currentMode === 'eraser') {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.strokeStyle = 'rgba(0,0,0,1)'; // Value doesn't matter for destination-out
+                } else {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = currentPath.color;
+                }
 
                 ctx.lineTo(x, y);
                 ctx.stroke();
                 ctx.beginPath();
                 ctx.moveTo(x, y);
             }
+
+            $widget.find('#' + wId + '-pen').click(function() {
+                currentMode = 'pen';
+                $widget.find('.wb-toolbar-btn').removeClass('active');
+                $(this).addClass('active');
+            });
+
+            $widget.find('#' + wId + '-highlighter').click(function() {
+                currentMode = 'highlighter';
+                $widget.find('.wb-toolbar-btn').removeClass('active');
+                $(this).addClass('active');
+            });
+
+            $widget.find('#' + wId + '-eraser').click(function() {
+                currentMode = 'eraser';
+                $widget.find('.wb-toolbar-btn').removeClass('active');
+                $(this).addClass('active');
+            });
 
             canvas.addEventListener('mousedown', startPosition);
             canvas.addEventListener('mouseup', finishedPosition);
