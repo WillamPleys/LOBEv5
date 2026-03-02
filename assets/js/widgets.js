@@ -359,15 +359,16 @@ const WidgetRegistry = {
                         </div>
                     </div>
 
-                    <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:20px; box-sizing:border-box; z-index:5;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                            <h3 style="margin:0; font-size:1.2rem; color:#333;">Card Editor</h3>
-                            <button id="${wId}-add-card" class="btn btn-sm btn-primary" style="border-radius:20px; padding:5px 15px;">+ Add Card</button>
+                    <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:15px; box-sizing:border-box; z-index:5;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                            <div>
+                                <h3 style="margin:0; font-size:1.1rem; color:#333;">Card Editor</h3>
+                                <small style="color:#888;">Total Cards: <span id="${wId}-total-count">0</span></small>
+                            </div>
+                            <button id="${wId}-save-settings" class="btn btn-success" style="padding:5px 15px; font-weight:bold;"><i class="fas fa-save"></i> Save</button>
                         </div>
-                        <div id="${wId}-editor-list" style="flex:1; overflow-y:auto; margin-bottom:15px; padding-right:5px;"></div>
-                        <div style="display:flex; gap:10px;">
-                            <button id="${wId}-save-settings" class="btn btn-success" style="flex:1; font-weight:bold;">Save Changes</button>
-                        </div>
+                        <div id="${wId}-editor-list" style="flex:1; overflow-y:auto; margin-bottom:10px; padding-right:5px;"></div>
+                        <button id="${wId}-add-card" class="btn btn-primary" style="width:100%; border-radius:8px; padding:8px;"><i class="fas fa-plus"></i> Add Question</button>
                     </div>
                 </div>
             `;
@@ -405,6 +406,7 @@ const WidgetRegistry = {
                 cards.forEach((c, i) => {
                     addEditorRow(c.q, c.a);
                 });
+                $(`#${wId}-total-count`).text(cards.length);
             }
 
             function addEditorRow(q = '', a = '') {
@@ -419,7 +421,12 @@ const WidgetRegistry = {
                         <i class="fas fa-trash-alt remove-card" style="position:absolute; top:12px; right:12px; color:#dc3545; cursor:pointer; font-size:0.9rem;" title="Delete Card"></i>
                     </div>
                 `);
-                item.find('.remove-card').click(() => { item.fadeOut(200, function() { $(this).remove(); }); });
+                item.find('.remove-card').click(() => {
+                    item.fadeOut(200, function() {
+                        $(this).remove();
+                        $(`#${wId}-total-count`).text($editorList.children().length);
+                    });
+                });
                 $editorList.append(item);
             }
 
@@ -434,6 +441,7 @@ const WidgetRegistry = {
 
             $(`#${wId}-add-card`).click(() => {
                 addEditorRow();
+                $(`#${wId}-total-count`).text($editorList.children().length);
                 $editorList.scrollTop($editorList[0].scrollHeight);
             });
 
