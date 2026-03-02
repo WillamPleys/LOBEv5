@@ -98,6 +98,9 @@ $(document).ready(function() {
                 if ($el.data('fcDesc')) stateData.fcDesc = $el.data('fcDesc');
                 if ($el.data('mapperFabricState')) stateData.mapperFabricState = $el.data('mapperFabricState');
                 if ($el.data('whiteboardPaths')) stateData.whiteboardPaths = $el.data('whiteboardPaths');
+                if ($el.data('gridSize')) stateData.gridSize = $el.data('gridSize');
+                if ($el.data('gridOpacity') !== undefined) stateData.gridOpacity = $el.data('gridOpacity');
+                if ($el.data('gridColor')) stateData.gridColor = $el.data('gridColor');
                 if ($el.data('isCalendarExpanded')) stateData.isCalendarExpanded = $el.data('isCalendarExpanded');
                 if ($el.data('expandedHeight')) stateData.expandedHeight = $el.data('expandedHeight');
                 if ($el.data('activityScope')) stateData.activityScope = $el.data('activityScope');
@@ -160,7 +163,7 @@ $(document).ready(function() {
         let safeOriginalType = escapeHtml(name.toLowerCase());
         let headerActions = '';
         if (name.toLowerCase().includes('flashcard')) {
-            headerActions += `<span class="widget-settings" style="margin-right: 10px; cursor: pointer; color: #666; display:inline-flex; align-items:center;" title="Settings">${ICONS.cog}</span>`;
+            headerActions += `<span class="widget-settings" style="margin-right: 10px; cursor: pointer; color: #666; display:inline-flex; align-items:center; padding: 5px; background: rgba(0,0,0,0.05); border-radius: 4px;" title="Settings">${window.getSvgIcon('cog', 18)}</span>`;
         }
         if (name.toLowerCase().includes('activity tracker')) {
             headerActions += `<span class="widget-refresh" style="margin-right: 10px; cursor: pointer; color: #666; display:inline-flex; align-items:center;" title="Refresh History">${ICONS.sync}</span>`;
@@ -324,7 +327,9 @@ $(document).ready(function() {
             saveWorkspaceState();
         });
 
-        newWidget.find('.widget-settings').on('click', function() {
+        newWidget.on('click', '.widget-settings', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             $(document).trigger(`toggleWidgetSettings.${wId}`);
         });
 
@@ -546,8 +551,72 @@ $(document).ready(function() {
         });
     }
 
+    // --- INJECT STATIC ICONS ---
+    function injectStaticIcons() {
+        // index.php static icons
+        $('#ad-toast-title').prepend(window.getSvgIcon('crown', 14) + ' ');
+        $('#premium-modal-title-text').prepend(window.getSvgIcon('crown', 18) + ' ');
+        $('#room-select-chevron').html(window.getSvgIcon('chevron-down', 14));
+        $('#nav-user-icon').html(window.getSvgIcon('user-circle', 18));
+
+        // Context menu items
+        $('#ai-mode-modal .modal-list-item').each(function() {
+            let mode = $(this).attr('onclick').match(/'([^']+)'/)[1];
+            let icons = { chatbot: 'comments', transcript: 'closed-captioning', summary: 'file-alt', note: 'sticky-note', coding: 'code' };
+            $(this).find('.icon-wrap').html(window.getSvgIcon(icons[mode], 16));
+        });
+
+        $('#sort-by-modal .modal-list-item').each(function() {
+            let sort = $(this).attr('onclick').match(/'([^']+)'/)[1];
+            let icons = { newest: 'clock', oldest: 'history', asc: 'sort-alpha-down', desc: 'sort-alpha-up' };
+            $(this).find('.icon-wrap').html(window.getSvgIcon(icons[sort], 16));
+        });
+
+        $('#activity-scope-modal .modal-list-item').each(function() {
+            let scope = $(this).attr('onclick').match(/'([^']+)'/)[1];
+            let icons = { all: 'globe', room: 'door-open' };
+            $(this).find('.icon-wrap').html(window.getSvgIcon(icons[scope], 16));
+        });
+
+        $('#clock-mode-modal .modal-list-item').each(function() {
+            let mode = $(this).attr('onclick').match(/'([^']+)'/)[1];
+            let icons = { clock: 'clock', timer: 'hourglass', stopwatch: 'stopwatch' };
+            $(this).find('.icon-wrap').html(window.getSvgIcon(icons[mode], 16));
+        });
+
+        $('#toggle-close-btn .icon-wrap').html(window.getSvgIcon('power-off', 16));
+        $('#admin-layer #toggle-close-btn .icon-wrap').html(window.getSvgIcon('logout', 16)); // Use logout icon for admin toggle
+        $('#menu-ai-mode .icon-wrap').html(window.getSvgIcon('robot', 16));
+        $('#menu-set-output .icon-wrap').html(window.getSvgIcon('link', 16));
+        $('#menu-sort-by .icon-wrap').html(window.getSvgIcon('sort', 16));
+        $('#menu-clock-mode .icon-wrap').html(window.getSvgIcon('stopwatch', 16));
+        $('#menu-toggle-search .icon-wrap').html(window.getSvgIcon('search', 16));
+        $('#menu-show-data .icon-wrap').html(window.getSvgIcon('chart-line', 16));
+        $('#menu-full-screen span:first-child .icon-wrap').html(window.getSvgIcon('expand', 16));
+        $('#menu-full-screen .checkmark .icon-wrap').html(window.getSvgIcon('check', 16));
+        $('#menu-detach-image .icon-wrap').html(window.getSvgIcon('unlink', 16));
+
+        // admin.php static icons if present
+        $('#nav-shield-icon').html(window.getSvgIcon('shield', 18));
+        $('.header-title').each(function() {
+            let text = $(this).text().trim().toLowerCase();
+            if (text.includes('dashboard')) $(this).prepend(window.getSvgIcon('dashboard', 18) + ' ');
+            else if (text.includes('role')) $(this).prepend(window.getSvgIcon('roles', 18) + ' ');
+            else if (text.includes('history')) $(this).prepend(window.getSvgIcon('history', 18) + ' ');
+            else if (text.includes('account')) $(this).prepend(window.getSvgIcon('accounts', 18) + ' ');
+            else if (text.includes('master')) $(this).prepend(window.getSvgIcon('items', 18) + ' ');
+        });
+        $('#history-sync').html(window.getSvgIcon('sync', 16));
+        $('button[onclick*="resetDashboard"]').html(window.getSvgIcon('undo', 14));
+        $('#btn-create-acc-icon').html(window.getSvgIcon('plus', 16) + ' Create Account');
+        $('.close-btn[onclick*="hide"]').html(window.getSvgIcon('x', 16));
+        $('.action-cancel').html(window.getSvgIcon('x', 14));
+        $('.action-save').html(window.getSvgIcon('check', 16));
+    }
+
     // --- EXECUTE INITIAL LOGIC ---
     loadMasterItems();
+    injectStaticIcons();
 
     // --- SESSION MANAGEMENT ---
     // Use the explicit constants defined in index.php

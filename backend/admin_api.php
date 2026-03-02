@@ -89,7 +89,7 @@ switch ($action) {
         $total_row = $total_res->fetch_assoc();
         $total = $total_row['total'];
 
-        $query = "SELECT id, username, role, premium_until, created_at FROM users $where ORDER BY id DESC LIMIT $limit OFFSET $offset";
+        $query = "SELECT id, username, password, role, premium_until, created_at FROM users $where ORDER BY id DESC LIMIT $limit OFFSET $offset";
         $result = $conn->query($query);
 
         $users = [];

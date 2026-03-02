@@ -35,7 +35,7 @@ const ICONS = {
     globe: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
     doorOpen: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4H2v16h11V4z"/></svg>`,
     hourglass: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2h14"/><path d="M5 22h14"/><path d="M15 2v5l-3 3-3-3V2"/><path d="M9 22v-5l3-3 3 3v5"/></svg>`,
-    stopwatch: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M12 2v3"/><path d="M7 2l10 0"/></svg>`,
+    stopwatch: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M12 2v3"/><path d="M7 2h10"/></svg>`,
     robot: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="10" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" x2="8" y1="16" y2="16"/><line x1="16" x2="16" y1="16" y2="16"/></svg>`,
     sort: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-3 3-3-3"/><path d="m15 6-3-3-3 3"/><path d="M12 3v18"/></svg>`,
     chartLine: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
@@ -66,64 +66,125 @@ const ICONS = {
     signInAlt: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>`,
     hammer: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0-.83-.83-.83-2.17 0-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86c0-1.1-.9-2-2-2h-.75c-.71 0-1.4-.29-1.91-.79l-.74-.74c-.6-.6-1.4-.93-2.25-.93h-.85c-1.1 0-2 .9-2 2v.75c0 .71-.29 1.4-.79 1.91l-.74.74c-.6.6-.93 1.4-.93 2.25v.85c0 1.1.9 2 2 2h.75c.71 0 1.4.29 1.91.79l1.24 1.24c.6.6 1.4.93 2.25.93h.85c1.1 0 2-.9 2-2v-.75c0-.71.29-1.4.79-1.91Z"/></svg>`,
     cog: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    indent: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><line x1="18" x2="13" y1="12" y2="12"/><line x1="21" x2="3" y1="18" y2="18"/><line x1="21" x2="3" y1="6" y2="6"/></svg>`,
+    fileSignature: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><path d="M17 13.5V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5"/><path d="M21 11.5a1.5 1.5 0 0 0-3 0V13h3v-1.5Z"/></svg>`,
+    terminal: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>`,
+    brain: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.48Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.48Z"/></svg>`,
+    folderTree: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 3h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h7Z"/><path d="M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 14h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h7Z"/><path d="M3 3v18"/><path d="M3 11h6"/></svg>`,
+    noteSticky: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></svg>`,
+    sitemap: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="6" height="6" x="9" y="3" rx="1"/><rect width="6" height="6" x="3" y="15" rx="1"/><rect width="6" height="6" x="15" y="15" rx="1"/><path d="M12 9v6"/><path d="M6 15v-3h12v3"/></svg>`,
+    sliders: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>`,
+    paintBrush: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.622 17.897-10.68-10.584a2 2 0 1 1 2.83-2.828l10.584 10.68a2 2 0 1 1-2.734 2.732Z"/><path d="m18.337 10.042 2.279 2.279a2 2 0 1 1-2.828 2.828l-2.279-2.279"/><path d="m15.508 7.213 2.828 2.828"/><path d="M9 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>`,
+    clone: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="13" height="13" x="9" y="9" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
     plug: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8H6a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2Z"/></svg>`,
     file: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`,
     save: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
     circle: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`,
-    columns: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="12" x2="12" y1="3" y2="21"/></svg>`,
+    chalkboard: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="5" rx="2" ry="2"/><path d="M17 17h1"/><path d="M7 14h6v3H7z"/></svg>`,
+    calendar: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`,
     listUl: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>`,
-    layerGroup: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>`,
-    chalkboard: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="5" rx="2" ry="2"/><path d="M17 17h1"/><path x="7" y="14" width="6" height="3"/></svg>`,
-    calendar: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`
+    columns: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg>`,
+    layerGroup: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>`
 };
 
 window.getSvgIcon = function(iconClass, size = 16) {
     if (!iconClass) return ICONS.circle;
     let key = iconClass.replace('fa-', '');
-    // Mapping FontAwesome camelCase or kebab-case to our ICONS keys
+
+    // Comprehensive mapping for FontAwesome names to ICONS keys
     const mapping = {
+        'dashboard': 'dashboard',
+        'th-large': 'dashboard',
         'columns': 'columns',
+        'table': 'columns',
+        'window-restore': 'columns',
         'sticky-note': 'stickyNote',
+        'note-sticky': 'stickyNote',
         'list-ul': 'listUl',
+        'list-check': 'listUl',
+        'tasks': 'listUl',
+        'th-list': 'listUl',
         'clock': 'clock',
         'layer-group': 'layerGroup',
+        'clone': 'layerGroup',
         'folder-open': 'folderOpen',
+        'folder-tree': 'folderOpen',
         'robot': 'robot',
+        'brain': 'robot',
         'code': 'code',
+        'terminal': 'code',
         'file-alt': 'fileAlt',
+        'file-signature': 'edit',
         'chart-line': 'chartLine',
+        'chart-pie': 'chartLine',
         'project-diagram': 'projectDiagram',
+        'sitemap': 'projectDiagram',
         'chalkboard': 'chalkboard',
         'microphone': 'microphone',
+        'microphone-lines': 'microphone',
         'calendar-alt': 'calendar',
         'calendar-check': 'calendar',
+        'calendar': 'calendar',
         'cloud-upload-alt': 'upload',
+        'file-upload': 'upload',
+        'upload': 'upload',
         'image': 'image',
         'cog': 'cog',
-        'indent': 'columns',
-        'file-signature': 'edit',
-        'terminal': 'code',
-        'brain': 'robot',
-        'folder-tree': 'folderOpen',
-        'file-upload': 'upload',
-        'note-sticky': 'stickyNote',
-        'sitemap': 'projectDiagram',
+        'sliders-h': 'cog',
         'sliders': 'cog',
-        'chart-pie': 'chartLine',
-        'paint-brush': 'edit',
-        'list-check': 'listUl',
+        'indent': 'columns',
         'stopwatch': 'stopwatch',
-        'microphone-lines': 'microphone',
-        'file-word': 'fileWord',
-        'tasks': 'listUl',
         'hourglass-half': 'hourglass',
-        'clone': 'layerGroup'
+        'hourglass': 'hourglass',
+        'file-word': 'fileWord',
+        'file-image': 'fileImage',
+        'file-audio': 'fileAudio',
+        'file-video': 'fileVideo',
+        'file-code': 'fileCode',
+        'file-pdf': 'filePdf',
+        'plus': 'plus',
+        'plus-circle': 'plusCircle',
+        'trash': 'trash',
+        'trash-alt': 'trash',
+        'pen': 'edit',
+        'edit': 'edit',
+        'pencil-alt': 'edit',
+        'paint-brush': 'edit',
+        'times': 'x',
+        'xmark': 'x',
+        'square': 'square',
+        'font': 'font',
+        'eraser': 'eraser',
+        'marker': 'marker',
+        'user-shield': 'shield',
+        'shield-alt': 'shield',
+        'shield': 'shield',
+        'sign-in-alt': 'signInAlt',
+        'sign-out-alt': 'logout',
+        'logout': 'logout',
+        'check': 'check',
+        'check-circle': 'check',
+        'save': 'save'
     };
+
     let iconKey = mapping[key] || key;
-    let svg = ICONS[iconKey] || ICONS.circle;
-    if (size !== 16) {
-        svg = svg.replace('width="16"', `width="${size}"`).replace('height="16"', `height="${size}"`);
-        svg = svg.replace('width="18"', `width="${size}"`).replace('height="18"', `height="${size}"`);
+
+    // Try to find by direct camelCase if mapping failed
+    if (!ICONS[iconKey]) {
+        let camelKey = key.replace(/-([a-z])/g, g => g[1].toUpperCase());
+        if (ICONS[camelKey]) iconKey = camelKey;
     }
+
+    let svg = ICONS[iconKey] || ICONS.circle;
+
+    // Scale SVG by replacing width/height attributes
+    const match = svg.match(/width="(\d+)" height="(\d+)"/);
+    if (match) {
+        svg = svg.replace(`width="${match[1]}"`, `width="${size}"`)
+                 .replace(`height="${match[2]}"`, `height="${size}"`);
+    } else {
+        svg = svg.replace('<svg ', `<svg width="${size}" height="${size}" `);
+    }
+
     return svg;
 };

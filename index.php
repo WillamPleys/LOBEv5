@@ -63,7 +63,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     <div id="ad-notification" style="cursor: pointer;">
         <div class="ad-toast">
             <div class="ad-header">
-                <span><script>document.write(ICONS.crown);</script> LOBE Premium</span>
+                <span id="ad-toast-title">LOBE Premium</span>
                 <span class="ad-close" onclick="event.stopPropagation(); $('#ad-notification').fadeOut()">&times;</span>
             </div>
             <div class="ad-body">
@@ -77,7 +77,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     <div id="premium-modal" class="modal-overlay" style="display: none; z-index: 21000;">
         <div class="windows-style" style="width: 450px;">
             <div class="modal-header">
-                <span><script>document.write(ICONS.crown);</script> Upgrade to LOBE Premium</span>
+                <span id="premium-modal-title-text">Upgrade to LOBE Premium</span>
                 <button class="close-btn" onclick="$('#premium-modal').hide()">&times;</button>
             </div>
             <div class="modal-body" style="gap: 10px;">
@@ -128,11 +128,11 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     <!-- AI MODE MODAL (FLOATING CONTEXT MENU STYLE) -->
     <div id="ai-mode-modal" class="windows-style floating-submenu" style="display: none; position: absolute; z-index: 9999;">
         <div class="modal-body" style="padding: 5px;">
-            <div class="modal-list-item" onclick="window.selectAiMode('chatbot')"><script>document.write(ICONS.comments);</script> Chatbot</div>
-            <div class="modal-list-item" onclick="window.selectAiMode('transcript')"><script>document.write(ICONS.closedCaptioning);</script> Transcript</div>
-            <div class="modal-list-item" onclick="window.selectAiMode('summary')"><script>document.write(ICONS.fileAlt);</script> File to Summary</div>
-            <div class="modal-list-item" onclick="window.selectAiMode('note')"><script>document.write(ICONS.stickyNote);</script> Note Generator</div>
-            <div class="modal-list-item" onclick="window.selectAiMode('coding')"><script>document.write(ICONS.code);</script> Coding Agent</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('chatbot')"><span class="icon-wrap"></span> Chatbot</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('transcript')"><span class="icon-wrap"></span> Transcript</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('summary')"><span class="icon-wrap"></span> File to Summary</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('note')"><span class="icon-wrap"></span> Note Generator</div>
+            <div class="modal-list-item" onclick="window.selectAiMode('coding')"><span class="icon-wrap"></span> Coding Agent</div>
         </div>
     </div>
 
@@ -146,27 +146,27 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     <!-- SORT BY MODAL (FLOATING CONTEXT MENU STYLE) -->
     <div id="sort-by-modal" class="windows-style floating-submenu" style="display: none; position: absolute; z-index: 9999;">
         <div class="modal-body" style="padding: 5px;">
-            <div class="modal-list-item" onclick="window.selectSortBy('newest')"><script>document.write(ICONS.clock);</script> From Newest</div>
-            <div class="modal-list-item" onclick="window.selectSortBy('oldest')"><script>document.write(ICONS.history);</script> From Oldest</div>
-            <div class="modal-list-item" onclick="window.selectSortBy('asc')"><script>document.write(ICONS.sortAlphaDown);</script> Ascending (A-Z)</div>
-            <div class="modal-list-item" onclick="window.selectSortBy('desc')"><script>document.write(ICONS.sortAlphaUp);</script> Descending (Z-A)</div>
+            <div class="modal-list-item" onclick="window.selectSortBy('newest')"><span class="icon-wrap"></span> From Newest</div>
+            <div class="modal-list-item" onclick="window.selectSortBy('oldest')"><span class="icon-wrap"></span> From Oldest</div>
+            <div class="modal-list-item" onclick="window.selectSortBy('asc')"><span class="icon-wrap"></span> Ascending (A-Z)</div>
+            <div class="modal-list-item" onclick="window.selectSortBy('desc')"><span class="icon-wrap"></span> Descending (Z-A)</div>
         </div>
     </div>
 
     <!-- ACTIVITY SCOPE MODAL (FLOATING CONTEXT MENU STYLE) -->
     <div id="activity-scope-modal" class="windows-style floating-submenu" style="display: none; position: absolute; z-index: 9999;">
         <div class="modal-body" style="padding: 5px;">
-            <div class="modal-list-item" onclick="window.selectActivityScope('all')"><script>document.write(ICONS.globe);</script> All Room (Account)</div>
-            <div class="modal-list-item" onclick="window.selectActivityScope('room')"><script>document.write(ICONS.doorOpen);</script> This Room Only</div>
+            <div class="modal-list-item" onclick="window.selectActivityScope('all')"><span class="icon-wrap"></span> All Room (Account)</div>
+            <div class="modal-list-item" onclick="window.selectActivityScope('room')"><span class="icon-wrap"></span> This Room Only</div>
         </div>
     </div>
 
     <!-- CLOCK MODE MODAL (FLOATING CONTEXT MENU STYLE) -->
     <div id="clock-mode-modal" class="windows-style floating-submenu" style="display: none; position: absolute; z-index: 9999;">
         <div class="modal-body" style="padding: 5px;">
-            <div class="modal-list-item" onclick="window.selectClockMode('clock')"><script>document.write(ICONS.clock);</script> Clock</div>
-            <div class="modal-list-item" onclick="window.selectClockMode('timer')"><script>document.write(ICONS.hourglass);</script> Timer</div>
-            <div class="modal-list-item" onclick="window.selectClockMode('stopwatch')"><script>document.write(ICONS.stopwatch);</script> Stopwatch</div>
+            <div class="modal-list-item" onclick="window.selectClockMode('clock')"><span class="icon-wrap"></span> Clock</div>
+            <div class="modal-list-item" onclick="window.selectClockMode('timer')"><span class="icon-wrap"></span> Timer</div>
+            <div class="modal-list-item" onclick="window.selectClockMode('stopwatch')"><span class="icon-wrap"></span> Stopwatch</div>
         </div>
     </div>
 
@@ -229,7 +229,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger">
                             <span id="current-room-name">+ Create New Room</span>
-                            <script>document.write(ICONS.chevronDown);</script>
+                            <span id="room-select-chevron"></span>
                         </div>
                         <div class="custom-options">
                             <span class="custom-option" data-value="new">+ Create New Room</span>
@@ -238,7 +238,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
                     </div>
                 </div>
                 <div class="nav-profile">
-                    <span style="margin-right:5px;"><script>document.write(ICONS.userCircle);</script></span>
+                    <span style="margin-right:5px;" id="nav-user-icon"></span>
                     <span id="display-user" style="font-weight: 500; margin-right: 15px;">Guest</span>
                     <button id="btn-logout" style="padding: 5px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #ddd; background: #fff; cursor: pointer;">Logout</button>
                 </div>
@@ -262,27 +262,27 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
 
         <!-- Widget Context Menu -->
         <div id="widget-context-menu" class="context-menu" style="display: none;">
-            <div class="context-item" id="toggle-close-btn"><script>document.write(ICONS.powerOff);</script> Toggle Close Button</div>
+            <div class="context-item" id="toggle-close-btn"><span class="icon-wrap"></span> Toggle Close Button</div>
 
             <div class="context-divider ai-feature" style="display:none;"></div>
 
-            <div class="context-item ai-feature" id="menu-ai-mode" style="display:none;"><script>document.write(ICONS.robot);</script> AI Mode</div>
-            <div class="context-item ai-feature" id="menu-set-output" style="display:none;"><script>document.write(ICONS.link);</script> Set as Output of</div>
-            <div class="context-item ai-feature" id="menu-sort-by" style="display:none;"><script>document.write(ICONS.sort);</script> Sort by</div>
+            <div class="context-item ai-feature" id="menu-ai-mode" style="display:none;"><span class="icon-wrap"></span> AI Mode</div>
+            <div class="context-item ai-feature" id="menu-set-output" style="display:none;"><span class="icon-wrap"></span> Set as Output of</div>
+            <div class="context-item ai-feature" id="menu-sort-by" style="display:none;"><span class="icon-wrap"></span> Sort by</div>
 
-            <div class="context-item" id="menu-clock-mode" style="display:none;"><script>document.write(ICONS.stopwatch);</script> Set as</div>
+            <div class="context-item" id="menu-clock-mode" style="display:none;"><span class="icon-wrap"></span> Set as</div>
 
-            <div class="context-item ai-feature" id="menu-toggle-search" style="display:none;"><script>document.write(ICONS.search);</script> Toggle Search Autocomplete</div>
+            <div class="context-item ai-feature" id="menu-toggle-search" style="display:none;"><span class="icon-wrap"></span> Toggle Search Autocomplete</div>
 
-            <div class="context-item" id="menu-show-data" style="display:none;"><script>document.write(ICONS.chartLine);</script> Show Data</div>
+            <div class="context-item" id="menu-show-data" style="display:none;"><span class="icon-wrap"></span> Show Data</div>
 
             <div class="context-item" id="menu-full-screen" style="display:none; justify-content: space-between; align-items: center;">
-                <span><script>document.write(ICONS.expand);</script> Full screen</span>
-                <span class="checkmark" style="display:none; color: #28a745;"><script>document.write(ICONS.check);</script></span>
+                <span><span class="icon-wrap"></span> Full screen</span>
+                <span class="checkmark" style="display:none; color: #28a745;"><span class="icon-wrap"></span></span>
             </div>
 
             <div class="context-item" id="menu-detach-image" style="display:none;">
-                <script>document.write(ICONS.unlink);</script> Detach image
+                <span class="icon-wrap"></span> Detach image
             </div>
         </div>
     </div>

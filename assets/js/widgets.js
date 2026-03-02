@@ -23,7 +23,19 @@ const WidgetRegistry = {
         init: function(wId) {
             const $widget = $(`#${wId}`);
             const $canvas = $('.grid-background');
-            function updateGrid() {
+
+            // Restore state
+            if ($widget.data('gridSize')) {
+                $widget.find(`#${wId}-grid-size`).val($widget.data('gridSize'));
+            }
+            if ($widget.data('gridOpacity') !== undefined) {
+                $widget.find(`#${wId}-grid-opacity`).val($widget.data('gridOpacity'));
+            }
+            if ($widget.data('gridColor')) {
+                $widget.find(`#${wId}-grid-color`).val($widget.data('gridColor'));
+            }
+
+            function updateGrid(isInitial = false) {
                 const size = $widget.find(`#${wId}-grid-size`).val();
                 const opacity = $widget.find(`#${wId}-grid-opacity`).val();
                 const color = $widget.find(`#${wId}-grid-color`).val();
@@ -31,14 +43,27 @@ const WidgetRegistry = {
                 let g = parseInt(color.substring(3,5), 16);
                 let b = parseInt(color.substring(5,7), 16);
                 let rgba = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+
                 $widget.find(`#${wId}-size-val`).text(size + 'px');
                 $widget.find(`#${wId}-opacity-val`).text(opacity);
+
                 $canvas.css({
                     'background-size': `${size}px ${size}px`,
                     'background-image': `linear-gradient(to right, ${rgba} 1px, transparent 1px), linear-gradient(to bottom, ${rgba} 1px, transparent 1px)`
                 });
+
+                if (!isInitial) {
+                    $widget.data('gridSize', size);
+                    $widget.data('gridOpacity', opacity);
+                    $widget.data('gridColor', color);
+                    if (window.saveWorkspaceState) window.saveWorkspaceState();
+                }
             }
-            $widget.find('input, select').on('input change', updateGrid);
+
+            $widget.find('input, select').on('input change', function() { updateGrid(false); });
+
+            // Initial apply
+            updateGrid(true);
         }
     },
     // --- 2. STICKY NOTES ---
@@ -52,13 +77,13 @@ const WidgetRegistry = {
                         <button class="color-btn" style="background:#f48fb1; width:20px; height:20px; border:none; cursor:pointer;" data-color="#f48fb1"></button>
                         <button class="color-btn" style="background:#ffffff; width:20px; height:20px; border:1px solid #ddd; cursor:pointer;" data-color="#ffffff"></button>
                     </div>
-                    <textarea style="flex:1; width:100%; border:none; background:transparent; resize:none; outline:none; font-family:'Comic Sans MS', cursive, sans-serif; font-size:1.1rem; padding:10px;" placeholder="Don't forget..." id="${wId}-textarea"></textarea>
+                    <input type="text" style="flex:1; width:100%; border:none; background:transparent; outline:none; font-family:'Comic Sans MS', cursive, sans-serif; font-size:1.1rem; padding:10px;" placeholder="Don't forget..." id="${wId}-input">
                 </div>
             `;
         },
         init: function(wId) {
             const $widget = $(`#${wId}`);
-            const $textarea = $(`#${wId}-textarea`);
+            const $input = $(`#${wId}-input`);
 
             // Restore color
             let savedColor = $widget.data('noteColor') || '#ffeb3b';
@@ -66,7 +91,7 @@ const WidgetRegistry = {
 
             // Restore text
             let savedText = $widget.data('noteText') || '';
-            $textarea.val(savedText);
+            $input.val(savedText);
 
             $widget.find('.color-btn').on('click', function() {
                 let color = $(this).data('color');
@@ -76,7 +101,7 @@ const WidgetRegistry = {
             });
 
             let noteTrackTimeout = null;
-            $textarea.on('input', function() {
+            $input.on('input', function() {
                 const val = $(this).val();
                 $widget.data('noteText', val);
                 if (window.saveWorkspaceState) window.saveWorkspaceState();
@@ -1701,7 +1726,7 @@ const WidgetRegistry = {
                     </style>
                     <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
                         <input type="color" id="${wId}-color" value="#0000ff" style="width:30px; height:32px; border:1px solid #ccc; padding:0; background:white; cursor:pointer; border-radius:3px;" title="Pick Color">
-                        <button id="${wId}-pen" class="wb-toolbar-btn active" title="Pen"><script>document.write(ICONS.edit);</script></button>
+                        <button id="${wId}-pen" class="wb-toolbar-btn active" title="Pen">${ICONS.edit}</button>
                         <button id="${wId}-highlighter" class="wb-toolbar-btn" title="Highlighter">${ICONS.marker}</button>
                         <button id="${wId}-eraser" class="wb-toolbar-btn" title="Eraser">${ICONS.eraser}</button>
                         <div style="display:flex; align-items:center; gap:5px; margin-left:5px;">

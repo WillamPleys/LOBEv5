@@ -29,12 +29,14 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             grid-template-columns: repeat(3, 1fr);
             gap: 20px; z-index: 100;
             padding-bottom: 80px;
+            pointer-events: none;
         }
 
         .admin-window {
             background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; border: 1px solid #ddd;
-            pointer-events: all; height: 100%; min-height: 500px;
+            height: 100%; min-height: 500px;
+            pointer-events: all;
         }
 
         .window-header {
@@ -133,7 +135,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger">
                     <span id="current-room-name">Admin Panel</span>
-                    <script>document.write(ICONS.chevronDown);</script>
+                    <span id="room-select-chevron"></span>
                 </div>
                 <div class="custom-options">
                     <span class="custom-option" data-value="new">+ Create New Room</span>
@@ -142,7 +144,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             </div>
         </div>
         <div class="nav-profile">
-            <span style="color:#007bff; margin-right:5px;"><script>document.write(ICONS.shield);</script></span>
+            <span style="color:#007bff; margin-right:5px;" id="nav-shield-icon"></span>
             <span id="display-user" style="font-weight: 500; margin-right: 15px;"><?php echo $username; ?></span>
             <button id="btn-logout" style="padding: 5px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #ddd; background: #fff; cursor: pointer;">Logout</button>
         </div>
@@ -157,12 +159,12 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <!-- 1. Dashboard Overview -->
                 <div class="admin-window">
                     <div class="window-header">
-                        <span><script>document.write(ICONS.dashboard);</script> Dashboard Overview</span>
+                        <span class="header-title">Dashboard Overview</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
                             <input type="text" id="dash-user-search" placeholder="Search user...">
-                            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.7rem;" title="Reset Dashboard" onclick="resetDashboard()"><script>document.write(ICONS.undo);</script></button>
+                            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.7rem;" title="Reset Dashboard" onclick="window.resetDashboard()"></button>
                         </div>
                         <div id="dash-scope-badge" style="font-size:0.7rem; color:#007bff; margin-bottom:10px; font-weight:bold;">SCOPE: GLOBAL</div>
 
@@ -184,7 +186,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <!-- 2. Role Management -->
                 <div class="admin-window">
                     <div class="window-header">
-                        <span><script>document.write(ICONS.roles);</script> Role Management</span>
+                        <span class="header-title">Role Management</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
@@ -203,8 +205,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <!-- 3. History -->
                 <div class="admin-window">
                     <div class="window-header">
-                        <span><script>document.write(ICONS.history);</script> History</span>
-                        <span style="cursor:pointer;" onclick="loadTransactions(1)"><script>document.write(ICONS.sync);</script></span>
+                        <span class="header-title">History</span>
+                        <span style="cursor:pointer;" onclick="window.loadTransactions(1)" id="history-sync"></span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
@@ -222,7 +224,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <!-- 5. Account Management -->
                 <div class="admin-window">
                     <div class="window-header">
-                        <span><script>document.write(ICONS.accounts);</script> Account Management</span>
+                        <span class="header-title">Account Management</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
@@ -232,7 +234,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             </select>
                         </div>
                         <div id="acc-list-container">Loading...</div>
-                        <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="openCreateAccModal()"><script>document.write(ICONS.plus);</script> Create Account</button>
+                        <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="window.openCreateAccModal()" id="btn-create-acc-icon"></button>
                     </div>
                     <div style="padding: 5px; border-top: 1px solid #eee;">
                          <div class="pagination" id="acc-pagination"></div>
@@ -242,7 +244,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <!-- 4. Master Items (Colspan 2) -->
                 <div class="admin-window" style="grid-column: span 2;">
                     <div class="window-header">
-                        <span><script>document.write(ICONS.items);</script> Master Items</span>
+                        <span class="header-title">Master Items</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
@@ -266,7 +268,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         <div class="windows-style" style="width: 400px;">
             <div class="modal-header">
                 <span id="user-modal-title">Create Account</span>
-                <button class="close-btn" onclick="$('#user-modal').hide()"><script>document.write(ICONS.x);</script></button>
+                <button class="close-btn" onclick="$('#user-modal').hide()"></button>
             </div>
             <form id="user-form">
                 <div class="modal-body">
@@ -274,8 +276,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     <div class="form-group"><label>Username</label><input type="text" id="edit-username" required></div>
                     <div class="form-group"><label>Password</label><input type="text" id="edit-password" required></div>
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#user-modal').hide()"><script>document.write(ICONS.x);</script></button>
-                        <button type="submit" class="btn btn-primary" title="Save Changes"><script>document.write(ICONS.check);</script></button>
+                        <button type="button" class="btn btn-secondary action-cancel" title="Cancel" onclick="$('#user-modal').hide()"></button>
+                        <button type="submit" class="btn btn-primary action-save" title="Save Changes"></button>
                     </div>
                 </div>
             </form>
@@ -286,7 +288,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         <div class="windows-style" style="width: 400px;">
             <div class="modal-header">
                 <span id="item-modal-title">Item Editor</span>
-                <button class="close-btn" onclick="$('#item-modal').hide()"><script>document.write(ICONS.x);</script></button>
+                <button class="close-btn" onclick="$('#item-modal').hide()"></button>
             </div>
             <form id="item-form">
                 <div class="modal-body">
@@ -296,8 +298,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     <div class="form-group"><label>Description</label><input type="text" id="item-desc"></div>
                     <div class="form-group"><label>Icon</label><input type="text" id="item-icon" required></div>
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#item-modal').hide()"><script>document.write(ICONS.x);</script></button>
-                        <button type="submit" class="btn btn-primary" title="Save Changes"><script>document.write(ICONS.check);</script></button>
+                        <button type="button" class="btn btn-secondary action-cancel" title="Cancel" onclick="$('#item-modal').hide()"></button>
+                        <button type="submit" class="btn btn-primary action-save" title="Save Changes"></button>
                     </div>
                 </div>
             </form>
@@ -309,7 +311,27 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         <ul id="menu-items-list"></ul>
     </div>
     <div id="widget-context-menu" class="context-menu" style="display: none;">
-        <div class="context-item" id="toggle-close-btn"><script>document.write(ICONS.logout);</script> Toggle Close Button</div>
+        <div class="context-item" id="toggle-close-btn"><span class="icon-wrap"></span> Toggle Close Button</div>
+    </div>
+
+    <!-- CUSTOM ALERT MODAL -->
+    <div id="custom-modal" class="modal-overlay" style="display: none; z-index: 20000;">
+        <div class="windows-style">
+            <div class="modal-header">
+                <span id="modal-title">Notification</span>
+                <button class="close-btn" onclick="$('#custom-modal').hide()"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message"></p>
+                <div class="modal-actions" id="modal-actions-default">
+                    <button class="btn" onclick="$('#custom-modal').hide()">OK</button>
+                </div>
+                <div class="modal-actions" id="modal-actions-confirm" style="display:none; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="$('#custom-modal').hide()">Cancel</button>
+                    <button class="btn btn-primary" id="btn-confirm-yes">Confirm</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="assets/js/widgets.js"></script>
@@ -323,25 +345,25 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 e.preventDefault();
             });
 
-            loadDashboard();
-            loadRoles(1);
-            loadTransactions(1);
-            loadItems(1);
-            loadAccounts(1);
+            window.loadDashboard();
+            window.loadRoles(1);
+            window.loadTransactions(1);
+            window.loadItems(1);
+            window.loadAccounts(1);
 
             // Sync room list in navbar
             if (window.updateRoomLists) updateRoomLists();
 
             // Auto refresh logs & dashboard
             setInterval(() => {
-                loadTransactions(1);
-                loadDashboard();
+                window.loadTransactions(1);
+                window.loadDashboard();
             }, 30000);
         });
 
         let currentDashUser = '';
 
-        function loadDashboard() {
+        window.loadDashboard = function() {
             $.get(`backend/admin_api.php?action=get_dashboard_stats&username=${currentDashUser}`, function(res) {
                 if(res.status === 'success') {
                     $('#stat-users').text(res.metrics.users);
@@ -381,27 +403,27 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             });
         }
 
-        function resetDashboard() {
+        window.resetDashboard = function() {
             currentDashUser = '';
             $('#dash-user-search').val('');
-            loadDashboard();
+            window.loadDashboard();
         }
 
         $('#dash-user-search').on('keypress', function(e) {
             if(e.which == 13) {
                 currentDashUser = $(this).val().trim();
-                loadDashboard();
+                window.loadDashboard();
             }
         });
 
-        function openCreateAccModal() {
+        window.openCreateAccModal = function() {
             $('#user-modal-title').text('Create New Account');
             $('#edit-user-id').val('');
             $('#user-form')[0].reset();
             $('#user-modal').show();
         }
 
-        function openEditById(id) {
+        window.openEditById = function(id) {
             let user = usersData[id];
             if (user) openEditAccModal(user);
         }
@@ -428,7 +450,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 success: function(res) {
                     if (res.status === 'success') {
                         $('#user-modal').hide();
-                        loadAccounts(1); loadRoles(1); loadDashboard();
+                        window.loadAccounts(1); window.loadRoles(1); window.loadDashboard();
                     } else {
                         window.showCustomModal('Error', res.message);
                     }
@@ -439,7 +461,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
         let usersData = {}; // Store user objects globally for safer access
 
-        function loadRoles(page) {
+        window.loadRoles = function(page) {
             let q = $('#role-search').val();
             let limit = $('#role-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_users&page=${page}&search=${q}&limit=${limit}`, function(res) {
@@ -456,19 +478,19 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             <td>${premBadge}</td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn ${isPrem ? 'btn-danger' : 'btn-success'}" style="padding:4px 8px; font-size:0.7rem;" title="${isPrem ? 'Strip Premium' : 'Grant Premium'}" onclick="givePremium(${u.id}, ${isPrem ? 0 : 30})">${isPrem ? ICONS.toggleOn : ICONS.toggleOff}</button>
+                                    <button class="btn ${isPrem ? 'btn-danger' : 'btn-success'} btn-toggle-premium" style="padding:4px 8px; font-size:0.7rem;" title="${isPrem ? 'Strip Premium' : 'Grant Premium'}" data-id="${u.id}" data-days="${isPrem ? 0 : 30}">${isPrem ? ICONS.toggleOn : ICONS.toggleOff}</button>
                                 </div>
                             </td>
                         </tr>`;
                     });
                     html += '</tbody></table>';
                     $('#role-list-container').html(html);
-                    renderPagination('role', res.pagination, loadRoles);
+                    renderPagination('role', res.pagination, 'loadRoles');
                 }
             });
         }
 
-        function loadAccounts(page) {
+        window.loadAccounts = function(page) {
             let q = $('#acc-search').val();
             let limit = $('#acc-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_users&page=${page}&search=${q}&limit=${limit}`, function(res) {
@@ -483,24 +505,24 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             <td><span style="font-family:password;">••••••</span></td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Account" onclick="openEditById(${u.id})">${ICONS.edit}</button>
-                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" title="Delete Account" onclick="deleteUser(${u.id}, '${safeName}')">${ICONS.trash}</button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Account" onclick="window.openEditById(${u.id})">${ICONS.edit}</button>
+                                    <button class="btn btn-danger btn-delete-user" style="padding:4px 8px; font-size:0.7rem;" title="Delete Account" data-id="${u.id}" data-name="${safeName}">${ICONS.trash}</button>
                                 </div>
                             </td>
                         </tr>`;
                     });
                     html += '</tbody></table>';
                     $('#acc-list-container').html(html);
-                    renderPagination('acc', res.pagination, loadAccounts);
+                    renderPagination('acc', res.pagination, 'loadAccounts');
                 }
             });
         }
 
-        function deleteUser(id, name) {
+        window.deleteUser = function(id, name) {
             window.showConfirmModal('Delete User', `Are you sure you want to delete user "<b>${name}</b>"? This is a permanent removal.`, function() {
                 $.get(`backend/admin_api.php?action=delete_user&id=${id}`, function(res) {
                     if (res.status === 'success') {
-                        loadAccounts(1); loadRoles(1); loadDashboard();
+                        window.loadAccounts(1); window.loadRoles(1); window.loadDashboard();
                     } else {
                         window.showCustomModal('Error', res.message);
                     }
@@ -508,7 +530,13 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             });
         }
 
-        function givePremium(id, days = 30) {
+        $(document).on('click', '.btn-delete-user', function() {
+            let id = $(this).data('id');
+            let name = $(this).data('name');
+            window.deleteUser(id, name);
+        });
+
+        window.givePremium = function(id, days = 30) {
             $.ajax({
                 url: 'backend/admin_api.php?action=update_user_premium',
                 type: 'POST',
@@ -519,13 +547,19 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                         if (window.showCustomModal) window.showCustomModal('Error', res.message);
                         else alert(res.message);
                     }
-                    loadRoles(1);
-                    loadDashboard();
+                    window.loadRoles(1);
+                    window.loadDashboard();
                 }
             });
         }
 
-        function loadTransactions(page) {
+        $(document).on('click', '.btn-toggle-premium', function() {
+            let id = $(this).data('id');
+            let days = $(this).data('days');
+            window.givePremium(id, days);
+        });
+
+        window.loadTransactions = function(page) {
             let limit = $('#trans-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_transactions&page=${page}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
@@ -540,14 +574,14 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     });
                     html += '</tbody></table>';
                     $('#transaction-list-container').html(html);
-                    renderPagination('trans', res.pagination, loadTransactions);
+                    renderPagination('trans', res.pagination, 'loadTransactions');
                 }
             });
         }
 
         let itemsData = {};
 
-        function loadItems(page = 1) {
+        window.loadItems = function(page = 1) {
             let limit = $('#item-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_items&page=${page}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
@@ -567,31 +601,37 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             <td style="color:${activeColor}; font-weight:bold;">${activeText}</td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Item" onclick="openEditItemById(${i.id})">${ICONS.edit}</button>
-                                    <button class="btn" style="padding:4px 8px; font-size:0.7rem; background:#6c757d;" title="${btnText}" onclick="toggleItem(${i.id}, ${i.is_active == 1 ? 0 : 1})">${i.is_active == 1 ? ICONS.eyeOff : ICONS.eye}</button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Item" onclick="window.openEditItemById(${i.id})">${ICONS.edit}</button>
+                                    <button class="btn btn-toggle-item" style="padding:4px 8px; font-size:0.7rem; background:#6c757d;" title="${btnText}" data-id="${i.id}" data-status="${i.is_active == 1 ? 0 : 1}">${i.is_active == 1 ? ICONS.eyeOff : ICONS.eye}</button>
                                 </div>
                             </td>
                         </tr>`;
                     });
                     html += '</tbody></table>';
                     $('#item-list-container').html(html);
-                    renderPagination('item', res.pagination, loadItems);
+                    renderPagination('item', res.pagination, 'loadItems');
                 }
             });
         }
 
-        function toggleItem(id, status) {
-            $.get(`backend/admin_api.php?action=toggle_item_status&id=${id}&status=${status}`, () => loadItems());
+        window.toggleItem = function(id, status) {
+            $.get(`backend/admin_api.php?action=toggle_item_status&id=${id}&status=${status}`, () => window.loadItems());
         }
 
-        function renderPagination(prefix, meta, callback) {
+        $(document).on('click', '.btn-toggle-item', function() {
+            let id = $(this).data('id');
+            let status = $(this).data('status');
+            window.toggleItem(id, status);
+        });
+
+        function renderPagination(prefix, meta, callbackName) {
             let html = '';
             const currentPage = parseInt(meta.current_page);
             const totalPages = parseInt(meta.total_pages);
 
             // 1, 2, 3, 4
             for (let i = 1; i <= Math.min(4, totalPages); i++) {
-                html += `<button class="${currentPage === i ? 'active' : ''}" onclick="${callback.name}(${i})">${i}</button>`;
+                html += `<button class="${currentPage === i ? 'active' : ''}" onclick="window.${callbackName}(${i})">${i}</button>`;
             }
 
             if (totalPages > 5) {
@@ -600,34 +640,34 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
             // Last page
             if (totalPages > 4) {
-                html += `<button class="${currentPage === totalPages ? 'active' : ''}" onclick="${callback.name}(${totalPages})">${totalPages}</button>`;
+                html += `<button class="${currentPage === totalPages ? 'active' : ''}" onclick="window.${callbackName}(${totalPages})">${totalPages}</button>`;
             }
 
             // Search/Jump Field 1 with padding (at least 20px)
             html += `<div style="display:flex; align-items:center; margin-left:40px; gap:5px;">
                 <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Go" style="width:50px; padding:0; height:24px; text-align:center;">
-                <button class="btn btn-secondary" style="padding:0; width:24px; height:24px; font-size:0.6rem;" title="Go" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);">${ICONS.search}</button>
+                <button class="btn btn-secondary" style="padding:0; width:24px; height:24px; font-size:0.6rem;" title="Go" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) window.${callbackName}(p);">${ICONS.search}</button>
             </div>`;
 
             $('#' + prefix + '-pagination').html(html);
 
             // Allow enter key on jump input
-            $(`#${prefix}-jump-page`).on('keypress', function(e) {
+            $(`#${prefix}-jump-page`).off('keypress').on('keypress', function(e) {
                 if(e.which == 13) {
                     let p = $(this).val();
-                    if(p >= 1 && p <= totalPages) callback(p);
+                    if(p >= 1 && p <= totalPages) window[callbackName](p);
                 }
             });
         }
 
-        function openItemModal() {
+        window.openItemModal = function() {
             $('#item-modal-title').text('Add New Catalog Item');
             $('#item-id').val('');
             $('#item-form')[0].reset();
             $('#item-modal').show();
         }
 
-        function openEditItemById(id) {
+        window.openEditItemById = function(id) {
             let item = itemsData[id];
             if (item) editItem(item);
         }
@@ -655,7 +695,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             $.ajax({
                 url: 'backend/admin_api.php?action=' + (id ? 'update_item' : 'create_item'),
                 type: 'POST', data: JSON.stringify(data), contentType: 'application/json',
-                success: function() { $('#item-modal').hide(); loadItems(); }
+                success: function() { $('#item-modal').hide(); window.loadItems(); }
             });
         });
     </script>
