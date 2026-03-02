@@ -95,6 +95,14 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
         </div>
     </div>
 
+    <!-- ACTIVITY SCOPE MODAL (FLOATING CONTEXT MENU STYLE) -->
+    <div id="activity-scope-modal" class="windows-style floating-submenu" style="display: none; position: absolute; z-index: 9999;">
+        <div class="modal-body" style="padding: 5px;">
+            <div class="modal-list-item" onclick="window.selectActivityScope('all')"><i class="fas fa-globe"></i> All Room (Account)</div>
+            <div class="modal-list-item" onclick="window.selectActivityScope('room')"><i class="fas fa-door-open"></i> This Room Only</div>
+        </div>
+    </div>
+
     <!-- CUSTOM ALERT MODAL -->
     <div id="custom-modal" class="modal-overlay" style="display: none;">
         <div class="windows-style">
@@ -192,6 +200,8 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
             <div class="context-item ai-feature" id="menu-sort-by" style="display:none;"><i class="fas fa-sort"></i> Sort by</div>
 
             <div class="context-item ai-feature" id="menu-toggle-search" style="display:none;"><i class="fas fa-search"></i> Toggle Search Autocomplete</div>
+
+            <div class="context-item" id="menu-show-data" style="display:none;"><i class="fas fa-chart-line"></i> Show Data</div>
 
             <div class="context-item" id="menu-full-screen" style="display:none; justify-content: space-between; align-items: center;">
                 <span><i class="fas fa-expand"></i> Full screen</span>
