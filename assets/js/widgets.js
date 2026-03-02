@@ -1183,13 +1183,45 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="height:100%; display:flex; flex-direction:column; background:#f5f5f5;">
+                    <style>
+                        .cm-toolbar-btn {
+                            height: 32px;
+                            padding: 0 10px;
+                            background: #fff;
+                            border: 1px solid #ccc;
+                            border-radius: 3px;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 0.8rem;
+                            transition: all 0.2s;
+                        }
+                        .cm-toolbar-btn:hover { background: #f0f0f0; }
+                        .cm-toolbar-btn.active { background: #e3f2fd; border-color: #2196f3; color: #2196f3; }
+                        .cm-save-btn {
+                            height: 32px;
+                            padding: 0 15px;
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            border-radius: 3px;
+                            cursor: pointer;
+                            margin-left: auto;
+                            font-weight: 500;
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                        }
+                    </style>
                     <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center; flex-wrap: wrap;">
-                        <button id="${wId}-add-rect" class="btn btn-sm" title="Add Rectangle"><i class="fas fa-square"></i></button>
-                        <button id="${wId}-add-circle" class="btn btn-sm" title="Add Circle"><i class="fas fa-circle"></i></button>
-                        <button id="${wId}-add-text" class="btn btn-sm" title="Add Text"><i class="fas fa-font"></i></button>
-                        <button id="${wId}-delete" class="btn btn-sm" title="Delete Selected"><i class="fas fa-eraser"></i></button>
-                        <button id="${wId}-clear" class="btn btn-sm" title="Clear All"><i class="fas fa-trash-alt"></i></button>
-                        <button id="${wId}-save-btn" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer; margin-left:auto;"><i class="fas fa-save"></i> Save</button>
+                        <button id="${wId}-add-rect" class="cm-toolbar-btn" title="Add Rectangle"><i class="fas fa-square"></i></button>
+                        <button id="${wId}-add-circle" class="cm-toolbar-btn" title="Add Circle"><i class="fas fa-circle"></i></button>
+                        <button id="${wId}-add-text" class="cm-toolbar-btn" title="Add Text"><i class="fas fa-font"></i></button>
+                        <button id="${wId}-add-line" class="cm-toolbar-btn" title="Draw Line"><i class="fas fa-project-diagram"></i></button>
+                        <button id="${wId}-delete" class="cm-toolbar-btn" title="Delete Selected"><i class="fas fa-eraser"></i></button>
+                        <button id="${wId}-clear" class="cm-toolbar-btn" title="Clear All"><i class="fas fa-trash-alt"></i></button>
+                        <button id="${wId}-save-btn" class="cm-save-btn"><i class="fas fa-save"></i> Save</button>
                     </div>
                     <div id="${wId}-canvas-area" style="flex:1; position:relative; overflow:hidden; background:white;">
                         <canvas id="${wId}-fabric-canvas"></canvas>
@@ -1243,6 +1275,52 @@ const WidgetRegistry = {
                 });
                 canvas.add(text);
                 canvas.setActiveObject(text);
+            });
+
+            let isDrawingLine = false;
+            let line, pointer;
+
+            $(`#${wId}-add-line`).click(function() {
+                isDrawingLine = !isDrawingLine;
+                $(this).toggleClass('active', isDrawingLine);
+                if (isDrawingLine) {
+                    canvas.selection = false;
+                    canvas.defaultCursor = 'crosshair';
+                    canvas.forEachObject(obj => obj.selectable = false);
+                } else {
+                    canvas.selection = true;
+                    canvas.defaultCursor = 'default';
+                    canvas.forEachObject(obj => obj.selectable = true);
+                }
+            });
+
+            canvas.on('mouse:down', function(o) {
+                if (!isDrawingLine) return;
+                let pointer = canvas.getPointer(o.e);
+                let points = [pointer.x, pointer.y, pointer.x, pointer.y];
+                line = new fabric.Line(points, {
+                    strokeWidth: 2,
+                    fill: '#999',
+                    stroke: '#999',
+                    originX: 'center',
+                    originY: 'center'
+                });
+                canvas.add(line);
+            });
+
+            canvas.on('mouse:move', function(o) {
+                if (!isDrawingLine || !line) return;
+                let pointer = canvas.getPointer(o.e);
+                line.set({ x2: pointer.x, y2: pointer.y });
+                canvas.renderAll();
+            });
+
+            canvas.on('mouse:up', function(o) {
+                if (!isDrawingLine) return;
+                line.setCoords();
+                line = null;
+                // Keep drawing mode active until button clicked again?
+                // Or disable after one line? Let's keep it active for better UX like mindmap tools.
             });
 
             $(`#${wId}-delete`).click(() => {
@@ -1317,10 +1395,40 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="display:flex; flex-direction:column; height:100%; background:white;">
+                    <style>
+                        .wb-toolbar-btn {
+                            height: 32px;
+                            padding: 0 10px;
+                            background: #fff;
+                            border: 1px solid #ccc;
+                            border-radius: 3px;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 0.8rem;
+                            transition: all 0.2s;
+                        }
+                        .wb-toolbar-btn:hover { background: #f0f0f0; }
+                        .wb-save-btn {
+                            height: 32px;
+                            padding: 0 15px;
+                            background: #28a745;
+                            color: white;
+                            border: none;
+                            border-radius: 3px;
+                            cursor: pointer;
+                            margin-left: auto;
+                            font-weight: 500;
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                        }
+                    </style>
                     <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center;">
-                        <input type="color" id="${wId}-color" value="#0000ff" style="width:30px; height:30px; border:none; padding:0; background:transparent; cursor:pointer;">
-                        <button id="${wId}-clear-wb" class="btn btn-sm" title="Clear Canvas"><i class="fas fa-eraser"></i></button>
-                        <button id="${wId}-save-upload-wb" class="btn btn-primary btn-sm" style="margin-left:auto;"><i class="fas fa-file-upload"></i> Save & Upload</button>
+                        <input type="color" id="${wId}-color" value="#0000ff" style="width:30px; height:32px; border:1px solid #ccc; padding:0; background:white; cursor:pointer; border-radius:3px;">
+                        <button id="${wId}-clear-wb" class="wb-toolbar-btn" title="Clear Canvas"><i class="fas fa-eraser"></i></button>
+                        <button id="${wId}-save-upload-wb" class="wb-save-btn"><i class="fas fa-file-upload"></i> Save & Upload</button>
                     </div>
                     <canvas id="${wId}-wb" style="flex:1; cursor:crosshair; background:white;"></canvas>
                 </div>
