@@ -92,6 +92,8 @@ $(document).ready(function() {
                 if ($el.data('timerMode')) stateData.timerMode = $el.data('timerMode');
                 if ($el.data('timerTargetMins')) stateData.timerTargetMins = $el.data('timerTargetMins');
                 if ($el.data('flashcards')) stateData.flashcards = $el.data('flashcards');
+                if ($el.data('fcTitle')) stateData.fcTitle = $el.data('fcTitle');
+                if ($el.data('fcDesc')) stateData.fcDesc = $el.data('fcDesc');
                 if ($el.data('mapperFabricState')) stateData.mapperFabricState = $el.data('mapperFabricState');
                 if ($el.data('whiteboardPaths')) stateData.whiteboardPaths = $el.data('whiteboardPaths');
                 if ($el.data('isCalendarExpanded')) stateData.isCalendarExpanded = $el.data('isCalendarExpanded');
