@@ -144,7 +144,7 @@ const WidgetRegistry = {
                             <span class="task-text">${safeText}</span>
                             <small style="color:#888;" class="task-time-wrap">${safeTime ? '@ <span class="task-time">'+safeTime+'</span>' : '<span class="task-time" style="display:none;"></span>'}</small>
                         </span>
-                        <i class="fas fa-times delete-task" style="cursor:pointer; color:#ccc;"></i>
+                        <i class="fas fa-trash-alt delete-task" style="cursor:pointer; color:#ccc; font-size: 0.8rem;"></i>
                     </li>
                 `);
 
