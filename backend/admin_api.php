@@ -103,7 +103,14 @@ switch ($action) {
         $stmt->bind_param("si", $expiry, $uId);
 
         if ($stmt->execute()) {
-            echo json_encode(['status' => 'success', 'message' => 'Premium status updated']);
+            // Also log this transaction
+            $username_res = $conn->query("SELECT username FROM users WHERE id = $uId")->fetch_assoc();
+            $target_user = $username_res['username'] ?? 'Unknown';
+            $ip = $_SERVER['REMOTE_ADDR'];
+            $detail = "Admin updated premium status for user $target_user until " . ($expiry ?? 'removed');
+            $conn->query("INSERT INTO transactions (user_id, jenis_aktivitas, detail_aktivitas, ip_address) VALUES ({$_SESSION['user_id']}, 'Update Premium', '$detail', '$ip')");
+
+            echo json_encode(['status' => 'success', 'message' => 'Premium status updated', 'expiry' => $expiry]);
         } else {
             echo json_encode(['status' => 'error', 'message' => $conn->error]);
         }

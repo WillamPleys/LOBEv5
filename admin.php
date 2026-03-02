@@ -20,21 +20,21 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
-        body { margin: 0; overflow: auto; background-color: #f0f2f5; min-height: 100vh; }
+        body { margin: 0; overflow-y: auto; background-color: #f0f2f5; min-height: 100vh; padding-top: 60px; }
 
         /* Admin Overlay Layer */
         #admin-layer {
-            position: absolute; top: 60px; left: 0; right: 0;
+            position: relative;
             padding: 20px; display: grid;
             grid-template-columns: 400px 1fr 1fr;
-            grid-template-rows: repeat(2, minmax(400px, auto));
+            grid-template-rows: repeat(2, minmax(450px, auto));
             gap: 20px; pointer-events: none; z-index: 100;
-            padding-bottom: 60px;
+            padding-bottom: 80px;
         }
 
         .admin-window {
             background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;
+            display: flex; flex-direction: column; border: 1px solid #ddd;
             pointer-events: all; height: 100%;
         }
 
@@ -106,41 +106,42 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             isLoggedIn: true,
             username: APP_USERNAME,
             activeRoomId: <?php echo $activeRoomId; ?>,
-            activeRoomName: "<?php echo htmlspecialchars($activeRoomName); ?>"
+            activeRoomName: "Admin Panel"
         };
+        window.IS_ADMIN_PAGE = true;
     </script>
 </head>
 <body>
 
-    <div id="workspace-screen" class="screen" style="display: block;">
-        <div id="canvas" class="grid-background active">
-
-            <nav id="up-nav-bar" class="navbar">
-                <div class="nav-logo" style="display:flex; align-items:center;">
-                    LOBE <span id="admin-badge" class="badge-admin-global">ADMIN</span>
+    <nav id="up-nav-bar" class="navbar" style="position: fixed;">
+        <div class="nav-logo" style="display:flex; align-items:center;">
+            LOBE <span id="admin-badge" class="badge-admin-global">ADMIN</span>
+        </div>
+        <div class="nav-center">
+            <div class="custom-select-wrapper">
+                <div class="custom-select-trigger">
+                    <span id="current-room-name">Admin Panel</span>
+                    <i class="fas fa-chevron-down"></i>
                 </div>
-                <div class="nav-center">
-                    <div class="custom-select-wrapper">
-                        <div class="custom-select-trigger">
-                            <span id="current-room-name">Admin Panel</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                        <div class="custom-options">
-                            <span class="custom-option" data-value="new">+ Create New Room</span>
-                            <!-- Rooms will be loaded here via updateRoomLists -->
-                        </div>
-                    </div>
+                <div class="custom-options">
+                    <span class="custom-option" data-value="new">+ Create New Room</span>
+                    <!-- Rooms will be loaded here via updateRoomLists -->
                 </div>
-                <div class="nav-profile">
-                    <i class="fas fa-user-shield" style="font-size: 1.2rem; margin-right: 5px; color:#007bff;"></i>
-                    <span id="display-user" style="font-weight: 500; margin-right: 15px;"><?php echo $username; ?></span>
-                    <button id="btn-logout" style="padding: 5px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #ddd; background: #fff; cursor: pointer;">Logout</button>
-                </div>
-            </nav>
+            </div>
+        </div>
+        <div class="nav-profile">
+            <i class="fas fa-user-shield" style="font-size: 1.2rem; margin-right: 5px; color:#007bff;"></i>
+            <span id="display-user" style="font-weight: 500; margin-right: 15px;"><?php echo $username; ?></span>
+            <button id="btn-logout" style="padding: 5px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #ddd; background: #fff; cursor: pointer;">Logout</button>
+        </div>
+    </nav>
 
-            <!-- Admin Layer -->
-            <div id="admin-layer">
+    <div id="workspace-screen" class="screen" style="display: block; position: fixed; z-index: -1;">
+        <div id="canvas" class="grid-background active"></div>
+    </div>
 
+    <div style="position: relative; z-index: 10;">
+        <div id="admin-layer">
                 <!-- Dashboard & Stats -->
                 <div class="admin-window" style="grid-row: 1 / 3;">
                     <div class="window-header">
@@ -215,8 +216,6 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 </div>
 
             </div>
-
-        </div>
     </div>
 
     <!-- MODAL BOXES -->

@@ -13,7 +13,7 @@ if (isset($_SESSION['user_id'])) {
     $stmt->execute();
     $res = $stmt->get_result();
     if ($row = $res->fetch_assoc()) {
-        if ($row['premium_until'] && strtotime($row['premium_until']) > time()) {
+        if ($row['premium_until'] && (strtotime($row['premium_until']) > time())) {
             $isPremium = true;
         }
     }
