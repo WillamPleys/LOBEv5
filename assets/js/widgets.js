@@ -525,6 +525,7 @@ const WidgetRegistry = {
                             <i class="fas ${icon}" style="margin-right:10px; color:#555; width:20px; text-align:center;"></i>
                             <span class="file-name-text" style="flex:1; overflow:hidden; text-overflow:ellipsis;">${safeName}</span>
                             <i class="fas fa-pencil-alt rename-icon" style="margin-left:10px; color:#ccc; font-size:0.8rem;" title="Rename File"></i>
+                            <i class="fas fa-trash-alt delete-file-icon" style="margin-left:10px; color:#ccc; font-size:0.8rem;" title="Delete File"></i>
                         </div>
                     `);
 
@@ -611,6 +612,34 @@ const WidgetRegistry = {
 
                     item.find('.rename-icon').on('click', startRename);
                     item.find('.file-name-text').on('dblclick', startRename);
+
+                    // DELETE LOGIC
+                    item.find('.delete-file-icon').on('click', function(e) {
+                        e.stopPropagation();
+                        window.showConfirmModal('Delete File', `Are you sure you want to delete "<b>${safeName}</b>"? This will permanently remove it from the server.`, () => {
+                            $.ajax({
+                                url: 'backend/delete_file.php',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ file_path: f.file_path }),
+                                success: function(res) {
+                                    if (res.status === 'success') {
+                                        // Remove from local list
+                                        files = files.filter(file => file.id !== f.id);
+                                        $widget.data('outputFiles', files);
+                                        renderFiles();
+                                        if (window.saveWorkspaceState) window.saveWorkspaceState();
+                                        window.showCustomModal('Success', 'File deleted successfully.');
+                                    } else {
+                                        window.showCustomModal('Error', res.message);
+                                    }
+                                },
+                                error: function() {
+                                    window.showCustomModal('Error', 'Failed to connect to server for deletion.');
+                                }
+                            });
+                        });
+                    });
 
                     $area.append(item);
                 });
@@ -1154,13 +1183,16 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="height:100%; display:flex; flex-direction:column; background:#f5f5f5;">
-                    <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center;">
-                        <button id="${wId}-add-node" class="btn btn-sm" title="Add Node"><i class="fas fa-plus-circle"></i></button>
+                    <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center; flex-wrap: wrap;">
+                        <button id="${wId}-add-rect" class="btn btn-sm" title="Add Rectangle"><i class="fas fa-square"></i></button>
+                        <button id="${wId}-add-circle" class="btn btn-sm" title="Add Circle"><i class="fas fa-circle"></i></button>
+                        <button id="${wId}-add-text" class="btn btn-sm" title="Add Text"><i class="fas fa-font"></i></button>
+                        <button id="${wId}-delete" class="btn btn-sm" title="Delete Selected"><i class="fas fa-eraser"></i></button>
                         <button id="${wId}-clear" class="btn btn-sm" title="Clear All"><i class="fas fa-trash-alt"></i></button>
-                        <button id="${wId}-save-upload" class="btn btn-primary btn-sm" style="margin-left:auto;"><i class="fas fa-file-upload"></i> Save & Upload</button>
+                        <button id="${wId}-save-btn" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer; margin-left:auto;"><i class="fas fa-save"></i> Save</button>
                     </div>
-                    <div id="${wId}-canvas-area" style="flex:1; position:relative; overflow:hidden; background:white; cursor:crosshair;">
-                        <canvas id="${wId}-link-canvas" style="position:absolute; top:0; left:0; pointer-events:none;"></canvas>
+                    <div id="${wId}-canvas-area" style="flex:1; position:relative; overflow:hidden; background:white;">
+                        <canvas id="${wId}-fabric-canvas"></canvas>
                     </div>
                 </div>
             `;
@@ -1168,116 +1200,87 @@ const WidgetRegistry = {
         init: function(wId) {
             const $widget = $(`#${wId}`);
             const $area = $(`#${wId}-canvas-area`);
-            const canvas = document.getElementById(`${wId}-link-canvas`);
-            const ctx = canvas.getContext('2d');
+            const canvasElement = document.getElementById(`${wId}-fabric-canvas`);
 
-            let nodes = $widget.data('mapperNodes') || [];
-            let connections = $widget.data('mapperLinks') || [];
-            let draggingNode = null;
+            // Initialize Fabric Canvas
+            const canvas = new fabric.Canvas(canvasElement, {
+                width: $area.width(),
+                height: $area.height(),
+                backgroundColor: '#ffffff'
+            });
+
+            // Restore state if exists
+            let savedState = $widget.data('mapperFabricState');
+            if (savedState) {
+                canvas.loadFromJSON(savedState, canvas.renderAll.bind(canvas));
+            }
 
             function updateCanvasSize() {
-                canvas.width = $area.width();
-                canvas.height = $area.height();
-                drawLinks();
+                canvas.setWidth($area.width());
+                canvas.setHeight($area.height());
+                canvas.renderAll();
             }
 
-            function drawLinks() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.strokeStyle = '#999';
-                ctx.lineWidth = 2;
-                connections.forEach(conn => {
-                    let from = nodes.find(n => n.id === conn.from);
-                    let to = nodes.find(n => n.id === conn.to);
-                    if (from && to) {
-                        ctx.beginPath();
-                        ctx.moveTo(from.x + 50, from.y + 25);
-                        ctx.lineTo(to.x + 50, to.y + 25);
-                        ctx.stroke();
-                    }
+            $(`#${wId}-add-rect`).click(() => {
+                const rect = new fabric.Rect({
+                    left: 50, top: 50, fill: '#007bff', width: 100, height: 60, rx: 5, ry: 5
                 });
-            }
+                canvas.add(rect);
+                canvas.setActiveObject(rect);
+            });
 
-            function createNodeEl(node) {
-                let el = $(`
-                    <div class="mapper-node" id="${wId}-node-${node.id}" style="position:absolute; left:${node.x}px; top:${node.y}px; width:100px; height:50px; background:#fff; border:2px solid #007bff; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:move; z-index:10; font-size:0.8rem; text-align:center; padding:5px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-                        <span contenteditable="true" style="outline:none; width:100%;">${escapeHtml(node.text)}</span>
-                    </div>
-                `);
-
-                el.draggable({
-                    containment: "parent",
-                    drag: function(e, ui) {
-                        node.x = ui.position.left;
-                        node.y = ui.position.top;
-                        drawLinks();
-                    },
-                    stop: function() {
-                        $widget.data('mapperNodes', nodes);
-                        if (window.saveWorkspaceState) window.saveWorkspaceState();
-                    }
+            $(`#${wId}-add-circle`).click(() => {
+                const circle = new fabric.Circle({
+                    left: 100, top: 100, fill: '#28a745', radius: 40
                 });
+                canvas.add(circle);
+                canvas.setActiveObject(circle);
+            });
 
-                el.find('span').on('blur', function() {
-                    node.text = $(this).text();
-                    $widget.data('mapperNodes', nodes);
-                    if (window.saveWorkspaceState) window.saveWorkspaceState();
+            $(`#${wId}-add-text`).click(() => {
+                const text = new fabric.IText('Double click to edit', {
+                    left: 150, top: 150, fontSize: 20
                 });
+                canvas.add(text);
+                canvas.setActiveObject(text);
+            });
 
-                // Simple linking: click one then another
-                el.on('click', function(e) {
-                    if (e.shiftKey) {
-                        // Delete node
-                        nodes = nodes.filter(n => n.id !== node.id);
-                        connections = connections.filter(c => c.from !== node.id && c.to !== node.id);
-                        el.remove();
-                        drawLinks();
-                        saveData();
-                        return;
-                    }
-                    if (window._mapperPendingSource && window._mapperPendingSource.wId === wId) {
-                        if (window._mapperPendingSource.nodeId !== node.id) {
-                            connections.push({from: window._mapperPendingSource.nodeId, to: node.id});
-                            drawLinks();
-                            saveData();
-                        }
-                        window._mapperPendingSource = null;
-                        $('.mapper-node').css('border-color', '#007bff');
-                    } else {
-                        window._mapperPendingSource = { wId: wId, nodeId: node.id };
-                        el.css('border-color', '#28a745');
-                    }
-                });
-
-                $area.append(el);
-            }
-
-            function saveData() {
-                $widget.data('mapperNodes', nodes);
-                $widget.data('mapperLinks', connections);
-                if (window.saveWorkspaceState) window.saveWorkspaceState();
-            }
-
-            $(`#${wId}-add-node`).click(() => {
-                let node = { id: Date.now(), x: 50, y: 50, text: 'New Concept' };
-                nodes.push(node);
-                createNodeEl(node);
-                saveData();
+            $(`#${wId}-delete`).click(() => {
+                const activeObjects = canvas.getActiveObjects();
+                canvas.discardActiveObject();
+                if (activeObjects.length) {
+                    canvas.remove(...activeObjects);
+                }
             });
 
             $(`#${wId}-clear`).click(() => {
-                nodes = [];
-                connections = [];
-                $area.find('.mapper-node').remove();
-                drawLinks();
-                saveData();
+                window.showConfirmModal('Clear Canvas', 'Are you sure you want to clear the entire concept map?', () => {
+                    canvas.clear();
+                    canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+                });
             });
 
-            $(`#${wId}-save-upload`).click(() => {
-                window.trackActivity('export_concept_map', 'PNG Export');
-                // Convert nodes + links to image
-                // For simplicity, we capture the $area div
-                html2canvas($area[0], { useCORS: true, backgroundColor: '#ffffff' }).then(canvasCapture => {
-                    canvasCapture.toBlob(blob => {
+            $(`#${wId}-save-btn`).click(() => {
+                // 1. Save JSON state to persistent data
+                const jsonState = JSON.stringify(canvas.toJSON());
+                $widget.data('mapperFabricState', jsonState);
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+
+                // 2. Export as PNG and upload
+                window.trackActivity('export_concept_map', 'Fabric.js Export');
+
+                // Ensure everything is deselected for clean export
+                canvas.discardActiveObject().renderAll();
+
+                const dataURL = canvas.toDataURL({
+                    format: 'png',
+                    quality: 1
+                });
+
+                // Convert dataURL to blob
+                fetch(dataURL)
+                    .then(res => res.blob())
+                    .then(blob => {
                         let file = new File([blob], "ConceptMap_" + Date.now() + ".png", {type: "image/png"});
                         let formData = new FormData();
                         formData.append('file', file);
@@ -1291,14 +1294,20 @@ const WidgetRegistry = {
                             }
                         });
                     });
-                });
             });
 
-            setTimeout(() => {
-                updateCanvasSize();
-                nodes.forEach(n => createNodeEl(n));
-            }, 200);
+            // Auto-save on object changes to ensure no loss on Ctrl+R
+            const autoSave = () => {
+                const jsonState = JSON.stringify(canvas.toJSON());
+                $widget.data('mapperFabricState', jsonState);
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+            };
 
+            canvas.on('object:modified', autoSave);
+            canvas.on('object:added', autoSave);
+            canvas.on('object:removed', autoSave);
+
+            setTimeout(updateCanvasSize, 200);
             $widget.on('resize', updateCanvasSize);
         }
     },

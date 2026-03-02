@@ -25,6 +25,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script> <!-- Mammoth.js for .docx -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> <!-- html2canvas for exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script> <!-- Fabric.js for Concept Mapper -->
 
     <script>
         const APP_IS_LOGGED_IN = <?php echo $isLoggedIn; ?>;
