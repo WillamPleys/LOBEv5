@@ -810,6 +810,7 @@ $(document).ready(function() {
 
     // Global Context Menu
     $(document).on('contextmenu', function(e) {
+        if (window.IS_ADMIN_PAGE) return;
         e.preventDefault();
         if (workspaceScreen.is(':visible')) {
              const menu = $('#context-menu');
