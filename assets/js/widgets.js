@@ -362,41 +362,38 @@ const WidgetRegistry = {
                             display: none;
                         }
                     </style>
-                    <div id="${wId}-play-area" style="flex:1; display:flex; flex-direction:column; padding:15px;">
-                        <div id="${wId}-set-info" style="margin-bottom:10px;">
+                    <div id="${wId}-play-area" style="height:100%; display:flex; flex-direction:column; padding:15px; box-sizing:border-box;">
+                        <div id="${wId}-set-info" style="margin-bottom:10px; flex-shrink:0;">
                             <h2 id="${wId}-display-title" style="margin:0; font-size:1.2rem; font-weight:900;">Flashcard Set</h2>
                             <p id="${wId}-display-desc" style="margin:0; font-size:0.8rem; color:#666;">Practice your knowledge here.</p>
                         </div>
-                        <div class="card-area" style="flex:1; perspective:1000px; cursor:pointer; position:relative; margin-bottom:15px;">
+                        <div class="card-area" style="flex:1; perspective:1000px; cursor:pointer; position:relative; margin-bottom:15px; min-height:0;">
                             <div class="card-inner" style="width:100%; height:100%; position:relative; text-align:center; transition:transform 0.6s; transform-style:preserve-3d;">
-                                <div class="card-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; font-weight:bold; font-size:1.4rem; background:white; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow:hidden;">
+                                <div class="card-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; font-weight:bold; font-size:1.4rem; background:white; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow:hidden; box-sizing:border-box;">
                                     <img class="card-img" style="max-height:60%; max-width:100%; object-fit:contain; margin-bottom:10px; display:none;">
                                     <span class="card-text">Question?</span>
                                 </div>
-                                <div class="card-back" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; padding:20px; color:#007bff; font-weight:bold; font-size:1.4rem; background:#f0f7ff; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">Answer!</div>
+                                <div class="card-back" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; padding:20px; color:#007bff; font-weight:bold; font-size:1.4rem; background:#f0f7ff; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing:border-box;">Answer!</div>
                             </div>
                         </div>
-                        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+                        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-shrink:0;">
                             <button id="${wId}-prev" class="btn btn-outline-primary" style="flex:1; border-radius:8px;"><i class="fas fa-chevron-left"></i> Prev</button>
                             <div style="flex:1; text-align:center; font-size:0.85rem; color:#666; font-weight:500;"><span id="${wId}-index-display">1</span> / <span id="${wId}-total-display">1</span></div>
                             <button id="${wId}-next" class="btn btn-outline-primary" style="flex:1; border-radius:8px;">Next <i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
 
-                    <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:15px; box-sizing:border-box; z-index:5;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                            <div>
-                                <h3 style="margin:0; font-size:1.1rem; color:#333;">Flashcard Creator</h3>
-                                <small style="color:#888;">Configure your set like a Google Form.</small>
-                            </div>
-                            <button id="${wId}-save-settings" class="btn btn-success" style="padding:5px 15px; font-weight:bold;"><i class="fas fa-save"></i> Save</button>
+                    <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:15px; box-sizing:border-box; z-index:5; overflow:hidden;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px; flex-shrink:0;">
+                            <h3 style="margin:0; font-size:1.1rem; color:#333;">Flashcard Creator</h3>
+                            <button id="${wId}-save-settings" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:500; width: auto; flex-shrink:0;"><i class="fas fa-save"></i> Save</button>
                         </div>
-                        <div style="margin-bottom:20px; padding:10px; border:1px solid #eee; border-radius:8px; border-top: 8px solid #673ab7;">
+                        <div style="margin-bottom:20px; padding:10px; border:1px solid #eee; border-radius:8px; border-top: 8px solid #673ab7; flex-shrink:0;">
                             <input type="text" id="${wId}-set-title" class="fc-input" placeholder="Set Title" style="font-size:1.5rem; border-bottom:1px solid #eee;" value="">
                             <input type="text" id="${wId}-set-desc" class="fc-input" placeholder="Set Description" style="font-size:0.9rem; border-bottom:none;" value="">
                         </div>
-                        <div id="${wId}-editor-list" style="flex:1; overflow-y:auto; margin-bottom:10px; padding-right:5px;"></div>
-                        <button id="${wId}-add-card" class="btn btn-primary" style="width:100%; border-radius:8px; padding:8px;"><i class="fas fa-plus"></i> Add Question</button>
+                        <div id="${wId}-editor-list" style="flex: 1; overflow-y: auto; margin-bottom: 10px; padding-right: 5px; min-height: 0;"></div>
+                        <button id="${wId}-add-card" style="width:100%; border-radius:8px; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; font-weight:500; flex-shrink:0;"><i class="fas fa-plus"></i> Add Question</button>
                     </div>
                     <input type="file" id="${wId}-fc-img-upload" style="display:none;" accept="image/*">
                 </div>
@@ -532,7 +529,7 @@ const WidgetRegistry = {
                     $settingsArea.fadeOut(300);
                 } else {
                     renderEditor();
-                    $settingsArea.fadeIn(300);
+                    $settingsArea.css('display', 'flex').hide().fadeIn(300);
                 }
             });
 
@@ -577,7 +574,7 @@ const WidgetRegistry = {
             if (cards.length === 0) {
                 setTimeout(() => {
                     renderEditor();
-                    $settingsArea.show();
+                    $settingsArea.css('display', 'flex').hide().show();
                 }, 100);
             }
 
