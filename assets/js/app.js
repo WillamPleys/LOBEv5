@@ -668,8 +668,8 @@ $(document).ready(function() {
             let safeTitleForJs = title.replace(/'/g, "\\'");
             let wId = $(this).attr('id');
 
-            // Filter allowed sources: AI Assistant, Rich Text Note, Code Editor, Voice Memo Recorder, Upload File
-            let allowedTypes = ['ai assistant', 'rich text note', 'code editor', 'voice memo recorder', 'upload file'];
+            // Filter allowed sources: AI Assistant, Rich Text Note, Code Editor, Voice Memo Recorder, Upload File, Concept Mapper, Interactive Whiteboard
+            let allowedTypes = ['ai assistant', 'rich text note', 'code editor', 'voice memo recorder', 'upload file', 'concept mapper', 'interactive whiteboard'];
             let isAllowed = allowedTypes.some(type => originalType.includes(type));
 
             if (currentTargetWidget !== wId && isAllowed) {
