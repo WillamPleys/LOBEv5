@@ -42,16 +42,26 @@ if ($action === 'login') {
                 }
             }
 
-            // CHECK IF USER HAS EXISTING ROOMS
-            $room_check = $conn->query("SELECT id, nama_room FROM rooms WHERE user_id = '{$user['id']}' ORDER BY created_at DESC LIMIT 1");
+            // CHECK IF USER HAS EXISTING ROOMS (excluding Admin Panel for redirect logic)
+            $room_check = $conn->query("SELECT id, nama_room FROM rooms WHERE user_id = '{$user['id']}' AND nama_room != 'Admin Panel' ORDER BY created_at DESC LIMIT 1");
             $existing_room = null;
             if ($room_check && $room_check->num_rows > 0) {
                 $existing_room = $room_check->fetch_assoc();
                 $_SESSION['active_room_id'] = $existing_room['id'];
                 $_SESSION['active_room_name'] = $existing_room['nama_room'];
+            } else {
+                // If only Admin Panel exists, set it as active but keep existing_room null to trigger redirect
+                if ($user['role'] === 'admin') {
+                    $admin_room_res = $conn->query("SELECT id, nama_room FROM rooms WHERE user_id = '{$user['id']}' AND nama_room = 'Admin Panel' LIMIT 1");
+                    if ($admin_room_res && $admin_room_res->num_rows > 0) {
+                        $admin_room = $admin_room_res->fetch_assoc();
+                        $_SESSION['active_room_id'] = $admin_room['id'];
+                        $_SESSION['active_room_name'] = $admin_room['nama_room'];
+                    }
+                }
             }
 
-            // Special check for admin redirect
+            // Special check for admin redirect: if admin and no "real" workspace rooms exist
             $redirect_url = null;
             if ($user['role'] === 'admin' && !$existing_room) {
                 $redirect_url = 'admin.php';
