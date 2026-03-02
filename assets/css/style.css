@@ -402,8 +402,24 @@ body, html {
 
 /* Floating Submenu */
 .floating-submenu {
-    width: max-content !important; /* allow width to expand so text doesn't wrap */
-    min-width: 200px;
+    width: auto !important;
+    min-width: 150px;
+}
+
+.floating-submenu .modal-body {
+    padding: 2px !important;
+}
+
+.floating-submenu .modal-list-item {
+    padding: 8px 15px;
+    font-size: 0.85rem;
+}
+
+/* Premium Plans */
+.premium-plan:hover {
+    background: #f8f9fa;
+    border-color: #0078d7 !important;
+    transform: scale(1.02);
 }
 
 /* Modal List Item */
