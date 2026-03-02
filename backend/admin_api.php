@@ -109,26 +109,6 @@ switch ($action) {
         ]);
         break;
 
-    case 'update_user_role':
-        $data = json_decode(file_get_contents("php://input"), true);
-        $uId = (int)$data['id'];
-        $role = $conn->real_escape_string($data['role']);
-
-        // Rule: admin accounts cannot have premium status
-        if ($role === 'admin') {
-            $stmt = $conn->prepare("UPDATE users SET role = ?, premium_until = NULL WHERE id = ?");
-            $stmt->bind_param("si", $role, $uId);
-        } else {
-            $stmt = $conn->prepare("UPDATE users SET role = ? WHERE id = ?");
-            $stmt->bind_param("si", $role, $uId);
-        }
-
-        if ($stmt->execute()) {
-            echo json_encode(['status' => 'success', 'message' => 'Role updated']);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => $conn->error]);
-        }
-        break;
 
     case 'update_user_account':
         $data = json_decode(file_get_contents("php://input"), true);
@@ -160,7 +140,7 @@ switch ($action) {
         $data = json_decode(file_get_contents("php://input"), true);
         $user = $conn->real_escape_string($data['username']);
         $pass = $conn->real_escape_string($data['password']);
-        $role = $conn->real_escape_string($data['role'] ?? 'user');
+        $role = 'user'; // Hardcoded to 'user' for safety
 
         $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
         $stmt->bind_param("sss", $user, $pass, $role);

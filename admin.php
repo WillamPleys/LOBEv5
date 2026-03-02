@@ -16,7 +16,6 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LOBE - Admin Workspace</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
@@ -28,7 +27,6 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             position: relative;
             padding: 20px; display: grid;
             grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: auto auto;
             gap: 20px; pointer-events: none; z-index: 100;
             padding-bottom: 80px;
         }
@@ -36,13 +34,14 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         .admin-window {
             background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; border: 1px solid #ddd;
-            pointer-events: all; height: 100%; min-height: 600px;
+            pointer-events: all; height: 100%; min-height: 500px;
         }
 
         .window-header {
             background: #343a40; color: white; padding: 10px 15px;
             font-weight: bold; display: flex; justify-content: space-between; align-items: center;
         }
+        .window-header svg { vertical-align: middle; margin-right: 8px; }
 
         .window-content { flex: 1; padding: 15px; overflow-y: auto; }
 
@@ -99,8 +98,11 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         .window-content::-webkit-scrollbar-track { background: #f1f1f1; }
         .window-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
         .window-content::-webkit-scrollbar-thumb:hover { background: #999; }
+
+        svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     </style>
 
+    <script src="assets/js/icons.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -131,7 +133,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             <div class="custom-select-wrapper">
                 <div class="custom-select-trigger">
                     <span id="current-room-name">Admin Panel</span>
-                    <i class="fas fa-chevron-down"></i>
+                    <script>document.write(ICONS.chevronDown);</script>
                 </div>
                 <div class="custom-options">
                     <span class="custom-option" data-value="new">+ Create New Room</span>
@@ -140,7 +142,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             </div>
         </div>
         <div class="nav-profile">
-            <i class="fas fa-user-shield" style="font-size: 1.2rem; margin-right: 5px; color:#007bff;"></i>
+            <span style="color:#007bff; margin-right:5px;"><script>document.write(ICONS.shield);</script></span>
             <span id="display-user" style="font-weight: 500; margin-right: 15px;"><?php echo $username; ?></span>
             <button id="btn-logout" style="padding: 5px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #ddd; background: #fff; cursor: pointer;">Logout</button>
         </div>
@@ -153,14 +155,14 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
     <div style="position: relative; z-index: 10;">
         <div id="admin-layer">
                 <!-- 1. Dashboard Overview -->
-                <div class="admin-window" style="grid-row: span 2;">
+                <div class="admin-window">
                     <div class="window-header">
-                        <span><i class="fas fa-tachometer-alt"></i> Dashboard Overview</span>
+                        <span><script>document.write(ICONS.dashboard);</script> Dashboard Overview</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
-                            <input type="text" id="dash-user-search" placeholder="Search specific user (or global)...">
-                            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.7rem;" title="Reset Dashboard" onclick="resetDashboard()"><i class="fas fa-undo"></i></button>
+                            <input type="text" id="dash-user-search" placeholder="Search user...">
+                            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.7rem;" title="Reset Dashboard" onclick="resetDashboard()"><script>document.write(ICONS.undo);</script></button>
                         </div>
                         <div id="dash-scope-badge" style="font-size:0.7rem; color:#007bff; margin-bottom:10px; font-weight:bold;">SCOPE: GLOBAL</div>
 
@@ -182,7 +184,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <!-- 2. Role Management -->
                 <div class="admin-window">
                     <div class="window-header">
-                        <span><i class="fas fa-user-tag"></i> Role Management</span>
+                        <span><script>document.write(ICONS.roles);</script> Role Management</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
@@ -201,8 +203,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <!-- 3. History -->
                 <div class="admin-window">
                     <div class="window-header">
-                        <span><i class="fas fa-history"></i> History</span>
-                        <i class="fas fa-sync" style="cursor:pointer; font-size:0.8rem;" onclick="loadTransactions(1)"></i>
+                        <span><script>document.write(ICONS.history);</script> History</span>
+                        <span style="cursor:pointer;" onclick="loadTransactions(1)"><script>document.write(ICONS.sync);</script></span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
@@ -217,10 +219,30 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     </div>
                 </div>
 
+                <!-- 5. Account Management -->
+                <div class="admin-window">
+                    <div class="window-header">
+                        <span><script>document.write(ICONS.accounts);</script> Account Management</span>
+                    </div>
+                    <div class="window-content">
+                        <div class="search-bar">
+                            <input type="text" id="acc-search" placeholder="Search user..." oninput="loadAccounts(1)">
+                            <select id="acc-limit" onchange="loadAccounts(1)">
+                                <option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>
+                            </select>
+                        </div>
+                        <div id="acc-list-container">Loading...</div>
+                        <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="openCreateAccModal()"><script>document.write(ICONS.plus);</script> Create Account</button>
+                    </div>
+                    <div style="padding: 5px; border-top: 1px solid #eee;">
+                         <div class="pagination" id="acc-pagination"></div>
+                    </div>
+                </div>
+
                 <!-- 4. Master Items (Colspan 2) -->
                 <div class="admin-window" style="grid-column: span 2;">
                     <div class="window-header">
-                        <span><i class="fas fa-th-list"></i> Master Items</span>
+                        <span><script>document.write(ICONS.items);</script> Master Items</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
@@ -235,25 +257,6 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     </div>
                 </div>
 
-                <!-- 5. Account Management -->
-                <div class="admin-window">
-                    <div class="window-header">
-                        <span><i class="fas fa-users-cog"></i> Account Management</span>
-                    </div>
-                    <div class="window-content">
-                        <div class="search-bar">
-                            <input type="text" id="acc-search" placeholder="Search user..." oninput="loadAccounts(1)">
-                            <select id="acc-limit" onchange="loadAccounts(1)">
-                                <option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>
-                            </select>
-                        </div>
-                        <div id="acc-list-container">Loading...</div>
-                        <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="openCreateAccModal()"><i class="fas fa-user-plus"></i> Create Account</button>
-                    </div>
-                    <div style="padding: 5px; border-top: 1px solid #eee;">
-                         <div class="pagination" id="acc-pagination"></div>
-                    </div>
-                </div>
 
             </div>
     </div>
@@ -263,23 +266,16 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         <div class="windows-style" style="width: 400px;">
             <div class="modal-header">
                 <span id="user-modal-title">Create Account</span>
-                <button class="close-btn" onclick="$('#user-modal').hide()">&times;</button>
+                <button class="close-btn" onclick="$('#user-modal').hide()"><script>document.write(ICONS.x);</script></button>
             </div>
             <form id="user-form">
                 <div class="modal-body">
                     <input type="hidden" id="edit-user-id">
                     <div class="form-group"><label>Username</label><input type="text" id="edit-username" required></div>
                     <div class="form-group"><label>Password</label><input type="text" id="edit-password" required></div>
-                    <div class="form-group" id="role-group">
-                        <label>Role</label>
-                        <select id="edit-role">
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#user-modal').hide()"><i class="fas fa-times"></i></button>
-                        <button type="submit" class="btn btn-primary" title="Save Changes"><i class="fas fa-check"></i></button>
+                        <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#user-modal').hide()"><script>document.write(ICONS.x);</script></button>
+                        <button type="submit" class="btn btn-primary" title="Save Changes"><script>document.write(ICONS.check);</script></button>
                     </div>
                 </div>
             </form>
@@ -290,7 +286,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         <div class="windows-style" style="width: 400px;">
             <div class="modal-header">
                 <span id="item-modal-title">Item Editor</span>
-                <button class="close-btn" onclick="$('#item-modal').hide()">&times;</button>
+                <button class="close-btn" onclick="$('#item-modal').hide()"><script>document.write(ICONS.x);</script></button>
             </div>
             <form id="item-form">
                 <div class="modal-body">
@@ -298,10 +294,10 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     <input type="hidden" id="item-type">
                     <div class="form-group"><label>Name</label><input type="text" id="item-name" required></div>
                     <div class="form-group"><label>Description</label><input type="text" id="item-desc"></div>
-                    <div class="form-group"><label>Icon (fa-xxx)</label><input type="text" id="item-icon" required></div>
+                    <div class="form-group"><label>Icon (fa-xxx, try: columns, list-ul, layer-group, robot, code, marker, whiteboard, hammer, clock)</label><input type="text" id="item-icon" required></div>
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#item-modal').hide()"><i class="fas fa-times"></i></button>
-                        <button type="submit" class="btn btn-primary" title="Save Changes"><i class="fas fa-check"></i></button>
+                        <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#item-modal').hide()"><script>document.write(ICONS.x);</script></button>
+                        <button type="submit" class="btn btn-primary" title="Save Changes"><script>document.write(ICONS.check);</script></button>
                     </div>
                 </div>
             </form>
@@ -313,7 +309,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         <ul id="menu-items-list"></ul>
     </div>
     <div id="widget-context-menu" class="context-menu" style="display: none;">
-        <div class="context-item" id="toggle-close-btn"><i class="fas fa-power-off"></i> Toggle Close Button</div>
+        <div class="context-item" id="toggle-close-btn"><script>document.write(ICONS.logout);</script> Toggle Close Button</div>
     </div>
 
     <script src="assets/js/widgets.js"></script>
@@ -399,7 +395,6 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             $('#user-modal-title').text('Create New Account');
             $('#edit-user-id').val('');
             $('#user-form')[0].reset();
-            $('#role-group').show();
             $('#user-modal').show();
         }
 
@@ -408,8 +403,6 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             $('#edit-user-id').val(user.id);
             $('#edit-username').val(user.username);
             $('#edit-password').val(user.password);
-            $('#edit-role').val(user.role);
-            $('#role-group').hide(); // Role managed in Role Management box
             $('#user-modal').show();
         }
 
@@ -419,8 +412,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             let data = {
                 id: id,
                 username: $('#edit-username').val(),
-                password: $('#edit-password').val(),
-                role: $('#edit-role').val()
+                password: $('#edit-password').val()
             };
             $.ajax({
                 url: 'backend/admin_api.php?action=' + (id ? 'update_user_account' : 'create_user'),
@@ -453,8 +445,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             <td>${premBadge}</td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Toggle Role" onclick="editRole(${u.id}, '${u.role}')"><i class="fas fa-user-shield"></i></button>
-                                    <button class="btn ${isPrem ? 'btn-danger' : 'btn-success'}" style="padding:4px 8px; font-size:0.7rem;" title="${isPrem ? 'Strip Premium' : 'Grant Premium'}" onclick="givePremium(${u.id}, ${isPrem ? 0 : 30})"><i class="fas ${isPrem ? 'fa-toggle-on' : 'fa-toggle-off'}"></i></button>
+                                    <button class="btn ${isPrem ? 'btn-danger' : 'btn-success'}" style="padding:4px 8px; font-size:0.7rem;" title="${isPrem ? 'Strip Premium' : 'Grant Premium'}" onclick="givePremium(${u.id}, ${isPrem ? 0 : 30})">${isPrem ? ICONS.toggleOn : ICONS.toggleOff}</button>
                                 </div>
                             </td>
                         </tr>`;
@@ -463,19 +454,6 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     $('#role-list-container').html(html);
                     renderPagination('role', res.pagination, loadRoles);
                 }
-            });
-        }
-
-        function editRole(id, currentRole) {
-            let newRole = currentRole === 'admin' ? 'user' : 'admin';
-            window.showConfirmModal('Change Role', `Change user role to <b>${newRole}</b>?`, function() {
-                $.ajax({
-                    url: 'backend/admin_api.php?action=update_user_role',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ id: id, role: newRole }),
-                    success: function() { loadRoles(1); loadAccounts(1); loadDashboard(); }
-                });
             });
         }
 
@@ -491,8 +469,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             <td><span style="font-family:password;">••••••</span></td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Account" onclick='openEditAccModal(${JSON.stringify(u)})'><i class="fas fa-user-edit"></i></button>
-                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" title="Delete Account" onclick="deleteUser(${u.id}, '${u.username}')"><i class="fas fa-trash-alt"></i></button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Account" onclick='openEditAccModal(${JSON.stringify(u)})'>${ICONS.edit}</button>
+                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" title="Delete Account" onclick="deleteUser(${u.id}, '${u.username}')">${ICONS.trash}</button>
                                 </div>
                             </td>
                         </tr>`;
@@ -557,25 +535,21 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             let limit = $('#item-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_items&page=${page}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
-                    let html = '<table><thead><tr><th>Icon</th><th>Name</th><th>Description</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+                    let html = '<table><thead><tr><th>Name</th><th>Description</th><th>Status</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(i => {
                         let activeText = i.is_active == 1 ? 'Active' : 'Disabled';
                         let activeColor = i.is_active == 1 ? 'green' : 'red';
                         let btnText = i.is_active == 1 ? 'Disable' : 'Enable';
                         let itemJson = JSON.stringify(i).replace(/'/g, "&#39;");
 
-                        let iconName = i.gambar;
-                        if (!iconName.startsWith('fa-')) iconName = 'fa-cube'; // Fallback if icon name is path or broken
-
                         html += `<tr>
-                            <td><i class="fas ${iconName}"></i></td>
                             <td><span style="font-weight:bold;">${i.nama_item}</span></td>
                             <td style="font-size:0.7rem; color:#666;">${i.deskripsi}</td>
                             <td style="color:${activeColor}; font-weight:bold;">${activeText}</td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Item" onclick='editItem(${itemJson})'><i class="fas fa-edit"></i></button>
-                                    <button class="btn" style="padding:4px 8px; font-size:0.7rem; background:#6c757d;" title="${btnText}" onclick="toggleItem(${i.id}, ${i.is_active == 1 ? 0 : 1})"><i class="fas ${i.is_active == 1 ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Item" onclick='editItem(${itemJson})'>${ICONS.edit}</button>
+                                    <button class="btn" style="padding:4px 8px; font-size:0.7rem; background:#6c757d;" title="${btnText}" onclick="toggleItem(${i.id}, ${i.is_active == 1 ? 0 : 1})">${i.is_active == 1 ? ICONS.eyeOff : ICONS.eye}</button>
                                 </div>
                             </td>
                         </tr>`;
@@ -613,7 +587,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             // Search/Jump Field 1 with padding (at least 20px)
             html += `<div style="display:flex; align-items:center; margin-left:40px; gap:5px;">
                 <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Go" style="width:50px; padding:0; height:24px; text-align:center;">
-                <button class="btn btn-secondary" style="padding:0; width:24px; height:24px; font-size:0.6rem;" title="Go" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);"><i class="fas fa-search"></i></button>
+                <button class="btn btn-secondary" style="padding:0; width:24px; height:24px; font-size:0.6rem;" title="Go" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);">${ICONS.search}</button>
             </div>`;
 
             $('#' + prefix + '-pagination').html(html);
