@@ -40,11 +40,25 @@ switch ($action) {
             $chart_data[] = ['date' => $date, 'count' => (int)$count];
         }
 
-        // 3. Widget Instance Counts
-        $widget_where = $uId ? "WHERE r.user_id = $uId" : "";
+        // 3. Widget Instance Counts (including 0s)
         $popular = [];
-        // JOIN with rooms to filter by user if needed
-        $res = $conn->query("SELECT mi.nama_item, COUNT(rw.id) as count FROM room_widgets rw JOIN master_items mi ON rw.master_item_id = mi.id JOIN rooms r ON rw.room_id = r.id $widget_where GROUP BY mi.id ORDER BY count DESC");
+        if ($uId) {
+            $res = $conn->query("SELECT mi.nama_item, COUNT(sub.id) as count
+                                FROM master_items mi
+                                LEFT JOIN (
+                                    SELECT rw.id, rw.master_item_id
+                                    FROM room_widgets rw
+                                    JOIN rooms r ON rw.room_id = r.id
+                                    WHERE r.user_id = $uId
+                                ) sub ON mi.id = sub.master_item_id
+                                GROUP BY mi.id ORDER BY count DESC");
+        } else {
+            $res = $conn->query("SELECT mi.nama_item, COUNT(rw.id) as count
+                                FROM master_items mi
+                                LEFT JOIN room_widgets rw ON mi.id = rw.master_item_id
+                                GROUP BY mi.id ORDER BY count DESC");
+        }
+
         while($row = $res->fetch_assoc()) {
             $popular[] = $row;
         }
@@ -93,6 +107,63 @@ switch ($action) {
                 'total_records' => $total
             ]
         ]);
+        break;
+
+    case 'update_user_role':
+        $data = json_decode(file_get_contents("php://input"), true);
+        $uId = (int)$data['id'];
+        $role = $conn->real_escape_string($data['role']);
+
+        $stmt = $conn->prepare("UPDATE users SET role = ? WHERE id = ?");
+        $stmt->bind_param("si", $role, $uId);
+
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Role updated']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => $conn->error]);
+        }
+        break;
+
+    case 'update_user_account':
+        $data = json_decode(file_get_contents("php://input"), true);
+        $uId = (int)$data['id'];
+        $user = $conn->real_escape_string($data['username']);
+        $pass = $conn->real_escape_string($data['password']);
+
+        $stmt = $conn->prepare("UPDATE users SET username = ?, password = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $user, $pass, $uId);
+
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Account updated']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => $conn->error]);
+        }
+        break;
+
+    case 'delete_user':
+        $id = (int)$_GET['id'];
+        if ($id == $_SESSION['user_id']) {
+            echo json_encode(['status' => 'error', 'message' => 'Cannot delete yourself']);
+            exit;
+        }
+        $conn->query("DELETE FROM users WHERE id = $id");
+        echo json_encode(['status' => 'success', 'message' => 'User deleted']);
+        break;
+
+    case 'create_user':
+        $data = json_decode(file_get_contents("php://input"), true);
+        $user = $conn->real_escape_string($data['username']);
+        $pass = $conn->real_escape_string($data['password']);
+        $role = $conn->real_escape_string($data['role'] ?? 'user');
+
+        $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $user, $pass, $role);
+
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Account created']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Username might already exist']);
+        }
         break;
 
     case 'update_user_premium':
