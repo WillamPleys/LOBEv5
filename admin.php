@@ -28,7 +28,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             position: relative;
             padding: 20px; display: grid;
             grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 650px);
+            grid-template-rows: auto auto;
             gap: 20px; pointer-events: none; z-index: 100;
             padding-bottom: 80px;
         }
@@ -36,7 +36,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         .admin-window {
             background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; border: 1px solid #ddd;
-            pointer-events: all; height: 100%;
+            pointer-events: all; height: 100%; min-height: 600px;
         }
 
         .window-header {
@@ -153,7 +153,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
     <div style="position: relative; z-index: 10;">
         <div id="admin-layer">
                 <!-- 1. Dashboard Overview -->
-                <div class="admin-window">
+                <div class="admin-window" style="grid-row: span 2;">
                     <div class="window-header">
                         <span><i class="fas fa-tachometer-alt"></i> Dashboard Overview</span>
                     </div>
@@ -238,7 +238,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <!-- 5. Account Management -->
                 <div class="admin-window">
                     <div class="window-header">
-                        <span><i class="fas fa-user-cog"></i> Account Management</span>
+                        <span><i class="fas fa-users-cog"></i> Account Management</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
@@ -248,19 +248,12 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             </select>
                         </div>
                         <div id="acc-list-container">Loading...</div>
-                        <button class="btn btn-primary" style="width:100%; margin-top:10px; font-size:1rem;" title="Create Account" onclick="openCreateAccModal()"><i class="fas fa-user-plus"></i></button>
+                        <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="openCreateAccModal()"><i class="fas fa-user-plus"></i> Create Account</button>
                     </div>
                     <div style="padding: 5px; border-top: 1px solid #eee;">
                          <div class="pagination" id="acc-pagination"></div>
                     </div>
                 </div>
-
-                <!-- 5-9 placeholders or more info -->
-                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 5</div>
-                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 6</div>
-                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 7</div>
-                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 8</div>
-                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 9</div>
 
             </div>
     </div>
@@ -302,16 +295,9 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             <form id="item-form">
                 <div class="modal-body">
                     <input type="hidden" id="item-id">
+                    <input type="hidden" id="item-type">
                     <div class="form-group"><label>Name</label><input type="text" id="item-name" required></div>
-                    <div class="form-group"><label>Description</label><input type="text" id="item-desc" style="width:100%; border:1px solid #ddd; padding:8px; border-radius:4px; font-size:14px;"></div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select id="item-type">
-                            <option value="ui">UI</option><option value="input">Input</option>
-                            <option value="output">Output</option><option value="tools">Tools</option>
-                            <option value="api">API</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Description</label><input type="text" id="item-desc"></div>
                     <div class="form-group"><label>Icon (fa-xxx)</label><input type="text" id="item-icon" required></div>
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#item-modal').hide()"><i class="fas fa-times"></i></button>
@@ -344,7 +330,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             loadDashboard();
             loadRoles(1);
             loadTransactions(1);
-            loadItems();
+            loadItems(1);
             loadAccounts(1);
 
             // Sync room list in navbar
@@ -450,37 +436,6 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             });
         });
 
-        function loadUsers(page) {
-            let q = $('#user-search').val();
-            let limit = $('#user-limit').val() || 10;
-            $.get(`backend/admin_api.php?action=get_users&page=${page}&search=${q}&limit=${limit}`, function(res) {
-                if(res.status === 'success') {
-                    let html = '<table><thead><tr><th>User</th><th>Role</th><th>Premium</th><th>Action</th></tr></thead><tbody>';
-                    res.data.forEach(u => {
-                        let premBadge = u.is_premium ? `<span class="badge badge-premium">Active</span>` : `<span style="color:#ccc;">None</span>`;
-                        let roleBadge = u.role === 'admin' ? `<span class="badge badge-admin">Admin</span>` : 'User';
-
-                        html += `<tr>
-                            <td style="font-weight:bold;">${u.username}</td>
-                            <td>${roleBadge}</td>
-                            <td>${premBadge}</td>
-                            <td>
-                                <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-success" style="padding:2px 5px; font-size:0.6rem;" onclick="givePremium(${u.id})">Grant</button>
-                                    <button class="btn btn-danger" style="padding:2px 5px; font-size:0.6rem;" onclick="givePremium(${u.id}, 0)">Strip</button>
-                                </div>
-                            </td>
-                        </tr>`;
-                    });
-                    html += '</tbody></table>';
-                    // We need to decide where to show this.
-                    // Actually, User Management in Box 2 was originally for Premium.
-                    // User requested Box 2 to be ROLE management.
-                    // So I will create a new function for Box 2 and use this for something else or remove.
-                    // Actually, I'll just use loadUsers for all user-list-container calls and adapt it.
-                }
-            });
-        }
 
         function loadRoles(page) {
             let q = $('#role-search').val();
@@ -489,7 +444,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 if(res.status === 'success') {
                     let html = '<table><thead><tr><th>User</th><th>Role</th><th>Premium</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(u => {
-                        let premBadge = u.is_premium ? `<span class="badge badge-premium">Active</span>` : `<span style="color:#ccc;">None</span>`;
+                        let isPrem = u.is_premium;
+                        let premBadge = isPrem ? `<span class="badge badge-premium">Active</span>` : `<span style="color:#ccc;">None</span>`;
                         let roleBadge = u.role === 'admin' ? `<span class="badge badge-admin">Admin</span>` : 'User';
                         html += `<tr>
                             <td style="font-weight:bold;">${u.username}</td>
@@ -497,9 +453,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             <td>${premBadge}</td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Toggle Role" onclick="editRole(${u.id}, '${u.role}')"><i class="fas fa-user-tag"></i></button>
-                                    <button class="btn btn-success" style="padding:4px 8px; font-size:0.7rem;" title="Grant Premium" onclick="givePremium(${u.id})"><i class="fas fa-crown"></i></button>
-                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" title="Strip Premium" onclick="givePremium(${u.id}, 0)"><i class="fas fa-trash-alt"></i></button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Toggle Role" onclick="editRole(${u.id}, '${u.role}')"><i class="fas fa-user-shield"></i></button>
+                                    <button class="btn ${isPrem ? 'btn-danger' : 'btn-success'}" style="padding:4px 8px; font-size:0.7rem;" title="${isPrem ? 'Strip Premium' : 'Grant Premium'}" onclick="givePremium(${u.id}, ${isPrem ? 0 : 30})"><i class="fas ${isPrem ? 'fa-toggle-on' : 'fa-toggle-off'}"></i></button>
                                 </div>
                             </td>
                         </tr>`;
@@ -517,6 +472,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 $.ajax({
                     url: 'backend/admin_api.php?action=update_user_role',
                     type: 'POST',
+                    contentType: 'application/json',
                     data: JSON.stringify({ id: id, role: newRole }),
                     success: function() { loadRoles(1); loadAccounts(1); loadDashboard(); }
                 });
@@ -564,20 +520,21 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             $.ajax({
                 url: 'backend/admin_api.php?action=update_user_premium',
                 type: 'POST',
+                contentType: 'application/json',
                 data: JSON.stringify({ id: id, days: days }),
                 success: function(res) {
                     if (res.status === 'error') {
                         if (window.showCustomModal) window.showCustomModal('Error', res.message);
                         else alert(res.message);
                     }
-                    loadUsers(1);
+                    loadRoles(1);
                     loadDashboard();
                 }
             });
         }
 
         function loadTransactions(page) {
-            let limit = $('#trans-limit').val();
+            let limit = $('#trans-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_transactions&page=${page}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
                     let html = '<table><thead><tr><th>User</th><th>Act</th><th>Time</th></tr></thead><tbody>';
@@ -600,18 +557,20 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             let limit = $('#item-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_items&page=${page}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
-                    let html = '<table><thead><tr><th>Icon</th><th>Name</th><th>Description</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+                    let html = '<table><thead><tr><th>Icon</th><th>Name</th><th>Description</th><th>Status</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(i => {
                         let activeText = i.is_active == 1 ? 'Active' : 'Disabled';
                         let activeColor = i.is_active == 1 ? 'green' : 'red';
                         let btnText = i.is_active == 1 ? 'Disable' : 'Enable';
                         let itemJson = JSON.stringify(i).replace(/'/g, "&#39;");
 
+                        let iconName = i.gambar;
+                        if (!iconName.startsWith('fa-')) iconName = 'fa-cube'; // Fallback if icon name is path or broken
+
                         html += `<tr>
-                            <td><i class="fas ${i.gambar}"></i></td>
+                            <td><i class="fas ${iconName}"></i></td>
                             <td><span style="font-weight:bold;">${i.nama_item}</span></td>
                             <td style="font-size:0.7rem; color:#666;">${i.deskripsi}</td>
-                            <td>${i.tipe_item}</td>
                             <td style="color:${activeColor}; font-weight:bold;">${activeText}</td>
                             <td>
                                 <div style="display:flex; gap:3px;">
@@ -637,29 +596,24 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             const currentPage = parseInt(meta.current_page);
             const totalPages = parseInt(meta.total_pages);
 
-            // First 3 pages
-            for (let i = 1; i <= Math.min(3, totalPages); i++) {
+            // 1, 2, 3, 4
+            for (let i = 1; i <= Math.min(4, totalPages); i++) {
                 html += `<button class="${currentPage === i ? 'active' : ''}" onclick="${callback.name}(${i})">${i}</button>`;
             }
 
-            if (totalPages > 4) {
+            if (totalPages > 5) {
                 html += `<span style="padding:0 5px; color:#ccc;">...</span>`;
             }
 
             // Last page
-            if (totalPages > 3) {
+            if (totalPages > 4) {
                 html += `<button class="${currentPage === totalPages ? 'active' : ''}" onclick="${callback.name}(${totalPages})">${totalPages}</button>`;
             }
 
-            // Search/Jump Field 1
-            html += `<div style="display:flex; align-items:center; margin-left:10px; gap:5px;">
-                <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Page" style="width:50px; padding:0; height:24px; text-align:center;">
-                <button class="btn btn-secondary" style="padding:0; width:24px; height:24px; font-size:0.6rem;" title="Go" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);"><i class="fas fa-chevron-right"></i></button>
-            </div>`;
-
-            // Search/Jump Field 2 (identical as requested "search field dan search field")
-            html += `<div style="display:flex; align-items:center; margin-left:5px; gap:5px;">
-                <input type="number" id="${prefix}-jump-page-2" min="1" max="${totalPages}" placeholder="Jump" style="width:50px; padding:0; height:24px; text-align:center;">
+            // Search/Jump Field 1 with padding (at least 20px)
+            html += `<div style="display:flex; align-items:center; margin-left:40px; gap:5px;">
+                <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Go" style="width:50px; padding:0; height:24px; text-align:center;">
+                <button class="btn btn-secondary" style="padding:0; width:24px; height:24px; font-size:0.6rem;" title="Go" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);"><i class="fas fa-search"></i></button>
             </div>`;
 
             $('#' + prefix + '-pagination').html(html);

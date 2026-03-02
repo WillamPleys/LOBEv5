@@ -114,8 +114,14 @@ switch ($action) {
         $uId = (int)$data['id'];
         $role = $conn->real_escape_string($data['role']);
 
-        $stmt = $conn->prepare("UPDATE users SET role = ? WHERE id = ?");
-        $stmt->bind_param("si", $role, $uId);
+        // Rule: admin accounts cannot have premium status
+        if ($role === 'admin') {
+            $stmt = $conn->prepare("UPDATE users SET role = ?, premium_until = NULL WHERE id = ?");
+            $stmt->bind_param("si", $role, $uId);
+        } else {
+            $stmt = $conn->prepare("UPDATE users SET role = ? WHERE id = ?");
+            $stmt->bind_param("si", $role, $uId);
+        }
 
         if ($stmt->execute()) {
             echo json_encode(['status' => 'success', 'message' => 'Role updated']);
