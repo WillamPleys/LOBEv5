@@ -2,6 +2,22 @@
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']) ? 'true' : 'false';
 $username = isset($_SESSION['username']) ? $_SESSION['username'] : 'Guest';
+$isPremium = false;
+
+if (isset($_SESSION['user_id'])) {
+    require 'koneksi.php';
+    $uId = $_SESSION['user_id'];
+    $stmt = $conn->prepare("SELECT premium_until FROM users WHERE id = ?");
+    $stmt->bind_param("i", $uId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        if ($row['premium_until'] && strtotime($row['premium_until']) > time()) {
+            $isPremium = true;
+        }
+    }
+}
+
 $activeRoomId = isset($_SESSION['active_room_id']) ? $_SESSION['active_room_id'] : 'null';
 $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_name'] : '';
 ?>
@@ -33,6 +49,7 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
         const INITIAL_STATE = {
             isLoggedIn: APP_IS_LOGGED_IN,
             username: APP_USERNAME,
+            isPremium: <?php echo $isPremium ? 'true' : 'false'; ?>,
             activeRoomId: <?php echo $activeRoomId; ?>,
             activeRoomName: "<?php echo htmlspecialchars($activeRoomName); ?>"
         };
@@ -41,15 +58,54 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
 <body>
 
     <!-- ADVERTISEMENT NOTIFICATION (TOAST) -->
-    <div id="ad-notification">
+    <div id="ad-notification" style="cursor: pointer;">
         <div class="ad-toast">
             <div class="ad-header">
                 <span><i class="fas fa-crown"></i> LOBE Premium</span>
-                <span class="ad-close" onclick="$('#ad-notification').fadeOut()">&times;</span>
+                <span class="ad-close" onclick="event.stopPropagation(); $('#ad-notification').fadeOut()">&times;</span>
             </div>
             <div class="ad-body">
-                <p>Unlock exclusive features with LOBE Premium! <br><strong>Subscribe now for only $9.99/mo.</strong></p>
-                <button class="btn btn-primary" style="margin-top:10px; font-size:0.8rem; padding:5px;">Upgrade Now</button>
+                <p>Unlock exclusive features with LOBE Premium! <br><strong>Subscribe now to unlock all modes!</strong></p>
+                <button class="btn btn-primary" style="margin-top:10px; font-size:0.8rem; padding:5px; pointer-events:none;">View Plans</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREMIUM SUBSCRIPTION MODAL -->
+    <div id="premium-modal" class="modal-overlay" style="display: none; z-index: 21000;">
+        <div class="windows-style" style="width: 450px;">
+            <div class="modal-header">
+                <span><i class="fas fa-crown"></i> Upgrade to LOBE Premium</span>
+                <button class="close-btn" onclick="$('#premium-modal').hide()">&times;</button>
+            </div>
+            <div class="modal-body" style="gap: 10px;">
+                <p style="text-align:center; color:#666; font-size:0.9rem; margin-bottom:10px;">Choose a plan that fits your needs.</p>
+
+                <div class="premium-plan" onclick="window.subscribePremium('1day')" style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; cursor: pointer; transition: 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin:0;">1 Day Pass</h4>
+                        <small style="color:#888;">Trial all features for 24 hours.</small>
+                    </div>
+                    <div style="font-weight:900; color:#28a745;">$0.99</div>
+                </div>
+
+                <div class="premium-plan" onclick="window.subscribePremium('monthly')" style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; cursor: pointer; transition: 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin:0;">Monthly Pro</h4>
+                        <small style="color:#888;">Full access for 30 days.</small>
+                    </div>
+                    <div style="font-weight:900; color:#28a745;">$9.99</div>
+                </div>
+
+                <div class="premium-plan" onclick="window.subscribePremium('yearly')" style="border: 1px solid #673ab7; background: #f3e5f5; padding: 15px; border-radius: 8px; cursor: pointer; transition: 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin:0; color:#673ab7;">Yearly Elite <span style="font-size:0.6rem; background:#673ab7; color:white; padding:2px 5px; border-radius:10px; margin-left:5px;">BEST VALUE</span></h4>
+                        <small style="color:#888;">Full access for 365 days.</small>
+                    </div>
+                    <div style="font-weight:900; color:#28a745;">$79.99</div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="$('#premium-modal').hide()" style="margin-top:10px;">Maybe Later</button>
             </div>
         </div>
     </div>
@@ -161,7 +217,10 @@ $activeRoomName = isset($_SESSION['active_room_name']) ? $_SESSION['active_room_
         <div id="canvas" class="grid-background">
             
             <nav id="up-nav-bar" class="navbar" style="display: none;">
-                <div class="nav-logo">LOBE</div>
+                <div class="nav-logo" style="display:flex; align-items:center;">
+                    LOBE
+                    <span id="premium-badge" style="display:none; margin-left:10px; background:linear-gradient(45deg, #FFD700, #FFA500); color:white; font-size:10px; padding:2px 8px; border-radius:20px; font-weight:900; box-shadow:0 2px 5px rgba(255,165,0,0.3); text-transform:uppercase; letter-spacing:1px;">Premium</span>
+                </div>
                 <div class="nav-center">
                     <!-- CUSTOM SELECT REPLACEMENT -->
                     <div class="custom-select-wrapper">

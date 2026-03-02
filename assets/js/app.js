@@ -530,6 +530,10 @@ $(document).ready(function() {
         loginScreen.hide();
         $('#display-user').text(APP_USERNAME);
 
+        if (typeof INITIAL_STATE !== 'undefined' && INITIAL_STATE.isPremium) {
+            $('#premium-badge').show();
+        }
+
         // If user was already in a room, go straight to workspace
         if (typeof INITIAL_STATE !== 'undefined' && INITIAL_STATE.activeRoomId !== null && INITIAL_STATE.activeRoomName) {
             roomScreen.hide();
@@ -577,6 +581,33 @@ $(document).ready(function() {
         }
         $('#widget-context-menu').hide();
     });
+
+    // --- PREMIUM SUBSCRIPTION LOGIC ---
+    $('#ad-notification').on('click', function() {
+        $(this).fadeOut();
+        $('#premium-modal').css('display', 'flex');
+    });
+
+    window.subscribePremium = function(plan) {
+        $.ajax({
+            url: 'backend/subscribe_premium.php',
+            type: 'POST',
+            data: { plan: plan },
+            dataType: 'json',
+            success: function(res) {
+                if (res.status === 'success') {
+                    $('#premium-modal').hide();
+                    $('#premium-badge').fadeIn();
+                    window.showCustomModal('Success', 'Welcome to LOBE Premium! Your subscription is active until: ' + res.premium_until);
+                } else {
+                    window.showCustomModal('Error', res.message);
+                }
+            },
+            error: function() {
+                window.showCustomModal('Error', 'Failed to process subscription.');
+            }
+        });
+    };
 
     $('#menu-detach-image').on('click', function() {
         if (currentTargetWidget) {
