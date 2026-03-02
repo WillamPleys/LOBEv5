@@ -496,9 +496,12 @@ $(document).ready(function() {
                     const contextList = $('#menu-items-list');
                     welcomeContainer.empty();
                     contextList.append('<div class="context-divider"></div><div class="context-title">Add Item:</div>');
-                    res.data.forEach(item => {
+                    res.data.forEach((item, index) => {
                         let iconClass = item.gambar;
-                        welcomeContainer.append(`<div class="item-btn" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><i class="fas ${iconClass}"></i><span>${item.nama_item}</span></div>`);
+                        // Limit welcome screen to first 16 items to prevent vertical overflow
+                        if (index < 16) {
+                            welcomeContainer.append(`<div class="item-btn" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><i class="fas ${iconClass}"></i><span>${item.nama_item}</span></div>`);
+                        }
                         contextList.append(`<li class="menu-item spawn-item" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><i class="fas ${iconClass}" style="width: 25px;"></i> ${item.nama_item}</li>`);
                     });
                 }
