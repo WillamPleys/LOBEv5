@@ -88,9 +88,11 @@ $(document).ready(function() {
                 if ($el.data('calendarEvents')) stateData.calendarEvents = $el.data('calendarEvents');
                 if ($el.data('todoTasks')) stateData.todoTasks = $el.data('todoTasks');
                 if ($el.data('timerTitle')) stateData.timerTitle = $el.data('timerTitle');
+                if ($el.data('timerSeconds') !== undefined) stateData.timerSeconds = $el.data('timerSeconds');
+                if ($el.data('timerMode')) stateData.timerMode = $el.data('timerMode');
+                if ($el.data('timerTargetMins')) stateData.timerTargetMins = $el.data('timerTargetMins');
                 if ($el.data('flashcards')) stateData.flashcards = $el.data('flashcards');
-                if ($el.data('mapperNodes')) stateData.mapperNodes = $el.data('mapperNodes');
-                if ($el.data('mapperLinks')) stateData.mapperLinks = $el.data('mapperLinks');
+                if ($el.data('mapperFabricState')) stateData.mapperFabricState = $el.data('mapperFabricState');
                 if ($el.data('whiteboardPaths')) stateData.whiteboardPaths = $el.data('whiteboardPaths');
                 if ($el.data('isCalendarExpanded')) stateData.isCalendarExpanded = $el.data('isCalendarExpanded');
                 if ($el.data('expandedHeight')) stateData.expandedHeight = $el.data('expandedHeight');

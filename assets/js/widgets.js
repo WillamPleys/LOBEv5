@@ -181,12 +181,25 @@ const WidgetRegistry = {
     'Timer': {
         render: function(wId) {
             return `
-                <div style="text-align:center; padding-top:20px;">
-                    <input type="text" placeholder="Timer Title" id="${wId}-title" style="text-align:center; border:none; border-bottom:1px solid #ccc; width:80%; margin-bottom:15px; outline:none;">
-                    <div id="${wId}-display" style="font-size:3rem; font-family:monospace; font-weight:bold; margin-bottom:20px;">00:00:00</div>
-                    <div>
-                        <button id="${wId}-start" style="padding:10px 20px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer;">Start</button>
-                        <button id="${wId}-reset" style="padding:10px 20px; background:#f44336; color:white; border:none; border-radius:4px; cursor:pointer;">Reset</button>
+                <div style="text-align:center; padding: 10px; height:100%; display:flex; flex-direction:column; justify-content:center;">
+                    <input type="text" placeholder="Timer Title" id="${wId}-title" style="text-align:center; border:none; border-bottom:1px solid #ccc; width:90%; margin: 0 auto 10px auto; outline:none; font-size:1.1rem; font-weight:bold;">
+
+                    <div style="display:flex; justify-content:center; gap:10px; margin-bottom:10px;">
+                        <select id="${wId}-mode" style="padding:2px 5px; font-size:0.8rem; border-radius:4px; border:1px solid #ccc;">
+                            <option value="stopwatch">Stopwatch</option>
+                            <option value="countdown">Countdown</option>
+                        </select>
+                        <div id="${wId}-set-area" style="display:none; align-items:center; gap:5px;">
+                            <input type="number" id="${wId}-mins" min="0" max="999" value="5" style="width:50px; padding:2px; font-size:0.8rem;">
+                            <span style="font-size:0.8rem;">m</span>
+                        </div>
+                    </div>
+
+                    <div id="${wId}-display" style="font-size:3.5rem; font-family:monospace; font-weight:bold; margin-bottom:15px; color:#333;">00:00:00</div>
+
+                    <div style="display:flex; justify-content:center; gap:10px;">
+                        <button id="${wId}-start" style="flex:1; max-width:100px; padding:10px; background:#28a745; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition: background 0.2s;">Start</button>
+                        <button id="${wId}-reset" style="flex:1; max-width:100px; padding:10px; background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; transition: background 0.2s;">Reset</button>
                     </div>
                 </div>
             `;
@@ -194,53 +207,166 @@ const WidgetRegistry = {
         init: function(wId) {
             const $widget = $(`#${wId}`);
             const $title = $(`#${wId}-title`);
-            let seconds = 0; let interval = null;
-            const $display = $(`#${wId}-display`); const $startBtn = $(`#${wId}-start`);
+            const $display = $(`#${wId}-display`);
+            const $startBtn = $(`#${wId}-start`);
+            const $mode = $(`#${wId}-mode`);
+            const $setArea = $(`#${wId}-set-area`);
+            const $minsInput = $(`#${wId}-mins`);
 
-            // Restore title
-            $title.val($widget.data('timerTitle') || '');
-
-            $title.on('input', function() {
-                $widget.data('timerTitle', $(this).val());
-                if (window.saveWorkspaceState) window.saveWorkspaceState();
-            });
+            let seconds = parseInt($widget.data('timerSeconds')) || 0;
+            let interval = null;
+            let currentMode = $widget.data('timerMode') || 'stopwatch';
 
             function formatTime(s) {
                 let h = Math.floor(s / 3600); let m = Math.floor((s % 3600) / 60); let sec = s % 60;
                 return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
             }
-            $startBtn.click(function() {
-                if(interval) { clearInterval(interval); interval = null; $(this).text('Start').css('background', '#4CAF50'); }
-                else { interval = setInterval(() => { seconds++; $display.text(formatTime(seconds)); }, 1000); $(this).text('Pause').css('background', '#FF9800'); }
+
+            function updateDisplay() {
+                $display.text(formatTime(seconds));
+                if (currentMode === 'countdown' && seconds <= 0 && interval) {
+                    stopTimer();
+                    window.showCustomModal('Timer Finished', ($title.val() || 'Timer') + ' has reached zero!');
+                }
+            }
+
+            function saveState() {
+                $widget.data('timerTitle', $title.val());
+                $widget.data('timerSeconds', seconds);
+                $widget.data('timerMode', currentMode);
+                $widget.data('timerTargetMins', $minsInput.val());
+                if (window.saveWorkspaceState) window.saveWorkspaceState();
+            }
+
+            function startTimer() {
+                if (interval) return;
+
+                if (currentMode === 'countdown' && seconds <= 0) {
+                    seconds = parseInt($minsInput.val() || 0) * 60;
+                    if (seconds <= 0) return;
+                }
+
+                $startBtn.text('Pause').css('background', '#fd7e14');
+                interval = setInterval(() => {
+                    if (currentMode === 'stopwatch') seconds++;
+                    else seconds--;
+
+                    updateDisplay();
+                    // Save state periodically if running? Or just on stop.
+                    // To prevent loss on refresh while running, maybe save every 10s.
+                    if (seconds % 10 === 0) saveState();
+                }, 1000);
+            }
+
+            function stopTimer() {
+                clearInterval(interval);
+                interval = null;
+                $startBtn.text('Start').css('background', '#28a745');
+                saveState();
+            }
+
+            // Restore
+            $title.val($widget.data('timerTitle') || '');
+            $mode.val(currentMode);
+            $minsInput.val($widget.data('timerTargetMins') || 5);
+            if (currentMode === 'countdown') $setArea.css('display', 'flex');
+            updateDisplay();
+
+            $title.on('input', saveState);
+            $minsInput.on('input', function() {
+                if (currentMode === 'countdown' && !interval) {
+                    seconds = parseInt($(this).val() || 0) * 60;
+                    updateDisplay();
+                }
+                saveState();
             });
-            $(`#${wId}-reset`).click(function() { if(interval) clearInterval(interval); interval = null; seconds = 0; $display.text('00:00:00'); $startBtn.text('Start').css('background', '#4CAF50'); });
+
+            $mode.on('change', function() {
+                currentMode = $(this).val();
+                if (currentMode === 'countdown') {
+                    $setArea.css('display', 'flex');
+                    seconds = parseInt($minsInput.val() || 0) * 60;
+                } else {
+                    $setArea.hide();
+                    seconds = 0;
+                }
+                updateDisplay();
+                saveState();
+            });
+
+            $startBtn.click(function() {
+                if(interval) stopTimer();
+                else startTimer();
+            });
+
+            $(`#${wId}-reset`).click(function() {
+                stopTimer();
+                if (currentMode === 'countdown') seconds = parseInt($minsInput.val() || 0) * 60;
+                else seconds = 0;
+                updateDisplay();
+                saveState();
+            });
         }
     },
     // --- 5. FLASHCARD ---
     'Flashcard': {
         render: function(wId) {
             return `
-                <div style="height:100%; display:flex; flex-direction:column; position:relative;">
-                    <div id="${wId}-play-area" style="flex:1; display:flex; flex-direction:column;">
-                        <div class="card-area" style="flex:1; perspective:1000px; cursor:pointer; position:relative; margin-bottom:10px;">
-                            <div class="card-inner" style="width:100%; height:100%; position:relative; text-align:center; transition:transform 0.6s; transform-style:preserve-3d; box-shadow:0 4px 8px rgba(0,0,0,0.1); border-radius:8px; background:white; border:1px solid #ddd;">
-                                <div class="card-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; align-items:center; justify-content:center; padding:20px; font-weight:bold; font-size:1.2rem;">Question?</div>
-                                <div class="card-back" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; padding:20px; color:blue;">Answer!</div>
+                <div style="height:100%; display:flex; flex-direction:column; position:relative; background:#fff; border-radius:8px; overflow:hidden;">
+                    <style>
+                        .fc-editor-item {
+                            background: #f8f9fa;
+                            border: 1px solid #dee2e6;
+                            border-radius: 8px;
+                            padding: 12px;
+                            margin-bottom: 15px;
+                            position: relative;
+                        }
+                        .fc-label {
+                            font-size: 0.7rem;
+                            font-weight: bold;
+                            color: #6c757d;
+                            margin-bottom: 4px;
+                            display: block;
+                            text-transform: uppercase;
+                        }
+                        .fc-input {
+                            width: 100%;
+                            border: none;
+                            border-bottom: 2px solid #ddd;
+                            background: transparent;
+                            padding: 5px 0;
+                            margin-bottom: 10px;
+                            font-size: 0.9rem;
+                            transition: border-color 0.2s;
+                        }
+                        .fc-input:focus {
+                            outline: none;
+                            border-color: #007bff;
+                        }
+                    </style>
+                    <div id="${wId}-play-area" style="flex:1; display:flex; flex-direction:column; padding:15px;">
+                        <div class="card-area" style="flex:1; perspective:1000px; cursor:pointer; position:relative; margin-bottom:15px;">
+                            <div class="card-inner" style="width:100%; height:100%; position:relative; text-align:center; transition:transform 0.6s; transform-style:preserve-3d;">
+                                <div class="card-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; align-items:center; justify-content:center; padding:20px; font-weight:bold; font-size:1.4rem; background:white; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">Question?</div>
+                                <div class="card-back" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; padding:20px; color:#007bff; font-weight:bold; font-size:1.4rem; background:#f0f7ff; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">Answer!</div>
                             </div>
                         </div>
-                        <div style="display:flex; justify-content:space-between; gap:5px;">
-                            <button id="${wId}-prev" style="flex:1; padding:10px;">&lt; Prev</button>
-                            <button id="${wId}-next" style="flex:1; padding:10px;">Next &gt;</button>
+                        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+                            <button id="${wId}-prev" class="btn btn-outline-primary" style="flex:1; border-radius:8px;"><i class="fas fa-chevron-left"></i> Prev</button>
+                            <div style="flex:1; text-align:center; font-size:0.85rem; color:#666; font-weight:500;"><span id="${wId}-index-display">1</span> / <span id="${wId}-total-display">1</span></div>
+                            <button id="${wId}-next" class="btn btn-outline-primary" style="flex:1; border-radius:8px;">Next <i class="fas fa-chevron-right"></i></button>
                         </div>
-                        <div style="text-align:center; margin-top:5px; font-size:0.8rem; color:#888;">Card <span id="${wId}-index-display">1</span> of <span id="${wId}-total-display">1</span></div>
                     </div>
 
-                    <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:10px; box-sizing:border-box; z-index:5;">
-                        <h4 style="margin-bottom:10px;">Card Editor</h4>
-                        <div id="${wId}-editor-list" style="flex:1; overflow-y:auto; margin-bottom:10px; border:1px solid #eee; padding:5px;"></div>
-                        <div style="display:flex; gap:5px;">
-                            <button id="${wId}-add-card" class="btn btn-secondary btn-sm" style="flex:1;">+ Add Card</button>
-                            <button id="${wId}-save-settings" class="btn btn-primary btn-sm" style="flex:1;">Save & Close</button>
+                    <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:20px; box-sizing:border-box; z-index:5;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                            <h3 style="margin:0; font-size:1.2rem; color:#333;">Card Editor</h3>
+                            <button id="${wId}-add-card" class="btn btn-sm btn-primary" style="border-radius:20px; padding:5px 15px;">+ Add Card</button>
+                        </div>
+                        <div id="${wId}-editor-list" style="flex:1; overflow-y:auto; margin-bottom:15px; padding-right:5px;"></div>
+                        <div style="display:flex; gap:10px;">
+                            <button id="${wId}-save-settings" class="btn btn-success" style="flex:1; font-weight:bold;">Save Changes</button>
                         </div>
                     </div>
                 </div>
@@ -260,8 +386,8 @@ const WidgetRegistry = {
 
             function updateCard() {
                 if (cards.length === 0) {
-                    $widget.find('.card-front').text("No cards. Click Cog to add!");
-                    $widget.find('.card-back').text("No cards.");
+                    $widget.find('.card-front').text("Empty. Click Cog to add!");
+                    $widget.find('.card-back').text("No Answer.");
                     $indexDisplay.text(0);
                     $totalDisplay.text(0);
                     return;
@@ -277,35 +403,37 @@ const WidgetRegistry = {
             function renderEditor() {
                 $editorList.empty();
                 cards.forEach((c, i) => {
-                    let item = $(`
-                        <div style="margin-bottom:10px; padding:5px; border:1px solid #eee; position:relative;">
-                            <input type="text" class="card-q" placeholder="Question" value="${escapeHtml(c.q)}" style="width:100%; margin-bottom:2px; font-size:0.8rem;">
-                            <input type="text" class="card-a" placeholder="Answer" value="${escapeHtml(c.a)}" style="width:100%; font-size:0.8rem;">
-                            <i class="fas fa-trash remove-card" style="position:absolute; top:5px; right:5px; color:#ff4d4d; cursor:pointer; font-size:0.7rem;"></i>
-                        </div>
-                    `);
-                    item.find('.remove-card').click(() => { item.remove(); });
-                    $editorList.append(item);
+                    addEditorRow(c.q, c.a);
                 });
+            }
+
+            function addEditorRow(q = '', a = '') {
+                let item = $(`
+                    <div class="fc-editor-item">
+                        <label class="fc-label">Question</label>
+                        <input type="text" class="fc-input card-q" placeholder="Enter question..." value="${escapeHtml(q)}">
+
+                        <label class="fc-label">Answer</label>
+                        <input type="text" class="fc-input card-a" placeholder="Enter answer..." value="${escapeHtml(a)}">
+
+                        <i class="fas fa-trash-alt remove-card" style="position:absolute; top:12px; right:12px; color:#dc3545; cursor:pointer; font-size:0.9rem;" title="Delete Card"></i>
+                    </div>
+                `);
+                item.find('.remove-card').click(() => { item.fadeOut(200, function() { $(this).remove(); }); });
+                $editorList.append(item);
             }
 
             $(document).on(`toggleWidgetSettings.${wId}`, function() {
                 if ($settingsArea.is(':visible')) {
-                    $settingsArea.hide();
+                    $settingsArea.fadeOut(300);
                 } else {
                     renderEditor();
-                    $settingsArea.show();
+                    $settingsArea.fadeIn(300);
                 }
             });
 
             $(`#${wId}-add-card`).click(() => {
-                $editorList.append(`
-                    <div style="margin-bottom:10px; padding:5px; border:1px solid #eee; position:relative;">
-                        <input type="text" class="card-q" placeholder="Question" style="width:100%; margin-bottom:2px; font-size:0.8rem;">
-                        <input type="text" class="card-a" placeholder="Answer" style="width:100%; font-size:0.8rem;">
-                        <i class="fas fa-trash remove-card" style="position:absolute; top:5px; right:5px; color:#ff4d4d; cursor:pointer; font-size:0.7rem;" onclick="$(this).parent().remove()"></i>
-                    </div>
-                `);
+                addEditorRow();
                 $editorList.scrollTop($editorList[0].scrollHeight);
             });
 
@@ -320,7 +448,7 @@ const WidgetRegistry = {
                 $widget.data('flashcards', cards);
                 if (window.saveWorkspaceState) window.saveWorkspaceState();
                 updateCard();
-                $settingsArea.hide();
+                $settingsArea.fadeOut(300);
             });
 
             $widget.find('.card-area').click(function() {
