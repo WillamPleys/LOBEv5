@@ -75,9 +75,16 @@ const WidgetRegistry = {
                 if (window.saveWorkspaceState) window.saveWorkspaceState();
             });
 
+            let noteTrackTimeout = null;
             $textarea.on('input', function() {
-                $widget.data('noteText', $(this).val());
+                const val = $(this).val();
+                $widget.data('noteText', val);
                 if (window.saveWorkspaceState) window.saveWorkspaceState();
+
+                if (noteTrackTimeout) clearTimeout(noteTrackTimeout);
+                noteTrackTimeout = setTimeout(() => {
+                    window.trackActivity('edit_sticky_note', val.substring(0, 50) + (val.length > 50 ? '...' : ''));
+                }, 2000);
             });
         }
     },
@@ -161,6 +168,7 @@ const WidgetRegistry = {
                 let time = $time.val();
                 if (text) {
                     addTask(text, time);
+                    window.trackActivity('add_task', text);
                     $input.val(''); $time.val('');
                     saveTasks();
                 }
@@ -624,6 +632,7 @@ const WidgetRegistry = {
                                 data: JSON.stringify({ file_path: f.file_path }),
                                 success: function(res) {
                                     if (res.status === 'success') {
+                                        window.trackActivity('delete_file', f.original_name);
                                         // Remove from local list
                                         files = files.filter(file => file.id !== f.id);
                                         $widget.data('outputFiles', files);
@@ -803,6 +812,10 @@ const WidgetRegistry = {
             const $list = $(`#${wId}-activity-list`);
             let chartInstance = null;
 
+            function escapeHtml(text) {
+                return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+
             function refreshActivity() {
                 $.get('backend/get_activity.php', function(res) {
                     if (res.status === 'success') {
@@ -815,12 +828,28 @@ const WidgetRegistry = {
                                 // Better date parsing for various formats
                                 let timeStr = a.waktu_transaksi.replace(/-/g, "/");
                                 let time = new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                            let icon = 'fa-circle';
+                            let color = '#ccc';
+                            let type = a.jenis_aktivitas.toLowerCase();
+
+                            if (type.includes('create')) { icon = 'fa-plus-circle'; color = '#28a745'; }
+                            else if (type.includes('delete')) { icon = 'fa-trash-alt'; color = '#dc3545'; }
+                            else if (type.includes('edit') || type.includes('rename') || type.includes('resize') || type.includes('move')) { icon = 'fa-edit'; color = '#ffc107'; }
+                            else if (type.includes('open')) { icon = 'fa-folder-open'; color = '#17a2b8'; }
+                            else if (type.includes('login')) { icon = 'fa-sign-in-alt'; color = '#007bff'; }
+
                                 $list.append(`
-                                    <div style="padding:4px 0; border-bottom:1px solid #f9f9f9; display:flex; justify-content:space-between;">
-                                        <span style="font-weight:500;">${a.jenis_aktivitas.replace('_',' ')}</span>
-                                        <span style="color:#888;">${time}</span>
+                                <div style="padding:8px 0; border-bottom:1px solid #f1f1f1; display:flex; align-items:flex-start; gap:10px;">
+                                    <i class="fas ${icon}" style="color:${color}; margin-top:3px; width:15px; text-align:center;"></i>
+                                    <div style="flex:1;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                                            <span style="font-weight:600; font-size:0.8rem; text-transform:capitalize;">${a.jenis_aktivitas.replace(/_/g,' ')}</span>
+                                            <span style="color:#999; font-size:0.7rem;">${time}</span>
+                                        </div>
+                                        <div style="font-size:0.7rem; color:#666; margin-top:2px;">${escapeHtml(a.detail_aktivitas)}</div>
                                     </div>
-                                    <div style="font-size:0.7rem; color:#666; margin-bottom:4px;">${escapeHtml(a.detail_aktivitas)}</div>
+                                    </div>
                                 `);
                             });
                         }
@@ -1527,6 +1556,7 @@ const WidgetRegistry = {
 
                 ctx.lineWidth = currentPath.width;
                 ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
 
                 if (currentMode === 'eraser') {
                     ctx.globalCompositeOperation = 'destination-out';
@@ -1565,10 +1595,13 @@ const WidgetRegistry = {
             canvas.addEventListener('mousemove', draw);
 
             $(`#${wId}-clear-wb`).click(() => {
-                paths = [];
-                $widget.data('whiteboardPaths', paths);
-                redraw();
-                if (window.saveWorkspaceState) window.saveWorkspaceState();
+                window.showConfirmModal('Clear Whiteboard', 'Are you sure you want to clear the entire whiteboard?', () => {
+                    window.trackActivity('clear_whiteboard', 'Cleared paths');
+                    paths = [];
+                    $widget.data('whiteboardPaths', paths);
+                    redraw();
+                    if (window.saveWorkspaceState) window.saveWorkspaceState();
+                });
             });
 
             $(`#${wId}-save-upload-wb`).click(() => {

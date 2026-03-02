@@ -194,11 +194,17 @@ $(document).ready(function() {
                  let currentH = $(this).height();
                  $(this).draggable("option", "containment", [0, 60, $(window).width() - currentW, $(window).height() - currentH]);
             },
-            stop: saveWorkspaceState
+            stop: function() {
+                window.trackActivity('move_widget', name);
+                saveWorkspaceState();
+            }
         }).resizable({
             // Ensure resize doesn't push it out
             containment: "document",
-            stop: saveWorkspaceState
+            stop: function() {
+                window.trackActivity('resize_widget', name);
+                saveWorkspaceState();
+            }
         });
 
         newWidget.on('mousedown', function() { $('.lobe-widget').css('z-index', 500); $(this).css('z-index', 501); });
