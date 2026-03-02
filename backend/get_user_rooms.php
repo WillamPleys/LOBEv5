@@ -21,8 +21,12 @@ $result = $conn->query($query);
 $rooms = [];
 if ($result) {
     while ($row = $result->fetch_assoc()) {
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin' && $row['nama_room'] === 'Admin Panel') {
+            $row['is_admin_virtual'] = true;
+        }
         $rooms[] = $row;
     }
+
     echo json_encode(['status' => 'success', 'data' => $rooms]);
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Failed to fetch rooms']);

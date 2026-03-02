@@ -34,6 +34,14 @@ if ($action === 'login') {
             $detail = "User {$user['username']} berhasil login.";
             $conn->query("INSERT INTO transactions (user_id, jenis_aktivitas, detail_aktivitas, ip_address) VALUES ('{$user['id']}', 'Login', '$detail', '$ip')");
 
+            // ENSURE ADMIN HAS ADMIN PANEL ROOM
+            if ($user['role'] === 'admin') {
+                $check_admin_room = $conn->query("SELECT id FROM rooms WHERE user_id = '{$user['id']}' AND nama_room = 'Admin Panel'");
+                if ($check_admin_room->num_rows === 0) {
+                    $conn->query("INSERT INTO rooms (user_id, nama_room) VALUES ('{$user['id']}', 'Admin Panel')");
+                }
+            }
+
             // CHECK IF USER HAS EXISTING ROOMS
             $room_check = $conn->query("SELECT id, nama_room FROM rooms WHERE user_id = '{$user['id']}' ORDER BY created_at DESC LIMIT 1");
             $existing_room = null;
