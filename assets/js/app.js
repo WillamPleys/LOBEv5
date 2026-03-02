@@ -94,6 +94,7 @@ $(document).ready(function() {
                 if ($el.data('whiteboardPaths')) stateData.whiteboardPaths = $el.data('whiteboardPaths');
                 if ($el.data('isCalendarExpanded')) stateData.isCalendarExpanded = $el.data('isCalendarExpanded');
                 if ($el.data('expandedHeight')) stateData.expandedHeight = $el.data('expandedHeight');
+                if ($el.data('activityScope')) stateData.activityScope = $el.data('activityScope');
 
                 widgets.push({
                     id: $el.attr('id'),
@@ -353,6 +354,9 @@ $(document).ready(function() {
                                     $(`#${wId}`).data('linkedSourceId', w.content_data.linkedSourceId);
                                     // Trigger quietly to update internal state without user alerts
                                     $(document).trigger('restoreOutputSource', [wId, w.content_data.linkedSourceId]);
+                                }
+                                if (w.content_data.activityScope) {
+                                    $(document).trigger('setActivityScope', [wId, w.content_data.activityScope]);
                                 }
                             }
                         });
