@@ -27,7 +27,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             position: relative;
             padding: 20px; display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px; pointer-events: none; z-index: 100;
+            gap: 20px; z-index: 100;
             padding-bottom: 80px;
         }
 
@@ -294,7 +294,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     <input type="hidden" id="item-type">
                     <div class="form-group"><label>Name</label><input type="text" id="item-name" required></div>
                     <div class="form-group"><label>Description</label><input type="text" id="item-desc"></div>
-                    <div class="form-group"><label>Icon (fa-xxx, try: columns, list-ul, layer-group, robot, code, marker, whiteboard, hammer, clock)</label><input type="text" id="item-icon" required></div>
+                    <div class="form-group"><label>Icon</label><input type="text" id="item-icon" required></div>
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#item-modal').hide()"><script>document.write(ICONS.x);</script></button>
                         <button type="submit" class="btn btn-primary" title="Save Changes"><script>document.write(ICONS.check);</script></button>
@@ -332,8 +332,11 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             // Sync room list in navbar
             if (window.updateRoomLists) updateRoomLists();
 
-            // Auto refresh logs
-            setInterval(() => loadTransactions(1), 30000);
+            // Auto refresh logs & dashboard
+            setInterval(() => {
+                loadTransactions(1);
+                loadDashboard();
+            }, 30000);
         });
 
         let currentDashUser = '';
@@ -398,11 +401,16 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             $('#user-modal').show();
         }
 
+        function openEditById(id) {
+            let user = usersData[id];
+            if (user) openEditAccModal(user);
+        }
+
         function openEditAccModal(user) {
             $('#user-modal-title').text('Edit Account: ' + user.username);
             $('#edit-user-id').val(user.id);
             $('#edit-username').val(user.username);
-            $('#edit-password').val(user.password);
+            $('#edit-password').val(user.password || '');
             $('#user-modal').show();
         }
 
@@ -429,6 +437,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         });
 
 
+        let usersData = {}; // Store user objects globally for safer access
+
         function loadRoles(page) {
             let q = $('#role-search').val();
             let limit = $('#role-limit').val() || 10;
@@ -436,6 +446,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 if(res.status === 'success') {
                     let html = '<table><thead><tr><th>User</th><th>Role</th><th>Premium</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(u => {
+                        usersData[u.id] = u;
                         let isPrem = u.is_premium;
                         let premBadge = isPrem ? `<span class="badge badge-premium">Active</span>` : `<span style="color:#ccc;">None</span>`;
                         let roleBadge = u.role === 'admin' ? `<span class="badge badge-admin">Admin</span>` : 'User';
@@ -464,13 +475,16 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 if(res.status === 'success') {
                     let html = '<table><thead><tr><th>User</th><th>Password</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(u => {
+                        usersData[u.id] = u;
+                        // Escape single quotes for use in onclick
+                        let safeName = u.username.replace(/'/g, "\\'");
                         html += `<tr>
                             <td style="font-weight:bold;">${u.username}</td>
                             <td><span style="font-family:password;">••••••</span></td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Account" onclick='openEditAccModal(${JSON.stringify(u)})'>${ICONS.edit}</button>
-                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" title="Delete Account" onclick="deleteUser(${u.id}, '${u.username}')">${ICONS.trash}</button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Account" onclick="openEditById(${u.id})">${ICONS.edit}</button>
+                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" title="Delete Account" onclick="deleteUser(${u.id}, '${safeName}')">${ICONS.trash}</button>
                                 </div>
                             </td>
                         </tr>`;
@@ -531,24 +545,29 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             });
         }
 
+        let itemsData = {};
+
         function loadItems(page = 1) {
             let limit = $('#item-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_items&page=${page}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
-                    let html = '<table><thead><tr><th>Name</th><th>Description</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+                    let html = '<table><thead><tr><th>Icon</th><th>Name</th><th>Description</th><th>Status</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(i => {
+                        itemsData[i.id] = i;
                         let activeText = i.is_active == 1 ? 'Active' : 'Disabled';
                         let activeColor = i.is_active == 1 ? 'green' : 'red';
                         let btnText = i.is_active == 1 ? 'Disable' : 'Enable';
-                        let itemJson = JSON.stringify(i).replace(/'/g, "&#39;");
+
+                        let iconSvg = window.getSvgIcon(i.gambar, 16);
 
                         html += `<tr>
+                            <td>${iconSvg}</td>
                             <td><span style="font-weight:bold;">${i.nama_item}</span></td>
                             <td style="font-size:0.7rem; color:#666;">${i.deskripsi}</td>
                             <td style="color:${activeColor}; font-weight:bold;">${activeText}</td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Item" onclick='editItem(${itemJson})'>${ICONS.edit}</button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Item" onclick="openEditItemById(${i.id})">${ICONS.edit}</button>
                                     <button class="btn" style="padding:4px 8px; font-size:0.7rem; background:#6c757d;" title="${btnText}" onclick="toggleItem(${i.id}, ${i.is_active == 1 ? 0 : 1})">${i.is_active == 1 ? ICONS.eyeOff : ICONS.eye}</button>
                                 </div>
                             </td>
@@ -606,6 +625,11 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             $('#item-id').val('');
             $('#item-form')[0].reset();
             $('#item-modal').show();
+        }
+
+        function openEditItemById(id) {
+            let item = itemsData[id];
+            if (item) editItem(item);
         }
 
         function editItem(item) {

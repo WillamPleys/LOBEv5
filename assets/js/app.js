@@ -936,6 +936,11 @@ $(document).ready(function() {
 
                     // Fix Bug 5: Update lists immediately
                     updateRoomLists();
+
+                    // Refresh dashboard if on admin page
+                    if (window.location.pathname.includes('admin.php') && typeof loadDashboard === 'function') {
+                        loadDashboard();
+                    }
                 } else { window.showCustomModal('Error', res.message); btn.text(originalText).prop('disabled', false); }
             },
             error: function() { window.showCustomModal('Error', "Server error."); btn.text(originalText).prop('disabled', false); }
