@@ -994,29 +994,34 @@ const WidgetRegistry = {
                     // DELETE LOGIC
                     item.find('.delete-file-icon').on('click', function(e) {
                         e.stopPropagation();
-                        window.showConfirmModal('Delete File', `Are you sure you want to delete "<b>${safeName}</b>"? This will permanently remove it from the server.`, () => {
-                            $.ajax({
-                                url: 'backend/delete_file.php',
-                                type: 'POST',
-                                contentType: 'application/json',
-                                data: JSON.stringify({ file_path: f.file_path }),
-                                success: function(res) {
-                                    if (res.status === 'success') {
-                                        window.trackActivity('delete_file', f.original_name);
-                                        // Remove from local list
-                                        files = files.filter(file => file.id !== f.id);
-                                        $widget.data('outputFiles', files);
-                                        renderFiles();
-                                        if (window.saveWorkspaceState) window.saveWorkspaceState();
-                                        window.showCustomModal('Success', 'File deleted successfully.');
-                                    } else {
-                                        window.showCustomModal('Error', res.message);
+                        window.showConfirmModal('Delete File', `Are you sure you want to delete "<b>${safeName}</b>"?`, () => {
+                            const removeLocal = () => {
+                                window.trackActivity('delete_file', f.original_name);
+                                files = files.filter(file => file.id !== f.id);
+                                $widget.data('outputFiles', files);
+                                renderFiles();
+                                if (window.saveWorkspaceState) window.saveWorkspaceState();
+                                window.showCustomModal('Success', 'File removed successfully.');
+                            };
+
+                            if (f.file_path) {
+                                $.ajax({
+                                    url: 'backend/delete_file.php',
+                                    type: 'POST',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify({ file_path: f.file_path }),
+                                    success: function(res) {
+                                        if (res.status === 'success') removeLocal();
+                                        else window.showCustomModal('Error', res.message);
+                                    },
+                                    error: function() {
+                                        window.showCustomModal('Error', 'Failed to connect to server for deletion.');
                                     }
-                                },
-                                error: function() {
-                                    window.showCustomModal('Error', 'Failed to connect to server for deletion.');
-                                }
-                            });
+                                });
+                            } else {
+                                // Virtual file (e.g. from AI Assistant or Note Editor content)
+                                removeLocal();
+                            }
                         });
                     });
 

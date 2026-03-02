@@ -632,8 +632,12 @@ $(document).ready(function() {
             $('#admin-badge').show();
         }
 
+        // Check for redirect action
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action');
+
         // If user was already in a room, go straight to workspace
-        if (typeof INITIAL_STATE !== 'undefined' && INITIAL_STATE.activeRoomId !== null && INITIAL_STATE.activeRoomName) {
+        if (typeof INITIAL_STATE !== 'undefined' && INITIAL_STATE.activeRoomId !== null && INITIAL_STATE.activeRoomName && action !== 'new_room') {
             roomScreen.hide();
             workspaceScreen.css('display', 'block');
             $('#up-nav-bar').show();
@@ -961,6 +965,10 @@ $(document).ready(function() {
         let isAdminRoom = $(this).data('is-admin') === true || $(this).attr('data-is-admin') === "true";
 
         if (value === 'new') {
+            if (window.IS_ADMIN_PAGE) {
+                window.location.href = 'index.php?action=new_room';
+                return;
+            }
             workspaceScreen.fadeOut(300, function() { roomScreen.fadeIn(300); $('#welcome-screen').hide(); $('.grid-background').removeClass('active'); });
         } else if (isAdminRoom) {
             window.location.href = 'admin.php';
