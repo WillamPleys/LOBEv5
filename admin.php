@@ -20,6 +20,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
+        * { font-family: 'Roboto', sans-serif !important; }
         body { margin: 0; overflow-y: auto; background-color: #f0f2f5; min-height: 100vh; padding-top: 60px; }
 
         /* Admin Overlay Layer */
@@ -64,7 +65,16 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         .pagination button.active { background: #007bff; color: white; border-color: #007bff; }
 
         .search-bar { margin-bottom: 10px; display: flex; gap: 5px; align-items: center; }
-        .search-bar input { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem; }
+        .search-bar input, .form-group input, .pagination input {
+            padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem;
+            background: #fff; transition: all 0.2s; outline: none;
+        }
+        .search-bar input:focus, .form-group input:focus { border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,0.1); }
+
+        /* Hide Number Spinners */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+
         .search-bar select, .form-group select {
             padding: 6px;
             border: 1px solid #ddd;
@@ -150,7 +160,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     <div class="window-content">
                         <div class="search-bar">
                             <input type="text" id="dash-user-search" placeholder="Search specific user (or global)...">
-                            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.7rem;" onclick="resetDashboard()">Reset</button>
+                            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.7rem;" title="Reset Dashboard" onclick="resetDashboard()"><i class="fas fa-undo"></i></button>
                         </div>
                         <div id="dash-scope-badge" style="font-size:0.7rem; color:#007bff; margin-bottom:10px; font-weight:bold;">SCOPE: GLOBAL</div>
 
@@ -238,7 +248,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             </select>
                         </div>
                         <div id="acc-list-container">Loading...</div>
-                        <button class="btn btn-primary" style="width:100%; margin-top:10px; font-size:0.8rem;" onclick="openCreateAccModal()">+ Create Account</button>
+                        <button class="btn btn-primary" style="width:100%; margin-top:10px; font-size:1rem;" title="Create Account" onclick="openCreateAccModal()"><i class="fas fa-user-plus"></i></button>
                     </div>
                     <div style="padding: 5px; border-top: 1px solid #eee;">
                          <div class="pagination" id="acc-pagination"></div>
@@ -275,8 +285,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                         </select>
                     </div>
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" onclick="$('#user-modal').hide()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#user-modal').hide()"><i class="fas fa-times"></i></button>
+                        <button type="submit" class="btn btn-primary" title="Save Changes"><i class="fas fa-check"></i></button>
                     </div>
                 </div>
             </form>
@@ -304,8 +314,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     </div>
                     <div class="form-group"><label>Icon (fa-xxx)</label><input type="text" id="item-icon" required></div>
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" onclick="$('#item-modal').hide()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" title="Cancel" onclick="$('#item-modal').hide()"><i class="fas fa-times"></i></button>
+                        <button type="submit" class="btn btn-primary" title="Save Changes"><i class="fas fa-check"></i></button>
                     </div>
                 </div>
             </form>
@@ -326,6 +336,11 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         let activityChart = null;
 
         $(document).ready(function() {
+            // Disable right-click menu globally in admin page
+            $(document).on('contextmenu', function(e) {
+                e.preventDefault();
+            });
+
             loadDashboard();
             loadRoles(1);
             loadTransactions(1);
@@ -472,14 +487,20 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             let limit = $('#role-limit').val() || 10;
             $.get(`backend/admin_api.php?action=get_users&page=${page}&search=${q}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
-                    let html = '<table><thead><tr><th>User</th><th>Role</th><th>Action</th></tr></thead><tbody>';
+                    let html = '<table><thead><tr><th>User</th><th>Role</th><th>Premium</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(u => {
+                        let premBadge = u.is_premium ? `<span class="badge badge-premium">Active</span>` : `<span style="color:#ccc;">None</span>`;
                         let roleBadge = u.role === 'admin' ? `<span class="badge badge-admin">Admin</span>` : 'User';
                         html += `<tr>
                             <td style="font-weight:bold;">${u.username}</td>
                             <td>${roleBadge}</td>
+                            <td>${premBadge}</td>
                             <td>
-                                <button class="btn btn-secondary" style="padding:2px 5px; font-size:0.6rem;" onclick="editRole(${u.id}, '${u.role}')"><i class="fas fa-user-edit"></i></button>
+                                <div style="display:flex; gap:3px;">
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Toggle Role" onclick="editRole(${u.id}, '${u.role}')"><i class="fas fa-user-tag"></i></button>
+                                    <button class="btn btn-success" style="padding:4px 8px; font-size:0.7rem;" title="Grant Premium" onclick="givePremium(${u.id})"><i class="fas fa-crown"></i></button>
+                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" title="Strip Premium" onclick="givePremium(${u.id}, 0)"><i class="fas fa-trash-alt"></i></button>
+                                </div>
                             </td>
                         </tr>`;
                     });
@@ -514,8 +535,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             <td><span style="font-family:password;">••••••</span></td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:2px 5px; font-size:0.6rem;" onclick='openEditAccModal(${JSON.stringify(u)})'><i class="fas fa-edit"></i></button>
-                                    <button class="btn btn-danger" style="padding:2px 5px; font-size:0.6rem;" onclick="deleteUser(${u.id}, '${u.username}')"><i class="fas fa-trash-alt"></i></button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Account" onclick='openEditAccModal(${JSON.stringify(u)})'><i class="fas fa-user-edit"></i></button>
+                                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" title="Delete Account" onclick="deleteUser(${u.id}, '${u.username}')"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </td>
                         </tr>`;
@@ -594,8 +615,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                             <td style="color:${activeColor}; font-weight:bold;">${activeText}</td>
                             <td>
                                 <div style="display:flex; gap:3px;">
-                                    <button class="btn btn-secondary" style="padding:2px 5px; font-size:0.6rem;" onclick='editItem(${itemJson})'>Edit</button>
-                                    <button class="btn" style="padding:2px 5px; font-size:0.6rem; background:#6c757d;" onclick="toggleItem(${i.id}, ${i.is_active == 1 ? 0 : 1})">${btnText}</button>
+                                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem;" title="Edit Item" onclick='editItem(${itemJson})'><i class="fas fa-edit"></i></button>
+                                    <button class="btn" style="padding:4px 8px; font-size:0.7rem; background:#6c757d;" title="${btnText}" onclick="toggleItem(${i.id}, ${i.is_active == 1 ? 0 : 1})"><i class="fas ${i.is_active == 1 ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
                                 </div>
                             </td>
                         </tr>`;
@@ -632,13 +653,13 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
             // Search/Jump Field 1
             html += `<div style="display:flex; align-items:center; margin-left:10px; gap:5px;">
-                <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Page" style="width:50px; padding:4px; font-size:0.7rem; border:1px solid #ddd; border-radius:3px;">
-                <button style="padding:4px 8px; font-size:0.7rem;" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);">Go</button>
+                <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Page" style="width:50px; padding:0; height:24px; text-align:center;">
+                <button class="btn btn-secondary" style="padding:0; width:24px; height:24px; font-size:0.6rem;" title="Go" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);"><i class="fas fa-chevron-right"></i></button>
             </div>`;
 
             // Search/Jump Field 2 (identical as requested "search field dan search field")
             html += `<div style="display:flex; align-items:center; margin-left:5px; gap:5px;">
-                <input type="number" id="${prefix}-jump-page-2" min="1" max="${totalPages}" placeholder="Jump" style="width:50px; padding:4px; font-size:0.7rem; border:1px solid #ddd; border-radius:3px;">
+                <input type="number" id="${prefix}-jump-page-2" min="1" max="${totalPages}" placeholder="Jump" style="width:50px; padding:0; height:24px; text-align:center;">
             </div>`;
 
             $('#' + prefix + '-pagination').html(html);
