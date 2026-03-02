@@ -321,6 +321,14 @@ const WidgetRegistry = {
                             padding: 12px;
                             margin-bottom: 15px;
                             position: relative;
+                            transition: all 0.2s;
+                            cursor: pointer;
+                        }
+                        .fc-editor-item:hover { background: #f1f3f5; }
+                        .fc-editor-item.active {
+                            border-left: 5px solid #007bff;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                            background: white;
                         }
                         .fc-label {
                             font-size: 0.7rem;
@@ -344,11 +352,27 @@ const WidgetRegistry = {
                             outline: none;
                             border-color: #007bff;
                         }
+                        .fc-img-preview {
+                            width: 100%;
+                            height: 100px;
+                            object-fit: contain;
+                            background: #eee;
+                            border-radius: 4px;
+                            margin-bottom: 10px;
+                            display: none;
+                        }
                     </style>
                     <div id="${wId}-play-area" style="flex:1; display:flex; flex-direction:column; padding:15px;">
+                        <div id="${wId}-set-info" style="margin-bottom:10px;">
+                            <h2 id="${wId}-display-title" style="margin:0; font-size:1.2rem; font-weight:900;">Flashcard Set</h2>
+                            <p id="${wId}-display-desc" style="margin:0; font-size:0.8rem; color:#666;">Practice your knowledge here.</p>
+                        </div>
                         <div class="card-area" style="flex:1; perspective:1000px; cursor:pointer; position:relative; margin-bottom:15px;">
                             <div class="card-inner" style="width:100%; height:100%; position:relative; text-align:center; transition:transform 0.6s; transform-style:preserve-3d;">
-                                <div class="card-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; align-items:center; justify-content:center; padding:20px; font-weight:bold; font-size:1.4rem; background:white; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">Question?</div>
+                                <div class="card-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; font-weight:bold; font-size:1.4rem; background:white; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow:hidden;">
+                                    <img class="card-img" style="max-height:60%; max-width:100%; object-fit:contain; margin-bottom:10px; display:none;">
+                                    <span class="card-text">Question?</span>
+                                </div>
                                 <div class="card-back" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; transform:rotateY(180deg); display:flex; align-items:center; justify-content:center; padding:20px; color:#007bff; font-weight:bold; font-size:1.4rem; background:#f0f7ff; border:2px solid #007bff; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">Answer!</div>
                             </div>
                         </div>
@@ -362,14 +386,19 @@ const WidgetRegistry = {
                     <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:15px; box-sizing:border-box; z-index:5;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                             <div>
-                                <h3 style="margin:0; font-size:1.1rem; color:#333;">Card Editor</h3>
-                                <small style="color:#888;">Total Cards: <span id="${wId}-total-count">0</span></small>
+                                <h3 style="margin:0; font-size:1.1rem; color:#333;">Flashcard Creator</h3>
+                                <small style="color:#888;">Configure your set like a Google Form.</small>
                             </div>
                             <button id="${wId}-save-settings" class="btn btn-success" style="padding:5px 15px; font-weight:bold;"><i class="fas fa-save"></i> Save</button>
+                        </div>
+                        <div style="margin-bottom:20px; padding:10px; border:1px solid #eee; border-radius:8px; border-top: 8px solid #673ab7;">
+                            <input type="text" id="${wId}-set-title" class="fc-input" placeholder="Set Title" style="font-size:1.5rem; border-bottom:1px solid #eee;" value="">
+                            <input type="text" id="${wId}-set-desc" class="fc-input" placeholder="Set Description" style="font-size:0.9rem; border-bottom:none;" value="">
                         </div>
                         <div id="${wId}-editor-list" style="flex:1; overflow-y:auto; margin-bottom:10px; padding-right:5px;"></div>
                         <button id="${wId}-add-card" class="btn btn-primary" style="width:100%; border-radius:8px; padding:8px;"><i class="fas fa-plus"></i> Add Question</button>
                     </div>
+                    <input type="file" id="${wId}-fc-img-upload" style="display:none;" accept="image/*">
                 </div>
             `;
         },
@@ -380,22 +409,37 @@ const WidgetRegistry = {
             const $editorList = $(`#${wId}-editor-list`);
             const $indexDisplay = $(`#${wId}-index-display`);
             const $totalDisplay = $(`#${wId}-total-display`);
+            const $imgUpload = $(`#${wId}-fc-img-upload`);
 
             let isFlipped = false;
             let currentIdx = 0;
-            let cards = $widget.data('flashcards') || [{q: "Sample Question?", a: "Sample Answer!"}];
+            let cards = $widget.data('flashcards') || [];
+            let setTitle = $widget.data('fcTitle') || "Flashcard Set";
+            let setDesc = $widget.data('fcDesc') || "Practice your knowledge here.";
+            let activeItem = null;
 
             function updateCard() {
+                $widget.find(`#${wId}-display-title`).text(setTitle);
+                $widget.find(`#${wId}-display-desc`).text(setDesc);
+
                 if (cards.length === 0) {
-                    $widget.find('.card-front').text("Empty. Click Cog to add!");
+                    $widget.find('.card-front .card-text').text("Empty. Click Cog to add!");
+                    $widget.find('.card-front .card-img').hide();
                     $widget.find('.card-back').text("No Answer.");
                     $indexDisplay.text(0);
                     $totalDisplay.text(0);
                     return;
                 }
                 if (currentIdx >= cards.length) currentIdx = 0;
-                $widget.find('.card-front').text(cards[currentIdx].q);
-                $widget.find('.card-back').text(cards[currentIdx].a);
+
+                const card = cards[currentIdx];
+                $widget.find('.card-front .card-text').text(card.q || "No Question");
+                if (card.img) {
+                    $widget.find('.card-front .card-img').attr('src', card.img).show();
+                } else {
+                    $widget.find('.card-front .card-img').hide();
+                }
+                $widget.find('.card-back').text(card.a || "No Answer");
                 $indexDisplay.text(currentIdx + 1);
                 $totalDisplay.text(cards.length);
                 if(isFlipped) { $widget.find('.card-inner').css('transform', 'rotateY(0deg)'); isFlipped = false; }
@@ -403,32 +447,85 @@ const WidgetRegistry = {
 
             function renderEditor() {
                 $editorList.empty();
+                $(`#${wId}-set-title`).val(setTitle);
+                $(`#${wId}-set-desc`).val(setDesc);
                 cards.forEach((c, i) => {
-                    addEditorRow(c.q, c.a);
+                    addEditorRow(c.q, c.a, c.img);
                 });
-                $(`#${wId}-total-count`).text(cards.length);
             }
 
-            function addEditorRow(q = '', a = '') {
+            function addEditorRow(q = '', a = '', img = null) {
                 let item = $(`
                     <div class="fc-editor-item">
+                        <img class="fc-img-preview" src="" style="display: none;">
                         <label class="fc-label">Question</label>
-                        <input type="text" class="fc-input card-q" placeholder="Enter question..." value="${escapeHtml(q)}">
+                        <input type="text" class="fc-input card-q" placeholder="Enter question...">
 
                         <label class="fc-label">Answer</label>
-                        <input type="text" class="fc-input card-a" placeholder="Enter answer..." value="${escapeHtml(a)}">
+                        <input type="text" class="fc-input card-a" placeholder="Enter answer...">
+
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn btn-sm btn-outline-secondary fc-upload-btn" style="font-size:0.7rem;"><i class="fas fa-image"></i> Add Image</button>
+                            <button class="btn btn-sm btn-outline-danger fc-remove-img" style="font-size:0.7rem; display:none;"><i class="fas fa-times"></i> Remove Image</button>
+                        </div>
 
                         <i class="fas fa-trash-alt remove-card" style="position:absolute; top:12px; right:12px; color:#dc3545; cursor:pointer; font-size:0.9rem;" title="Delete Card"></i>
                     </div>
                 `);
-                item.find('.remove-card').click(() => {
+
+                // Set values safely
+                item.find('.card-q').val(q);
+                item.find('.card-a').val(a);
+                if (img) {
+                    item.find('.fc-img-preview').attr('src', img).show();
+                    item.find('.fc-remove-img').show();
+                }
+
+                item.on('click', function() {
+                    $editorList.find('.fc-editor-item').removeClass('active');
+                    $(this).addClass('active');
+                });
+
+                item.find('.fc-upload-btn').click((e) => {
+                    e.stopPropagation();
+                    activeItem = item;
+                    $imgUpload.click();
+                });
+
+                item.find('.fc-remove-img').click((e) => {
+                    e.stopPropagation();
+                    item.find('.fc-img-preview').attr('src', '').hide();
+                    $(e.target).closest('.fc-remove-img').hide();
+                });
+
+                item.find('.remove-card').click((e) => {
+                    e.stopPropagation();
                     item.fadeOut(200, function() {
                         $(this).remove();
-                        $(`#${wId}-total-count`).text($editorList.children().length);
                     });
                 });
                 $editorList.append(item);
             }
+
+            $imgUpload.on('change', function() {
+                const file = this.files[0];
+                if (file && activeItem) {
+                    let formData = new FormData();
+                    formData.append('file', file);
+                    $.ajax({
+                        url: 'backend/upload.php', type: 'POST', data: formData, contentType: false, processData: false,
+                        success: function(res) {
+                            if(res.status === 'success') {
+                                activeItem.find('.fc-img-preview').attr('src', res.file_path).show();
+                                activeItem.find('.fc-remove-img').show();
+                            } else {
+                                window.showCustomModal('Error', res.message);
+                            }
+                        }
+                    });
+                }
+                this.value = ''; // Reset input
+            });
 
             $(document).on(`toggleWidgetSettings.${wId}`, function() {
                 if ($settingsArea.is(':visible')) {
@@ -441,7 +538,6 @@ const WidgetRegistry = {
 
             $(`#${wId}-add-card`).click(() => {
                 addEditorRow();
-                $(`#${wId}-total-count`).text($editorList.children().length);
                 $editorList.scrollTop($editorList[0].scrollHeight);
             });
 
@@ -450,12 +546,21 @@ const WidgetRegistry = {
                 $editorList.children().each(function() {
                     let q = $(this).find('.card-q').val().trim();
                     let a = $(this).find('.card-a').val().trim();
-                    if (q || a) newCards.push({q: q, a: a});
+                    let img = $(this).find('.fc-img-preview').attr('src');
+                    if (q || a || img) newCards.push({q: q, a: a, img: img});
                 });
                 cards = newCards;
+                setTitle = $(`#${wId}-set-title`).val().trim() || "Flashcard Set";
+                setDesc = $(`#${wId}-set-desc`).val().trim() || "Practice your knowledge here.";
+
                 $widget.data('flashcards', cards);
+                $widget.data('fcTitle', setTitle);
+                $widget.data('fcDesc', setDesc);
+
                 if (window.saveWorkspaceState) window.saveWorkspaceState();
+
                 updateCard();
+                window.showCustomModal('Success', 'Flashcard set saved successfully.');
                 $settingsArea.fadeOut(300);
             });
 
@@ -467,6 +572,14 @@ const WidgetRegistry = {
             });
             $widget.find(`#${wId}-next`).click(function() { if (cards.length > 0) { currentIdx = (currentIdx + 1) % cards.length; updateCard(); } });
             $widget.find(`#${wId}-prev`).click(function() { if (cards.length > 0) { currentIdx = (currentIdx - 1 + cards.length) % cards.length; updateCard(); } });
+
+            // Automatically open settings if empty or newly created
+            if (cards.length === 0) {
+                setTimeout(() => {
+                    renderEditor();
+                    $settingsArea.show();
+                }, 100);
+            }
 
             updateCard();
         }
