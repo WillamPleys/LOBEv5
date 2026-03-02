@@ -85,6 +85,13 @@ switch ($action) {
         $uId = (int)$data['id'];
         $days = (int)$data['days']; // 0 for remove, -1 for permanent (far future)
 
+        // Prevent granting premium to admin accounts
+        $check = $conn->query("SELECT role FROM users WHERE id = $uId")->fetch_assoc();
+        if ($check && $check['role'] === 'admin') {
+            echo json_encode(['status' => 'error', 'message' => 'Admin accounts cannot be given premium.']);
+            exit;
+        }
+
         $expiry = null;
         if ($days > 0) {
             $expiry = date('Y-m-d H:i:s', strtotime("+$days days"));

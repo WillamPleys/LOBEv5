@@ -458,12 +458,15 @@ $(document).ready(function() {
 
                     rooms.forEach(room => {
                         let safeRoom = $('<div/>').text(room.nama_room).html();
+
+                        let isVirtualAdmin = (room.is_admin_virtual === true);
+
                         // Increased hit area for delete button (using padding and larger wrapper)
-                        let deleteBtn = canDelete ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="margin-left:auto; cursor:pointer; padding:5px 10px; display:inline-block;" title="Delete Room"><i class="fas fa-trash-alt" style="color:#ff4d4d; font-size:0.9rem;"></i></span>` : '';
+                        let deleteBtn = (canDelete && !isVirtualAdmin) ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="margin-left:auto; cursor:pointer; padding:5px 10px; display:inline-block;" title="Delete Room"><i class="fas fa-trash-alt" style="color:#ff4d4d; font-size:0.9rem;"></i></span>` : '';
 
                         // Custom Option with Delete Button
                         let optionHtml = `
-                            <div class="custom-option" data-value="${room.id}" style="display:flex; align-items:center; justify-content:space-between; padding-right:5px;">
+                            <div class="custom-option" data-value="${room.id}" ${isVirtualAdmin ? 'data-is-admin="true"' : ''} style="display:flex; align-items:center; justify-content:space-between; padding-right:5px;">
                                 <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80%;">${safeRoom}</span>
                                 ${deleteBtn}
                             </div>
@@ -478,11 +481,13 @@ $(document).ready(function() {
                             list.empty();
                             rooms.forEach(room => {
                                 let safeRoom = $('<div/>').text(room.nama_room).html();
-                                // Same hit area improvement for sidebar
-                                let deleteBtn = canDelete ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="float:right; cursor:pointer; padding:2px 8px;" title="Delete Room"><i class="fas fa-trash-alt" style="color:#ff4d4d;"></i></span>` : '';
+                                let isVirtualAdmin = (room.is_admin_virtual === true);
 
-                                list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="switchRoom('${room.id}', '${safeRoom}')">
-                                    <span><i class="fas fa-door-open"></i> ${safeRoom}</span>
+                                // Same hit area improvement for sidebar
+                                let deleteBtn = (canDelete && !isVirtualAdmin) ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="float:right; cursor:pointer; padding:2px 8px;" title="Delete Room"><i class="fas fa-trash-alt" style="color:#ff4d4d;"></i></span>` : '';
+
+                                list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="${isVirtualAdmin ? "window.location.href='admin.php'" : "switchRoom('"+room.id+"', '"+safeRoom+"')" }">
+                                    <span><i class="fas ${isVirtualAdmin ? 'fa-user-shield' : 'fa-door-open'}"></i> ${safeRoom}</span>
                                     ${deleteBtn}
                                 </li>`);
                             });
@@ -532,6 +537,10 @@ $(document).ready(function() {
 
         if (typeof INITIAL_STATE !== 'undefined' && INITIAL_STATE.isPremium) {
             $('#premium-badge').show();
+        }
+
+        if (typeof INITIAL_STATE !== 'undefined' && INITIAL_STATE.role === 'admin') {
+            $('#admin-badge').show();
         }
 
         // If user was already in a room, go straight to workspace
@@ -859,8 +868,12 @@ $(document).ready(function() {
     // Handle Option Click (Navbar)
     $(document).on('click', '.custom-option', function() {
         let value = $(this).data('value'); let text = $(this).text();
+        let isAdminRoom = $(this).data('is-admin') === true || $(this).attr('data-is-admin') === "true";
+
         if (value === 'new') {
             workspaceScreen.fadeOut(300, function() { roomScreen.fadeIn(300); $('#welcome-screen').hide(); $('.grid-background').removeClass('active'); });
+        } else if (isAdminRoom) {
+            window.location.href = 'admin.php';
         } else {
             // Check if not clicking on the delete button span
             if(!$(event.target).closest('span[title="Delete Room"]').length) {
@@ -883,6 +896,13 @@ $(document).ready(function() {
             success: function(res) {
                 if(res.status === 'success') {
                     window.trackActivity('create_room', roomName);
+
+                    // Redirect to index.php if currently on admin.php
+                    if (window.location.pathname.includes('admin.php')) {
+                        window.location.href = 'index.php';
+                        return;
+                    }
+
                     // Fix Bug 3: Clear workspace before showing new room
                     $('.lobe-widget').remove();
 

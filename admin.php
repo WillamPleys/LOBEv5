@@ -20,21 +20,21 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #f0f2f5; }
+        body { margin: 0; overflow: auto; background-color: #f0f2f5; }
 
         /* Admin Overlay Layer */
         #admin-layer {
-            position: absolute; top: 60px; left: 0; right: 0; bottom: 0;
+            position: absolute; top: 60px; left: 0; right: 0; min-height: calc(100vh - 60px);
             padding: 20px; display: grid;
             grid-template-columns: 400px 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
+            grid-template-rows: auto auto;
             gap: 20px; pointer-events: none; z-index: 100;
         }
 
         .admin-window {
             background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;
-            pointer-events: all;
+            pointer-events: all; height: 100%;
         }
 
         .window-header {
@@ -52,7 +52,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
-        th { background-color: #fafafa; color: #555; position: sticky; top: 0; z-index: 1; }
+        th { background-color: #fff; color: #333; position: sticky; top: 0px; z-index: 10; border-bottom: 2px solid #eee; }
 
         .badge { padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; }
         .badge-premium { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
@@ -99,16 +99,17 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
             <nav id="up-nav-bar" class="navbar">
                 <div class="nav-logo" style="display:flex; align-items:center;">
-                    LOBE <span style="margin-left:10px; background:#343a40; color:white; font-size:10px; padding:2px 8px; border-radius:20px; font-weight:900;">ADMIN</span>
+                    LOBE <span id="admin-badge" style="margin-left:10px; background:#343a40; color:white; font-size:10px; padding:2px 8px; border-radius:20px; font-weight:900;">ADMIN</span>
                 </div>
                 <div class="nav-center">
                     <div class="custom-select-wrapper">
                         <div class="custom-select-trigger">
-                            <span id="current-room-name"><?php echo $activeRoomName ?: '+ Create New Room'; ?></span>
+                            <span id="current-room-name">Admin Panel</span>
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="custom-options">
                             <span class="custom-option" data-value="new">+ Create New Room</span>
+                            <!-- Rooms will be loaded here via updateRoomLists -->
                         </div>
                     </div>
                 </div>
@@ -211,7 +212,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 <div class="modal-body">
                     <input type="hidden" id="item-id">
                     <div class="form-group"><label>Name</label><input type="text" id="item-name" required></div>
-                    <div class="form-group"><label>Description</label><textarea id="item-desc" rows="2" style="width:100%; border:1px solid #ddd; padding:8px; border-radius:4px; font-size:14px;"></textarea></div>
+                    <div class="form-group"><label>Description</label><input type="text" id="item-desc" style="width:100%; border:1px solid #ddd; padding:8px; border-radius:4px; font-size:14px;"></div>
                     <div class="form-group">
                         <label>Type</label>
                         <select id="item-type">
@@ -248,6 +249,9 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             loadUsers(1);
             loadTransactions(1);
             loadItems();
+
+            // Sync room list in navbar
+            if (window.updateRoomLists) updateRoomLists();
 
             // Auto refresh logs
             setInterval(() => loadTransactions(1), 30000);
@@ -324,7 +328,14 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                 url: 'backend/admin_api.php?action=update_user_premium',
                 type: 'POST',
                 data: JSON.stringify({ id: id, days: days }),
-                success: function() { loadUsers(1); loadDashboard(); }
+                success: function(res) {
+                    if (res.status === 'error') {
+                        if (window.showCustomModal) window.showCustomModal('Error', res.message);
+                        else alert(res.message);
+                    }
+                    loadUsers(1);
+                    loadDashboard();
+                }
             });
         }
 
@@ -381,12 +392,48 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
         function renderPagination(prefix, meta, callback) {
             let html = '';
-            let start = Math.max(1, meta.current_page - 2);
-            let end = Math.min(meta.total_pages, start + 4);
-            for(let i=start; i<=end; i++) {
-                html += `<button class="${i === meta.current_page ? 'active' : ''}" onclick="${callback.name}(${i})">${i}</button>`;
+            const currentPage = meta.current_page;
+            const totalPages = meta.total_pages;
+
+            // First page
+            html += `<button class="${currentPage === 1 ? 'active' : ''}" onclick="${callback.name}(1)">1</button>`;
+
+            if (currentPage > 3) {
+                html += `<span>...</span>`;
             }
+
+            // Middle pages
+            let start = Math.max(2, currentPage - 1);
+            let end = Math.min(totalPages - 1, currentPage + 1);
+
+            for (let i = start; i <= end; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="${callback.name}(${i})">${i}</button>`;
+            }
+
+            if (currentPage < totalPages - 2) {
+                html += `<span>...</span>`;
+            }
+
+            // Last page
+            if (totalPages > 1) {
+                html += `<button class="${currentPage === totalPages ? 'active' : ''}" onclick="${callback.name}(${totalPages})">${totalPages}</button>`;
+            }
+
+            // Jump to page input
+            html += `<div style="display:flex; align-items:center; margin-left:10px; gap:5px;">
+                <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Go" style="width:40px; padding:2px; font-size:0.7rem; border:1px solid #ddd; border-radius:3px;">
+                <button style="padding:2px 5px; font-size:0.7rem;" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);">Jump</button>
+            </div>`;
+
             $('#' + prefix + '-pagination').html(html);
+
+            // Allow enter key on jump input
+            $(`#${prefix}-jump-page`).on('keypress', function(e) {
+                if(e.which == 13) {
+                    let p = $(this).val();
+                    if(p >= 1 && p <= totalPages) callback(p);
+                }
+            });
         }
 
         function openItemModal() {
