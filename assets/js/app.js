@@ -402,6 +402,10 @@ $(document).ready(function() {
                     success: function(res) {
                         if(res.status === 'success') {
                             window.showCustomModal('Success', 'Room deleted successfully.');
+                            if(res.redirect_admin) {
+                                window.location.href = 'admin.php';
+                                return;
+                            }
                             if(res.switched_to) {
                                 switchRoom(res.switched_to.id, res.switched_to.nama_room);
                             }
@@ -845,7 +849,7 @@ $(document).ready(function() {
                     if (action === 'login') window.trackActivity('login', username);
                     if (action === 'register') { $('#auth-message').html('<span style="color:green; font-size:12px; font-weight:bold;">' + res.message + '</span>'); $('#password').val(''); }
                     else {
-                        if(false) { /* redirect logic removed */ }
+                        if(res.redirect_url) { window.location.href = res.redirect_url; }
                         else {
                             $('#display-user').text(username);
                             loginScreen.fadeOut(300, function() {
