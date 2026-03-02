@@ -178,7 +178,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                         <div class="search-bar">
                             <input type="text" id="user-search" placeholder="Search username..." oninput="loadUsers(1)">
                             <select id="user-limit" onchange="loadUsers(1)">
-                                <option value="25">25</option><option value="50">50</option><option value="100">100</option>
+                                <option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>
                             </select>
                         </div>
                         <div id="user-list-container">Loading...</div>
@@ -188,24 +188,16 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     </div>
                 </div>
 
-                <!-- 3. Master Items -->
+                <!-- 3. History -->
                 <div class="admin-window">
                     <div class="window-header">
-                        <span><i class="fas fa-th-list"></i> Catalog Control</span>
-                        <button class="btn btn-primary" style="padding:2px 10px; font-size:0.7rem;" onclick="openItemModal()">+ Add New</button>
-                    </div>
-                    <div class="window-content" id="item-list-container">Loading...</div>
-                </div>
-
-                <!-- 4. Live Activity Feed -->
-                <div class="admin-window">
-                    <div class="window-header">
-                        <span><i class="fas fa-stream"></i> Live Activity Feed</span>
+                        <span><i class="fas fa-history"></i> History</span>
+                        <i class="fas fa-sync" style="cursor:pointer; font-size:0.8rem;" onclick="loadTransactions(1)"></i>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
                             <select id="trans-limit" onchange="loadTransactions(1)" style="margin-left:auto;">
-                                <option value="25">25</option><option value="50">50</option><option value="100">100</option>
+                                <option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>
                             </select>
                         </div>
                         <div id="transaction-list-container">Loading...</div>
@@ -213,6 +205,15 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                      <div style="padding: 5px; border-top: 1px solid #eee;">
                          <div class="pagination" id="trans-pagination"></div>
                     </div>
+                </div>
+
+                <!-- 4. Catalog Control (was Box 3) -->
+                <div class="admin-window">
+                    <div class="window-header">
+                        <span><i class="fas fa-th-list"></i> Catalog Control</span>
+                        <button class="btn btn-primary" style="padding:2px 10px; font-size:0.7rem;" onclick="openItemModal()">+ Add New</button>
+                    </div>
+                    <div class="window-content" id="item-list-container">Loading...</div>
                 </div>
 
                 <!-- 5-9 placeholders or more info -->
@@ -399,8 +400,9 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             });
         }
 
-        function loadItems() {
-            $.get('backend/admin_api.php?action=get_items', function(res) {
+        function loadItems(page = 1) {
+            let limit = $('#item-limit').val() || 10;
+            $.get(`backend/admin_api.php?action=get_items&page=${page}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
                     let html = '<table><thead><tr><th>Icon</th><th>Name</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(i => {
@@ -422,6 +424,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     });
                     html += '</tbody></table>';
                     $('#item-list-container').html(html);
+                    renderPagination('item', res.pagination, loadItems);
                 }
             });
         }
@@ -432,37 +435,32 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
         function renderPagination(prefix, meta, callback) {
             let html = '';
-            const currentPage = meta.current_page;
-            const totalPages = meta.total_pages;
+            const currentPage = parseInt(meta.current_page);
+            const totalPages = parseInt(meta.total_pages);
 
-            // First page
-            html += `<button class="${currentPage === 1 ? 'active' : ''}" onclick="${callback.name}(1)">1</button>`;
-
-            if (currentPage > 3) {
-                html += `<span>...</span>`;
+            // First 3 pages
+            for (let i = 1; i <= Math.min(3, totalPages); i++) {
+                html += `<button class="${currentPage === i ? 'active' : ''}" onclick="${callback.name}(${i})">${i}</button>`;
             }
 
-            // Middle pages
-            let start = Math.max(2, currentPage - 1);
-            let end = Math.min(totalPages - 1, currentPage + 1);
-
-            for (let i = start; i <= end; i++) {
-                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="${callback.name}(${i})">${i}</button>`;
-            }
-
-            if (currentPage < totalPages - 2) {
-                html += `<span>...</span>`;
+            if (totalPages > 4) {
+                html += `<span style="padding:0 5px; color:#ccc;">...</span>`;
             }
 
             // Last page
-            if (totalPages > 1) {
+            if (totalPages > 3) {
                 html += `<button class="${currentPage === totalPages ? 'active' : ''}" onclick="${callback.name}(${totalPages})">${totalPages}</button>`;
             }
 
-            // Jump to page input
+            // Search/Jump Field 1
             html += `<div style="display:flex; align-items:center; margin-left:10px; gap:5px;">
-                <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Go" style="width:40px; padding:2px; font-size:0.7rem; border:1px solid #ddd; border-radius:3px;">
-                <button style="padding:2px 5px; font-size:0.7rem;" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);">Jump</button>
+                <input type="number" id="${prefix}-jump-page" min="1" max="${totalPages}" placeholder="Page" style="width:50px; padding:4px; font-size:0.7rem; border:1px solid #ddd; border-radius:3px;">
+                <button style="padding:4px 8px; font-size:0.7rem;" onclick="let p = $('#${prefix}-jump-page').val(); if(p >= 1 && p <= ${totalPages}) ${callback.name}(p);">Go</button>
+            </div>`;
+
+            // Search/Jump Field 2 (identical as requested "search field dan search field")
+            html += `<div style="display:flex; align-items:center; margin-left:5px; gap:5px;">
+                <input type="number" id="${prefix}-jump-page-2" min="1" max="${totalPages}" placeholder="Jump" style="width:50px; padding:4px; font-size:0.7rem; border:1px solid #ddd; border-radius:3px;">
             </div>`;
 
             $('#' + prefix + '-pagination').html(html);

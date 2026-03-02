@@ -64,7 +64,7 @@ switch ($action) {
 
     case 'get_users':
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 25;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
         $search = $conn->real_escape_string($_GET['search'] ?? '');
         $offset = ($page - 1) * $limit;
 
@@ -133,7 +133,7 @@ switch ($action) {
 
     case 'get_transactions':
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 25;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
         $offset = ($page - 1) * $limit;
 
         $total_query = "SELECT COUNT(*) as total FROM transactions";
@@ -161,13 +161,29 @@ switch ($action) {
         break;
 
     case 'get_items':
-        $query = "SELECT * FROM master_items ORDER BY tipe_item, nama_item";
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        $offset = ($page - 1) * $limit;
+
+        $total_query = "SELECT COUNT(*) as total FROM master_items";
+        $total_res = $conn->query($total_query);
+        $total = $total_res->fetch_assoc()['total'];
+
+        $query = "SELECT * FROM master_items ORDER BY tipe_item, nama_item LIMIT $limit OFFSET $offset";
         $result = $conn->query($query);
         $items = [];
         while($row = $result->fetch_assoc()) {
             $items[] = $row;
         }
-        echo json_encode(['status' => 'success', 'data' => $items]);
+        echo json_encode([
+            'status' => 'success',
+            'data' => $items,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => ceil($total / $limit),
+                'total_records' => $total
+            ]
+        ]);
         break;
 
     case 'toggle_item_status':
