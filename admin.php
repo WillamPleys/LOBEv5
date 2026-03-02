@@ -20,15 +20,16 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
-        body { margin: 0; overflow: auto; background-color: #f0f2f5; }
+        body { margin: 0; overflow: auto; background-color: #f0f2f5; min-height: 100vh; }
 
         /* Admin Overlay Layer */
         #admin-layer {
-            position: absolute; top: 60px; left: 0; right: 0; min-height: calc(100vh - 60px);
+            position: absolute; top: 60px; left: 0; right: 0;
             padding: 20px; display: grid;
             grid-template-columns: 400px 1fr 1fr;
-            grid-template-rows: auto auto;
+            grid-template-rows: repeat(2, minmax(400px, auto));
             gap: 20px; pointer-events: none; z-index: 100;
+            padding-bottom: 60px;
         }
 
         .admin-window {
@@ -64,7 +65,24 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
         .search-bar { margin-bottom: 10px; display: flex; gap: 5px; align-items: center; }
         .search-bar input { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem; }
-        .search-bar select { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem; background: white; }
+        .search-bar select, .form-group select {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background: #f8f9fa;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 12px;
+            padding-right: 30px;
+        }
+        .search-bar select:hover, .form-group select:hover { border-color: #007bff; background-color: #fff; }
 
         /* Custom scrollbar for admin */
         .window-content::-webkit-scrollbar { width: 6px; }
@@ -99,7 +117,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
             <nav id="up-nav-bar" class="navbar">
                 <div class="nav-logo" style="display:flex; align-items:center;">
-                    LOBE <span id="admin-badge" style="margin-left:10px; background:#343a40; color:white; font-size:10px; padding:2px 8px; border-radius:20px; font-weight:900;">ADMIN</span>
+                    LOBE <span id="admin-badge" class="badge-admin-global">ADMIN</span>
                 </div>
                 <div class="nav-center">
                     <div class="custom-select-wrapper">

@@ -395,6 +395,18 @@ body, html {
     margin-bottom: 10px;
 }
 
+.badge-admin-global {
+    margin-left: 10px;
+    background: #343a40;
+    color: white;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 /* Modifikasi Context Item */
 .context-item { padding: 8px 15px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; }
 .context-item i { width: 25px; text-align: center; margin-right: 5px; color: #555;}
