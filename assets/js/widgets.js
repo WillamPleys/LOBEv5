@@ -93,16 +93,17 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="display:flex; flex-direction:column; height:100%;">
-                    <div style="display:flex; gap:5px; margin-bottom:10px;">
-                        <input type="text" id="${wId}-input" placeholder="New Task..." style="flex:1; padding:5px;">
-                        <input type="time" id="${wId}-time" style="padding:5px;">
-                        <button id="${wId}-add" style="padding:5px 10px; cursor:pointer;">+</button>
+                    <div style="display:flex; gap:5px; margin-bottom:10px; flex-wrap:wrap;">
+                        <input type="text" id="${wId}-input" placeholder="New Task..." style="flex:1; min-width:100px; padding:6px; border:1px solid #ccc; border-radius:4px; font-size:0.9rem;">
+                        <input type="time" id="${wId}-time" style="padding:5px; border:1px solid #ccc; border-radius:4px; font-size:0.8rem;">
+                        <button id="${wId}-add" style="padding:0 12px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold; height:34px;">+</button>
                     </div>
-                    <ul id="${wId}-list" style="list-style:none; padding:0; flex:1; overflow-y:auto;"></ul>
+                    <ul id="${wId}-list" style="list-style:none; padding:0; flex:1; overflow-y:auto; border-top:1px solid #f0f0f0; padding-top:5px;"></ul>
                 </div>
             `;
         },
         init: function(wId) {
+            const $widget = $(`#${wId}`);
             const $input = $(`#${wId}-input`);
             const $time = $(`#${wId}-time`);
             const $btn = $(`#${wId}-add`);
@@ -793,102 +794,6 @@ const WidgetRegistry = {
             renderCalendar();
         }
     },
-    // --- 10. ACTIVITY ---
-    'Activity Tracker': {
-        render: function(wId) {
-            return `
-                <div style="height:100%; display:flex; flex-direction:column; padding:10px; box-sizing:border-box;">
-                    <div style="height:150px; margin-bottom:10px;">
-                        <canvas id="${wId}-chart"></canvas>
-                    </div>
-                    <h5 style="margin-bottom:5px;">Recent Actions</h5>
-                    <div id="${wId}-activity-list" style="flex:1; overflow-y:auto; font-size:0.75rem; border-top:1px solid #eee; padding-top:5px;">
-                        <p style="color:#888; text-align:center;">Loading history...</p>
-                    </div>
-                </div>
-            `;
-        },
-        init: function(wId) {
-            const $list = $(`#${wId}-activity-list`);
-            let chartInstance = null;
-
-            function escapeHtml(text) {
-                return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            }
-
-            function refreshActivity() {
-                $.get('backend/get_activity.php', function(res) {
-                    if (res.status === 'success') {
-                        // 1. Update List
-                        $list.empty();
-                        if (res.list.length === 0) {
-                            $list.html('<p style="color:#888; text-align:center;">No activity yet.</p>');
-                        } else {
-                            res.list.forEach(a => {
-                                // Better date parsing for various formats
-                                let timeStr = a.waktu_transaksi.replace(/-/g, "/");
-                                let time = new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-                            let icon = 'fa-circle';
-                            let color = '#ccc';
-                            let type = a.jenis_aktivitas.toLowerCase();
-
-                            if (type.includes('create')) { icon = 'fa-plus-circle'; color = '#28a745'; }
-                            else if (type.includes('delete')) { icon = 'fa-trash-alt'; color = '#dc3545'; }
-                            else if (type.includes('edit') || type.includes('rename') || type.includes('resize') || type.includes('move')) { icon = 'fa-edit'; color = '#ffc107'; }
-                            else if (type.includes('open')) { icon = 'fa-folder-open'; color = '#17a2b8'; }
-                            else if (type.includes('login')) { icon = 'fa-sign-in-alt'; color = '#007bff'; }
-
-                                $list.append(`
-                                <div style="padding:8px 0; border-bottom:1px solid #f1f1f1; display:flex; align-items:flex-start; gap:10px;">
-                                    <i class="fas ${icon}" style="color:${color}; margin-top:3px; width:15px; text-align:center;"></i>
-                                    <div style="flex:1;">
-                                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                                            <span style="font-weight:600; font-size:0.8rem; text-transform:capitalize;">${a.jenis_aktivitas.replace(/_/g,' ')}</span>
-                                            <span style="color:#999; font-size:0.7rem;">${time}</span>
-                                        </div>
-                                        <div style="font-size:0.7rem; color:#666; margin-top:2px;">${escapeHtml(a.detail_aktivitas)}</div>
-                                    </div>
-                                    </div>
-                                `);
-                            });
-                        }
-
-                        // 2. Update Chart
-                        const labels = res.chart.map(d => d.date.split('-').slice(1).join('/'));
-                        const data = res.chart.map(d => d.count);
-
-                        if (chartInstance) chartInstance.destroy();
-                        chartInstance = new Chart(document.getElementById(`${wId}-chart`), {
-                            type: 'bar',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    label: 'Daily Actions',
-                                    data: data,
-                                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                                    borderColor: 'rgba(54, 162, 235, 1)',
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                maintainAspectRatio: false,
-                                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-                                plugins: { legend: { display: false } }
-                            }
-                        });
-                    }
-                });
-            }
-
-            refreshActivity();
-            // Optional: poll every minute
-            const poll = setInterval(refreshActivity, 60000);
-            $(`#${wId}`).on('remove', () => clearInterval(poll));
-        }
-    },
-
-    // ==========================================
     // --- BATCH 3: COMPLEX & AI FEATURES ---
     // ==========================================
 
@@ -1848,6 +1753,128 @@ const WidgetRegistry = {
                 if (file) {
                     handlePhotoUpload(file);
                 }
+            });
+        }
+    },
+    // --- 10. ACTIVITY TRACKER ---
+    'Activity Tracker': {
+        render: function(wId) {
+            return `
+                <div style="height:100%; display:flex; flex-direction:column; padding:10px; box-sizing:border-box;">
+                    <div id="${wId}-scope-info" style="font-size: 0.7rem; color: #007bff; margin-bottom: 5px; font-weight: bold; text-align: right;">Global View</div>
+                    <div style="height:150px; margin-bottom:10px;">
+                        <canvas id="${wId}-chart"></canvas>
+                    </div>
+                    <h5 style="margin-bottom:5px;">Recent Actions</h5>
+                    <div id="${wId}-activity-list" style="flex:1; overflow-y:auto; font-size:0.75rem; border-top:1px solid #eee; padding-top:5px;">
+                        <p style="color:#888; text-align:center;">Loading history...</p>
+                    </div>
+                </div>
+            `;
+        },
+        init: function(wId) {
+            const $widget = $(`#${wId}`);
+            const $list = $(`#${wId}-activity-list`);
+            const $scopeInfo = $(`#${wId}-scope-info`);
+            let chartInstance = null;
+            let currentScope = $widget.data('activityScope') || 'all';
+
+            function escapeHtml(text) {
+                return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+
+            function refreshActivity() {
+                $scopeInfo.text(currentScope === 'all' ? 'Global View' : 'Room View');
+
+                let roomId = (typeof INITIAL_STATE !== 'undefined') ? INITIAL_STATE.activeRoomId : null;
+                let url = `backend/get_activity.php?scope=${currentScope}`;
+                if (currentScope === 'room' && roomId) {
+                    url += `&room_id=${roomId}`;
+                }
+
+                $.get(url, function(res) {
+                    if (res.status === 'success') {
+                        // 1. Update List
+                        $list.empty();
+                        if (res.list.length === 0) {
+                            $list.html('<p style="color:#888; text-align:center;">No activity yet.</p>');
+                        } else {
+                            res.list.forEach(a => {
+                                let timeStr = a.waktu_transaksi.replace(/-/g, "/");
+                                let time = new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                                let icon = 'fa-circle';
+                                let color = '#ccc';
+                                let type = a.jenis_aktivitas.toLowerCase();
+
+                                if (type.includes('create')) { icon = 'fa-plus-circle'; color = '#28a745'; }
+                                else if (type.includes('delete')) { icon = 'fa-trash-alt'; color = '#dc3545'; }
+                                else if (type.includes('edit') || type.includes('rename') || type.includes('resize') || type.includes('move')) { icon = 'fa-edit'; color = '#ffc107'; }
+                                else if (type.includes('open')) { icon = 'fa-folder-open'; color = '#17a2b8'; }
+                                else if (type.includes('login')) { icon = 'fa-sign-in-alt'; color = '#007bff'; }
+
+                                $list.append(`
+                                    <div style="padding:8px 0; border-bottom:1px solid #f1f1f1; display:flex; align-items:flex-start; gap:10px;">
+                                        <i class="fas ${icon}" style="color:${color}; margin-top:3px; width:15px; text-align:center;"></i>
+                                        <div style="flex:1;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                <span style="font-weight:600; font-size:0.8rem; text-transform:capitalize;">${a.jenis_aktivitas.replace(/_/g,' ')}</span>
+                                                <span style="color:#999; font-size:0.7rem;">${time}</span>
+                                            </div>
+                                            <div style="font-size:0.7rem; color:#666; margin-top:2px;">${escapeHtml(a.detail_aktivitas)}</div>
+                                        </div>
+                                    </div>
+                                `);
+                            });
+                        }
+
+                        // 2. Update Chart
+                        const labels = res.chart.map(d => d.date.split('-').slice(1).join('/'));
+                        const data = res.chart.map(d => d.count);
+
+                        if (chartInstance) chartInstance.destroy();
+                        const canvas = document.getElementById(`${wId}-chart`);
+                        if (canvas) {
+                            chartInstance = new Chart(canvas, {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Actions',
+                                        data: data,
+                                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                        borderColor: 'rgba(54, 162, 235, 1)',
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    maintainAspectRatio: false,
+                                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                                    plugins: { legend: { display: false } }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            refreshActivity();
+
+            $(document).on(`refreshWidget.${wId}`, refreshActivity);
+
+            $(document).on(`setActivityScope.${wId}`, function(e, targetWId, scope) {
+                if (targetWId === wId) {
+                    currentScope = scope;
+                    $widget.data('activityScope', scope);
+                    refreshActivity();
+                }
+            });
+
+            const poll = setInterval(refreshActivity, 30000);
+            $(`#${wId}`).on('remove', () => {
+                clearInterval(poll);
+                $(document).off(`refreshWidget.${wId}`);
+                $(document).off(`setActivityScope.${wId}`);
             });
         }
     }

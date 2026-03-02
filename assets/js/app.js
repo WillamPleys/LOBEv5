@@ -151,8 +151,15 @@ $(document).ready(function() {
 
         let animClass = animate ? 'fade-in' : '';
         let safeOriginalType = escapeHtml(name.toLowerCase());
-        let settingsBtn = (name.toLowerCase().includes('flashcard')) ? `<span class="widget-settings" style="margin-right: 10px; cursor: pointer; color: #666;"><i class="fas fa-cog"></i></span>` : '';
-        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" data-original-type="${safeOriginalType}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span class="widget-title-text">${escapeHtml(name)}</span><div style="margin-left: auto; display: flex; align-items: center;">${settingsBtn}<span class="widget-close" style="display: none;">&times;</span></div></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
+        let headerActions = '';
+        if (name.toLowerCase().includes('flashcard')) {
+            headerActions += `<span class="widget-settings" style="margin-right: 10px; cursor: pointer; color: #666;" title="Settings"><i class="fas fa-cog"></i></span>`;
+        }
+        if (name.toLowerCase().includes('activity tracker')) {
+            headerActions += `<span class="widget-refresh" style="margin-right: 10px; cursor: pointer; color: #666;" title="Refresh History"><i class="fas fa-sync-alt"></i></span>`;
+        }
+
+        let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" data-original-type="${safeOriginalType}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span class="widget-title-text">${escapeHtml(name)}</span><div style="margin-left: auto; display: flex; align-items: center;">${headerActions}<span class="widget-close" style="display: none;">&times;</span></div></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
         
         $('#workspace-screen').append(html);
         if(animate) {
@@ -216,12 +223,9 @@ $(document).ready(function() {
             // Default reset
             $('.ai-feature').hide();
 
-            if($(this).data('isai') == true || $(this).data('isai') == 'true') {
-                // We use the original internal name provided during spawn for logic, not the visual title
-                // We can derive it by matching the master_id if needed, but for now we know
-                // the initial name was passed as 'name'. Let's store the original type as a data attribute.
-                let originalType = $(this).data('original-type') || name.toLowerCase();
+            let originalType = ($(this).data('original-type') || name || '').toLowerCase();
 
+            if($(this).data('isai') == true || $(this).data('isai') == 'true') {
                 if (originalType.includes('ai assistant')) {
                     $('#menu-ai-mode').show();
                 }
@@ -232,7 +236,12 @@ $(document).ready(function() {
                 }
             }
 
-            let originalType = ($(this).data('original-type') || '').toLowerCase();
+            if (originalType.includes('activity tracker')) {
+                $('#menu-show-data').show();
+            } else {
+                $('#menu-show-data').hide();
+            }
+
             if (originalType.includes('photo frame')) {
                 $('#menu-full-screen').show().css('display', 'flex');
                 $('#menu-detach-image').show();
@@ -304,6 +313,10 @@ $(document).ready(function() {
 
         newWidget.find('.widget-settings').on('click', function() {
             $(document).trigger(`toggleWidgetSettings.${wId}`);
+        });
+
+        newWidget.find('.widget-refresh').on('click', function() {
+            $(document).trigger(`refreshWidget.${wId}`);
         });
 
         // Only save if this was a user action (animate=true), not a load action
@@ -612,8 +625,13 @@ $(document).ready(function() {
         positionFloatingMenu('sort-by-modal', this);
     });
 
+    $('#menu-show-data').on('mouseenter', function() {
+        $('.floating-submenu').hide(); // Hide others
+        positionFloatingMenu('activity-scope-modal', this);
+    });
+
     // We should also close floating submenus when leaving the parent item or hovering other items
-    $('.context-item').not('#menu-ai-mode, #menu-sort-by, #menu-set-output').on('mouseenter', function() {
+    $('.context-item').not('#menu-ai-mode, #menu-sort-by, #menu-set-output, #menu-show-data').on('mouseenter', function() {
         $('.floating-submenu').hide();
     });
 
@@ -639,6 +657,15 @@ $(document).ready(function() {
             saveWorkspaceState();
         }
         $('#sort-by-modal').hide();
+    };
+
+    window.selectActivityScope = function(scope) {
+        if (currentTargetWidget) {
+            $(document).trigger('setActivityScope', [currentTargetWidget, scope]);
+            saveWorkspaceState();
+        }
+        $('#activity-scope-modal').hide();
+        $('#widget-context-menu').hide();
     };
 
     $('#menu-full-screen').on('click', function() {
