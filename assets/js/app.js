@@ -340,6 +340,7 @@ $(document).ready(function() {
 
     // --- LOADING WORKSPACE ---
     function loadWorkspaceState() {
+        if (window.IS_ADMIN_PAGE) return;
         // Clear existing widgets first
         $('.lobe-widget').remove();
 
@@ -514,6 +515,7 @@ $(document).ready(function() {
 
     // --- LOAD MASTER ITEMS (Welcome Screen) ---
     function loadMasterItems() {
+        if (window.IS_ADMIN_PAGE) return;
         $.ajax({
             url: 'backend/get_items.php',
             type: 'GET',
