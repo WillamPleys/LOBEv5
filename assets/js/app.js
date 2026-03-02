@@ -151,7 +151,7 @@ $(document).ready(function() {
         if (typeof WidgetRegistry !== 'undefined' && WidgetRegistry[name]) {
             if (WidgetRegistry[name].render) widgetContent = WidgetRegistry[name].render(wId);
         } else {
-             widgetContent = `<div style="padding:20px; text-align:center;"><i class="fas fa-hammer" style="font-size:3rem; color:#eee; margin-bottom:10px;"></i><p>Feature <b>${name}</b> is ready to use!</p></div>`;
+             widgetContent = `<div style="padding:20px; text-align:center;"><div style="color:#eee; margin-bottom:10px; display:flex; justify-content:center;">${ICONS.hammer.replace('16','48').replace('16','48')}</div><p>Feature <b>${name}</b> is ready to use!</p></div>`;
         }
 
         if (y < 70) y = 70;
@@ -160,10 +160,10 @@ $(document).ready(function() {
         let safeOriginalType = escapeHtml(name.toLowerCase());
         let headerActions = '';
         if (name.toLowerCase().includes('flashcard')) {
-            headerActions += `<span class="widget-settings" style="margin-right: 10px; cursor: pointer; color: #666;" title="Settings"><i class="fas fa-cog"></i></span>`;
+            headerActions += `<span class="widget-settings" style="margin-right: 10px; cursor: pointer; color: #666; display:inline-flex; align-items:center;" title="Settings">${ICONS.cog}</span>`;
         }
         if (name.toLowerCase().includes('activity tracker')) {
-            headerActions += `<span class="widget-refresh" style="margin-right: 10px; cursor: pointer; color: #666;" title="Refresh History"><i class="fas fa-sync-alt"></i></span>`;
+            headerActions += `<span class="widget-refresh" style="margin-right: 10px; cursor: pointer; color: #666; display:inline-flex; align-items:center;" title="Refresh History">${ICONS.sync}</span>`;
         }
 
         let html = `<div class="lobe-widget ${animClass}" id="${wId}" data-isai="${isAI}" data-master-id="${id}" data-original-type="${safeOriginalType}" style="width:${w}px; height:${h}px; left: ${x}px; top: ${y}px;"><div class="widget-header"><span class="widget-title-text">${escapeHtml(name)}</span><div style="margin-left: auto; display: flex; align-items: center;">${headerActions}<span class="widget-close" style="display: none;">&times;</span></div></div><div class="widget-content" id="content-${wId}">${widgetContent}</div></div>`;
@@ -478,7 +478,7 @@ $(document).ready(function() {
                         let isVirtualAdmin = (room.is_admin_virtual === true);
 
                         // Increased hit area for delete button (using padding and larger wrapper)
-                        let deleteBtn = (canDelete && !isVirtualAdmin) ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="margin-left:auto; cursor:pointer; padding:5px 10px; display:inline-block;" title="Delete Room"><i class="fas fa-trash-alt" style="color:#ff4d4d; font-size:0.9rem;"></i></span>` : '';
+                        let deleteBtn = (canDelete && !isVirtualAdmin) ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="margin-left:auto; cursor:pointer; padding:5px 10px; display:inline-flex; align-items:center;" title="Delete Room">${ICONS.trash.replace('stroke="currentColor"', 'stroke="#ff4d4d"')}</span>` : '';
 
                         // Custom Option with Delete Button
                         let optionHtml = `
@@ -500,10 +500,11 @@ $(document).ready(function() {
                                 let isVirtualAdmin = (room.is_admin_virtual === true);
 
                                 // Same hit area improvement for sidebar
-                                let deleteBtn = (canDelete && !isVirtualAdmin) ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="float:right; cursor:pointer; padding:2px 8px;" title="Delete Room"><i class="fas fa-trash-alt" style="color:#ff4d4d;"></i></span>` : '';
+                                let deleteBtn = (canDelete && !isVirtualAdmin) ? `<span onclick="event.stopPropagation(); deleteRoom('${room.id}', '${safeRoom}')" style="float:right; cursor:pointer; padding:2px 8px; display:inline-flex; align-items:center;" title="Delete Room">${ICONS.trash.replace('stroke="currentColor"', 'stroke="#ff4d4d"')}</span>` : '';
+                                let roomIcon = isVirtualAdmin ? ICONS.shield : ICONS.doorOpen;
 
                                 list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="${isVirtualAdmin ? "window.location.href='admin.php'" : "switchRoom('"+room.id+"', '"+safeRoom+"')" }">
-                                    <span><i class="fas ${isVirtualAdmin ? 'fa-user-shield' : 'fa-door-open'}"></i> ${safeRoom}</span>
+                                    <span style="display:flex; align-items:center; gap:8px;">${roomIcon} ${safeRoom}</span>
                                     ${deleteBtn}
                                 </li>`);
                             });
@@ -531,12 +532,14 @@ $(document).ready(function() {
                     welcomeContainer.empty();
                     contextList.append('<div class="context-divider"></div><div class="context-title">Add Item:</div>');
                     res.data.forEach((item, index) => {
-                        let iconClass = item.gambar;
+                        let iconSvg = window.getSvgIcon(item.gambar, 32);
+                        let contextIconSvg = window.getSvgIcon(item.gambar, 16);
+
                         // Limit welcome screen to first 16 items to prevent vertical overflow
                         if (index < 16) {
-                            welcomeContainer.append(`<div class="item-btn" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><i class="fas ${iconClass}"></i><span>${item.nama_item}</span></div>`);
+                            welcomeContainer.append(`<div class="item-btn" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><div style="margin-bottom:10px;">${iconSvg}</div><span>${item.nama_item}</span></div>`);
                         }
-                        contextList.append(`<li class="menu-item spawn-item" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><i class="fas ${iconClass}" style="width: 25px;"></i> ${item.nama_item}</li>`);
+                        contextList.append(`<li class="menu-item spawn-item" data-id="${item.id}" data-type="${item.tipe_item}" data-name="${item.nama_item}"><span style="width: 25px; display:inline-flex; align-items:center;">${contextIconSvg}</span> ${item.nama_item}</li>`);
                     });
                 }
             }
@@ -797,7 +800,7 @@ $(document).ready(function() {
 
             if (currentTargetWidget !== wId && isAllowed) {
                 found = true;
-                sourcesMenu.append(`<div class="modal-list-item" onclick="$(document).trigger('setOutputSource', ['${currentTargetWidget}', '${wId}', '${safeTitleForJs}']); $('#output-source-modal').hide(); saveWorkspaceState();"><i class="fas fa-plug" style="margin-right:10px; color:#007bff;"></i> ${safeTitle}</div>`);
+                sourcesMenu.append(`<div class="modal-list-item" onclick="$(document).trigger('setOutputSource', ['${currentTargetWidget}', '${wId}', '${safeTitleForJs}']); $('#output-source-modal').hide(); saveWorkspaceState();"><span style="margin-right:10px; color:#007bff; display:inline-flex; align-items:center;">${ICONS.plug}</span> ${safeTitle}</div>`);
             }
         });
 

@@ -144,7 +144,7 @@ const WidgetRegistry = {
                             <span class="task-text">${safeText}</span>
                             <small style="color:#888;" class="task-time-wrap">${safeTime ? '@ <span class="task-time">'+safeTime+'</span>' : '<span class="task-time" style="display:none;"></span>'}</small>
                         </span>
-                        <i class="fas fa-trash-alt delete-task" style="cursor:pointer; color:#ccc; font-size: 0.8rem;"></i>
+                        <span class="delete-task" style="cursor:pointer; color:#ccc; display:inline-flex; align-items:center;">${ICONS.trash}</span>
                     </li>
                 `);
 
@@ -470,23 +470,23 @@ const WidgetRegistry = {
                             </div>
                         </div>
                         <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-shrink:0;">
-                            <button id="${wId}-prev" class="btn btn-outline-primary" style="flex:1; border-radius:8px;"><i class="fas fa-chevron-left"></i> Prev</button>
+                            <button id="${wId}-prev" class="btn btn-outline-primary" style="flex:1; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px;">${ICONS.chevronLeft} Prev</button>
                             <div style="flex:1; text-align:center; font-size:0.85rem; color:#666; font-weight:500;"><span id="${wId}-index-display">1</span> / <span id="${wId}-total-display">1</span></div>
-                            <button id="${wId}-next" class="btn btn-outline-primary" style="flex:1; border-radius:8px;">Next <i class="fas fa-chevron-right"></i></button>
+                            <button id="${wId}-next" class="btn btn-outline-primary" style="flex:1; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px;">Next ${ICONS.chevronRight}</button>
                         </div>
                     </div>
 
                     <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:15px; box-sizing:border-box; z-index:5; overflow:hidden;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px; flex-shrink:0;">
                             <h3 style="margin:0; font-size:1.1rem; color:#333;">Flashcard Creator</h3>
-                            <button id="${wId}-save-settings" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:500; width: auto; flex-shrink:0;"><i class="fas fa-save"></i> Save</button>
+                            <button id="${wId}-save-settings" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:500; width: auto; flex-shrink:0; display:flex; align-items:center; gap:5px;">${ICONS.save} Save</button>
                         </div>
                         <div style="margin-bottom:20px; padding:10px; border:1px solid #eee; border-radius:8px; border-top: 8px solid #673ab7; flex-shrink:0;">
                             <input type="text" id="${wId}-set-title" class="fc-input" placeholder="Set Title" style="font-size:1.5rem; border-bottom:1px solid #eee;" value="">
                             <input type="text" id="${wId}-set-desc" class="fc-input" placeholder="Set Description" style="font-size:0.9rem; border-bottom:none;" value="">
                         </div>
                         <div id="${wId}-editor-list" style="flex: 1; overflow-y: auto; margin-bottom: 10px; padding-right: 5px; min-height: 0;"></div>
-                        <button id="${wId}-add-card" style="width:100%; border-radius:8px; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; font-weight:500; flex-shrink:0;"><i class="fas fa-plus"></i> Add Question</button>
+                        <button id="${wId}-add-card" style="width:100%; border-radius:8px; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; font-weight:500; flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:5px;">${ICONS.plus} Add Question</button>
                     </div>
                     <input type="file" id="${wId}-fc-img-upload" style="display:none;" accept="image/*">
                 </div>
@@ -555,11 +555,11 @@ const WidgetRegistry = {
                         <input type="text" class="fc-input card-a" placeholder="Enter answer...">
 
                         <div style="display:flex; gap:10px;">
-                            <button class="btn btn-sm btn-outline-secondary fc-upload-btn" style="font-size:0.7rem;"><i class="fas fa-image"></i> Add Image</button>
-                            <button class="btn btn-sm btn-outline-danger fc-remove-img" style="font-size:0.7rem; display:none;"><i class="fas fa-times"></i> Remove Image</button>
+                            <button class="btn btn-sm btn-outline-secondary fc-upload-btn" style="font-size:0.7rem; display:flex; align-items:center; gap:3px;">${ICONS.image} Add Image</button>
+                            <button class="btn btn-sm btn-outline-danger fc-remove-img" style="font-size:0.7rem; display:none; align-items:center; gap:3px;">${ICONS.x} Remove Image</button>
                         </div>
 
-                        <i class="fas fa-trash-alt remove-card" style="position:absolute; top:12px; right:12px; color:#dc3545; cursor:pointer; font-size:0.9rem;" title="Delete Card"></i>
+                        <span class="remove-card" style="position:absolute; top:12px; right:12px; color:#dc3545; cursor:pointer;" title="Delete Card">${ICONS.trash}</span>
                     </div>
                 `);
 
@@ -693,7 +693,7 @@ const WidgetRegistry = {
                         // Sanitize room name
                         let safeRoom = $('<div/>').text(room.nama_room).html();
                         // This uses window.switchRoom from app.js without alerts
-                        list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;" onclick="window.switchRoom('${room.id}', '${safeRoom}')"><i class="fas fa-door-open"></i> ${safeRoom}</li>`);
+                        list.append(`<li style="padding:8px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.switchRoom('${room.id}', '${safeRoom}')">${ICONS.doorOpen} ${safeRoom}</li>`);
                     });
                 } else {
                     list.html('<li style="color:red;">Failed to load rooms.</li>');
@@ -706,7 +706,7 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px dashed #ccc; border-radius:10px; background:#f9f9f9;" id="${wId}-dropzone">
-                    <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:10px;"></i>
+                    <div style="color:#ccc; margin-bottom:10px;">${ICONS.upload.replace('width="16"','width="48"').replace('height="16"','height="48"')}</div>
                     <p style="color:#888;">Drag & Drop files here</p>
                     <input type="file" id="${wId}-file" style="display:none;">
                     <button onclick="$('#${wId}-file').click()" style="margin-top:10px; padding:5px 10px;">Or Click to Upload</button>
@@ -857,23 +857,23 @@ const WidgetRegistry = {
                 if(filteredFiles.length === 0) { $area.html('<p style="text-align:center; color:#888;">No output matches.</p>'); return; }
 
                 filteredFiles.forEach((f, idx) => {
-                    let icon = 'fa-file';
+                    let icon = ICONS.file;
                     let lowerName = f.original_name.toLowerCase();
-                    if(f.type.includes('image')) icon = 'fa-file-image';
-                    else if(f.type.includes('audio') || lowerName.endsWith('.mp3') || lowerName.endsWith('.wav')) icon = 'fa-file-audio';
-                    else if(f.type.includes('video') || lowerName.endsWith('.mp4')) icon = 'fa-file-video';
-                    else if(lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) icon = 'fa-file-word';
-                    else if(lowerName.endsWith('.html')) icon = 'fa-file-code';
-                    else if(lowerName.endsWith('.pdf') || f.type.includes('pdf')) icon = 'fa-file-pdf';
-                    else if(f.type.includes('text') || lowerName.endsWith('.txt')) icon = 'fa-file-alt';
+                    if(f.type.includes('image')) icon = ICONS.fileImage;
+                    else if(f.type.includes('audio') || lowerName.endsWith('.mp3') || lowerName.endsWith('.wav')) icon = ICONS.fileAudio;
+                    else if(f.type.includes('video') || lowerName.endsWith('.mp4')) icon = ICONS.fileVideo;
+                    else if(lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) icon = ICONS.fileWord;
+                    else if(lowerName.endsWith('.html')) icon = ICONS.fileCode;
+                    else if(lowerName.endsWith('.pdf') || f.type.includes('pdf')) icon = ICONS.filePdf;
+                    else if(f.type.includes('text') || lowerName.endsWith('.txt')) icon = ICONS.fileAlt;
 
                     let safeName = escapeHtml(f.original_name);
                     let item = $(`
                         <div style="padding:10px; border-bottom:1px solid #eee; display:flex; align-items:center; cursor:pointer;" class="file-item" data-id="${f.id}">
-                            <i class="fas ${icon}" style="margin-right:10px; color:#555; width:20px; text-align:center;"></i>
+                            <span style="margin-right:10px; color:#555; width:20px; display:flex; justify-content:center;">${icon}</span>
                             <span class="file-name-text" style="flex:1; overflow:hidden; text-overflow:ellipsis;">${safeName}</span>
-                            <i class="fas fa-pencil-alt rename-icon" style="margin-left:10px; color:#ccc; font-size:0.8rem;" title="Rename File"></i>
-                            <i class="fas fa-trash-alt delete-file-icon" style="margin-left:10px; color:#ccc; font-size:0.8rem;" title="Delete File"></i>
+                            <span class="rename-icon" style="margin-left:10px; color:#ccc;" title="Rename File">${ICONS.edit}</span>
+                            <span class="delete-file-icon" style="margin-left:10px; color:#ccc;" title="Delete File">${ICONS.trash}</span>
                         </div>
                     `);
 
@@ -900,7 +900,7 @@ const WidgetRegistry = {
                         } else if(lowerName.endsWith('.pdf') || f.type.includes('pdf')) {
                             $content.html(`<iframe src="${f.file_path}" style="width:100%; height:100%; border:none;"></iframe>`);
                         } else if(lowerName.endsWith('.docx') || lowerName.endsWith('.doc')) {
-                            $content.html('<div style="margin:auto; text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading document...</div>');
+                            $content.html(`<div style="margin:auto; text-align:center;">${ICONS.spinner} Loading document...</div>`);
                             fetch(f.file_path)
                                 .then(response => response.arrayBuffer())
                                 .then(arrayBuffer => mammoth.convertToHtml({arrayBuffer: arrayBuffer}))
@@ -909,14 +909,14 @@ const WidgetRegistry = {
                                 })
                                 .catch(err => {
                                     // Fallback for older .doc if mammoth fails (since mammoth mainly supports docx)
-                                    $content.html('<div style="margin:auto; text-align:center;"><i class="fas fa-file-word" style="font-size:4rem; color:#ccc; margin-bottom:10px;"></i><br>Direct preview for old .doc files is limited. Please use .docx for better viewing.<br><br><a href="'+f.file_path+'" download class="btn btn-primary">Download File</a></div>');
+                                    $content.html('<div style="margin:auto; text-align:center;"><div style="color:#ccc; margin-bottom:10px;">'+ICONS.fileWord.replace('16','64').replace('16','64')+'</div><br>Direct preview for old .doc files is limited. Please use .docx for better viewing.<br><br><a href="'+f.file_path+'" download class="btn btn-primary">Download File</a></div>');
                                 });
                         } else if(lowerName.endsWith('.txt') || lowerName.endsWith('.html') || lowerName.endsWith('.js') || lowerName.endsWith('.css') || lowerName.endsWith('.php')) {
                             if (f.content) {
                                 let safeContent = escapeHtml(f.content);
                                 $content.html(`<div style="padding:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; color:#333;">${safeContent}</div>`);
                             } else {
-                                $content.html('<div style="margin:auto; text-align:center;"><i class="fas fa-spinner fa-spin"></i> Loading file...</div>');
+                                $content.html(`<div style="margin:auto; text-align:center;">${ICONS.spinner} Loading file...</div>`);
                                 fetch(f.file_path)
                                     .then(response => response.text())
                                     .then(text => {
@@ -930,7 +930,7 @@ const WidgetRegistry = {
                             let safeContent = escapeHtml(f.content);
                             $content.html(`<div style="padding:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; color:#333;">${safeContent}</div>`);
                         } else {
-                            $content.html('<div style="margin:auto; text-align:center;"><i class="fas fa-file-alt" style="font-size:4rem; color:#ccc; margin-bottom:10px;"></i><br>Preview not available for this file type.</div>');
+                            $content.html('<div style="margin:auto; text-align:center;"><div style="color:#ccc; margin-bottom:10px;">'+ICONS.fileAlt.replace('16','64').replace('16','64')+'</div><br>Preview not available for this file type.</div>');
                         }
                         $('#file-opener-modal').css('display', 'flex');
                     });
@@ -1015,7 +1015,7 @@ const WidgetRegistry = {
                         <div id="${wId}-event-editor-content" style="background:white;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                                 <div style="font-size:0.8rem; font-weight:bold;" id="${wId}-selected-date-label">Events for ...</div>
-                                <i class="fas fa-times" id="${wId}-close-editor" style="cursor:pointer; color:#888; padding: 2px 5px;"></i>
+                                <span id="${wId}-close-editor" style="cursor:pointer; color:#888; padding: 2px 5px;">${ICONS.x}</span>
                             </div>
                             <input type="text" id="${wId}-event-input" placeholder="Event name..." style="width:100%; padding:5px; box-sizing:border-box; margin-bottom:5px; border:1px solid #ccc; border-radius:3px;">
                             <button id="${wId}-save-event" class="btn btn-primary btn-sm" style="width:100%;">Save Event</button>
@@ -1142,7 +1142,7 @@ const WidgetRegistry = {
             return `
                 <div style="display:flex; flex-direction:column; height:100%;">
                     <div style="display:flex; justify-content:flex-end; padding:5px; background:#f4f4f4; border-bottom:1px solid #ddd;">
-                        <button id="${wId}-save-btn" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer;"><i class="fas fa-save"></i> Save</button>
+                        <button id="${wId}-save-btn" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer; display:flex; align-items:center; gap:5px;">${ICONS.save} Save</button>
                     </div>
                     <div id="${wId}-editor" style="flex:1; color:#000;"></div>
                 </div>
@@ -1186,7 +1186,7 @@ const WidgetRegistry = {
             return `
                 <div style="display:flex; flex-direction:column; height:100%;">
                     <div style="display:flex; justify-content:flex-end; padding:5px; background:#272822; border-bottom:1px solid #000;">
-                        <button id="${wId}-save-btn" style="padding:5px 15px; background:#007bff; color:white; border:none; border-radius:3px; cursor:pointer;"><i class="fas fa-save"></i> Save Code</button>
+                        <button id="${wId}-save-btn" style="padding:5px 15px; background:#007bff; color:white; border:none; border-radius:3px; cursor:pointer; display:flex; align-items:center; gap:5px;">${ICONS.save} Save Code</button>
                     </div>
                     <div id="${wId}-ace" style="flex:1;"></div>
                 </div>
@@ -1221,27 +1221,27 @@ const WidgetRegistry = {
                         <span id="${wId}-mode-indicator">Mode: Chatbot</span>
                         <div style="display:flex; align-items:center; gap:10px;">
                             <label id="${wId}-select-all-wrap" style="display:none; font-weight:normal; font-size:0.7rem; cursor:pointer;"><input type="checkbox" id="${wId}-select-all" checked> All</label>
-                            <button id="${wId}-save-chat" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem; display:none;"><i class="fas fa-save"></i> Save Chat</button>
+                            <button id="${wId}-save-chat" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.8rem; display:none; align-items:center; gap:3px;">${ICONS.save} Save Chat</button>
                         </div>
                     </div>
                     <div style="flex:1; overflow-y:auto; padding:10px; background:#f4f4f4; margin-bottom:10px; border-radius:5px;" id="${wId}-chat-box">
                         <div style="color:#888; font-size:0.8rem; text-align:center;">Gemini 2.5 Flash Ready...</div>
                     </div>
 
-                    <div id="${wId}-file-preview" style="display:none; padding:5px; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px; margin-bottom:5px; font-size:0.8rem; display:flex; justify-content:space-between;">
+                    <div id="${wId}-file-preview" style="display:none; padding:5px; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px; margin-bottom:5px; font-size:0.8rem; display:flex; justify-content:space-between; align-items:center;">
                         <span id="${wId}-file-name"></span>
-                        <i class="fas fa-times" style="cursor:pointer;" onclick="$(this).parent().hide(); $('#${wId}-file-data').val('');"></i>
+                        <span style="cursor:pointer;" onclick="$(this).parent().hide(); $('#${wId}-file-data').val('');">${ICONS.x}</span>
                     </div>
 
                     <div style="display:flex; gap:5px;">
                         <input type="hidden" id="${wId}-file-data">
                         <input type="hidden" id="${wId}-file-mime">
                         <input type="file" id="${wId}-file-input" style="display:none;">
-                        <button onclick="$('#${wId}-file-input').click()" style="padding:8px 12px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer;" title="Upload File">
-                            <i class="fas fa-paperclip"></i>
+                        <button onclick="$('#${wId}-file-input').click()" style="padding:8px 12px; background:#6c757d; color:white; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Upload File">
+                            ${ICONS.paperclip}
                         </button>
                         <input type="text" id="${wId}-msg" placeholder="Ask AI..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                        <button id="${wId}-send" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                        <button id="${wId}-send" style="padding:8px 15px; background:#007bff; color:white; border:none; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center;">${ICONS.paperPlane}</button>
                     </div>
                 </div>
             `;
@@ -1414,7 +1414,7 @@ const WidgetRegistry = {
                 $fileData.val('');
                 $fileMime.val('');
 
-                let loadingId = addMessage('<i class="fas fa-spinner fa-spin"></i> Processing...', 'ai', true);
+                let loadingId = addMessage(`${ICONS.spinner} Processing...`, 'ai', true);
 
                 let payload = { message: txt, mode: currentMode };
                 if (fileBase64) {
@@ -1488,13 +1488,13 @@ const WidgetRegistry = {
                         }
                     </style>
                     <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center; flex-wrap: wrap;">
-                        <button id="${wId}-add-rect" class="cm-toolbar-btn" title="Add Rectangle"><i class="fas fa-square"></i></button>
-                        <button id="${wId}-add-circle" class="cm-toolbar-btn" title="Add Circle"><i class="fas fa-circle"></i></button>
-                        <button id="${wId}-add-text" class="cm-toolbar-btn" title="Add Text"><i class="fas fa-font"></i></button>
-                        <button id="${wId}-add-line" class="cm-toolbar-btn" title="Draw Line"><i class="fas fa-project-diagram"></i></button>
-                        <button id="${wId}-delete" class="cm-toolbar-btn" title="Delete Selected"><i class="fas fa-eraser"></i></button>
-                        <button id="${wId}-clear" class="cm-toolbar-btn" title="Clear All"><i class="fas fa-trash-alt"></i></button>
-                        <button id="${wId}-save-btn" class="cm-save-btn"><i class="fas fa-save"></i> Save</button>
+                        <button id="${wId}-add-rect" class="cm-toolbar-btn" title="Add Rectangle">${ICONS.square}</button>
+                        <button id="${wId}-add-circle" class="cm-toolbar-btn" title="Add Circle">${ICONS.circle}</button>
+                        <button id="${wId}-add-text" class="cm-toolbar-btn" title="Add Text">${ICONS.font}</button>
+                        <button id="${wId}-add-line" class="cm-toolbar-btn" title="Draw Line">${ICONS.projectDiagram}</button>
+                        <button id="${wId}-delete" class="cm-toolbar-btn" title="Delete Selected">${ICONS.eraser}</button>
+                        <button id="${wId}-clear" class="cm-toolbar-btn" title="Clear All">${ICONS.trash}</button>
+                        <button id="${wId}-save-btn" class="cm-save-btn">${ICONS.save} Save</button>
                     </div>
                     <div id="${wId}-canvas-area" style="flex:1; position:relative; overflow:hidden; background:white;">
                         <canvas id="${wId}-fabric-canvas"></canvas>
@@ -1701,15 +1701,15 @@ const WidgetRegistry = {
                     </style>
                     <div style="padding:5px; background:#eee; border-bottom:1px solid #ccc; display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
                         <input type="color" id="${wId}-color" value="#0000ff" style="width:30px; height:32px; border:1px solid #ccc; padding:0; background:white; cursor:pointer; border-radius:3px;" title="Pick Color">
-                        <button id="${wId}-pen" class="wb-toolbar-btn active" title="Pen"><i class="fas fa-pen"></i></button>
-                        <button id="${wId}-highlighter" class="wb-toolbar-btn" title="Highlighter"><i class="fas fa-marker"></i></button>
-                        <button id="${wId}-eraser" class="wb-toolbar-btn" title="Eraser"><i class="fas fa-eraser"></i></button>
+                        <button id="${wId}-pen" class="wb-toolbar-btn active" title="Pen"><script>document.write(ICONS.edit);</script></button>
+                        <button id="${wId}-highlighter" class="wb-toolbar-btn" title="Highlighter">${ICONS.marker}</button>
+                        <button id="${wId}-eraser" class="wb-toolbar-btn" title="Eraser">${ICONS.eraser}</button>
                         <div style="display:flex; align-items:center; gap:5px; margin-left:5px;">
                             <label style="font-size:0.7rem; color:#666;">Size:</label>
                             <input type="range" id="${wId}-size" min="1" max="50" value="3" style="width:60px;">
                         </div>
-                        <button id="${wId}-clear-wb" class="wb-toolbar-btn" title="Clear All" style="margin-left:5px;"><i class="fas fa-trash-alt"></i></button>
-                        <button id="${wId}-save-upload-wb" class="wb-save-btn"><i class="fas fa-file-upload"></i> Save</button>
+                        <button id="${wId}-clear-wb" class="wb-toolbar-btn" title="Clear All" style="margin-left:5px;">${ICONS.trash}</button>
+                        <button id="${wId}-save-upload-wb" class="wb-save-btn">${ICONS.upload} Save</button>
                     </div>
                     <canvas id="${wId}-wb" style="flex:1; cursor:crosshair; background:white;"></canvas>
                 </div>
@@ -1876,7 +1876,7 @@ const WidgetRegistry = {
         render: function(wId) {
             return `
                 <div style="text-align:center; padding:20px;">
-                    <i class="fas fa-microphone" style="font-size:3rem; color:#ccc;" id="${wId}-mic-icon"></i>
+                    <div style="color:#ccc; display:flex; justify-content:center;" id="${wId}-mic-icon">${ICONS.microphone.replace('16','48').replace('16','48')}</div>
                     <div style="margin-top:20px;">
                         <button id="${wId}-rec" style="padding:10px 20px; border-radius:20px; border:none; background:#f44336; color:white; cursor:pointer;">Record</button>
                     </div>
@@ -1953,13 +1953,13 @@ const WidgetRegistry = {
             return `
                 <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f9f9f9; position:relative; overflow:hidden; border:2px dashed #ccc; border-radius:10px;" id="${wId}-frame">
                     <div id="${wId}-placeholder" style="text-align:center; color:#888; padding: 20px; width: 100%;">
-                        <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:10px;"></i>
+                        <div style="color:#ccc; margin-bottom:10px;">${ICONS.upload.replace('16','48').replace('16','48')}</div>
                         <p style="color:#888;">Drag & Drop files here</p>
                         <button class="upload-trigger-btn" style="margin-top:10px; padding:5px 10px; cursor: pointer;">Or Click to Upload</button>
                     </div>
                     <img id="${wId}-img" style="display:none; width:100%; height:100%; object-fit:contain;">
                     <input type="file" id="${wId}-file" style="display:none;" accept="image/*">
-                    <button id="${wId}-change-btn" style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.5); color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.7rem; display:none;"><i class="fas fa-sync"></i></button>
+                    <button id="${wId}-change-btn" style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.5); color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:0.7rem; display:none;">${ICONS.sync}</button>
                 </div>
             `;
         },
@@ -1989,7 +1989,7 @@ const WidgetRegistry = {
                     $widget.data('photoPath', null);
                     $img.hide().attr('src', '');
                     $placeholder.html(`
-                        <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:10px;"></i>
+                        <div style="color:#ccc; margin-bottom:10px;">${ICONS.upload.replace('16','48').replace('16','48')}</div>
                         <p style="color:#888;">Drag & Drop files here</p>
                         <button class="upload-trigger-btn" style="margin-top:10px; padding:5px 10px; cursor: pointer;">Or Click to Upload</button>
                     `).show();
@@ -2057,7 +2057,7 @@ const WidgetRegistry = {
                 formData.append('file', file);
 
                 // Show loading state
-                $placeholder.html('<i class="fas fa-spinner fa-spin" style="font-size:3rem; margin-bottom:10px;"></i><p>Uploading...</p>').show();
+                $placeholder.html(`${ICONS.spinner.replace('16','48').replace('16','48')}<p>Uploading...</p>`).show();
                 $img.hide();
 
                 $.ajax({
@@ -2076,12 +2076,12 @@ const WidgetRegistry = {
                             $widget.data('photoPath', res.file_path);
                             if (window.saveWorkspaceState) window.saveWorkspaceState();
                         } else {
-                            $placeholder.html('<i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:10px; color:red;"></i><p>Error: '+res.message+'</p>');
+                            $placeholder.html(`${ICONS.exclamationTriangle.replace('16','48').replace('16','48')}<p>Error: `+res.message+`</p>`);
                             window.showCustomModal('Error', res.message);
                         }
                     },
                     error: function() {
-                        $placeholder.html('<i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:10px; color:red;"></i><p>Upload Failed</p>');
+                        $placeholder.html(`${ICONS.exclamationTriangle.replace('16','48').replace('16','48')}<p>Upload Failed</p>`);
                         window.showCustomModal('Error', 'Failed to upload photo.');
                     }
                 });
@@ -2142,19 +2142,19 @@ const WidgetRegistry = {
                                 let timeStr = a.waktu_transaksi.replace(/-/g, "/");
                                 let time = new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
-                                let icon = 'fa-circle';
+                                let icon = ICONS.circle;
                                 let color = '#ccc';
                                 let type = a.jenis_aktivitas.toLowerCase();
 
-                                if (type.includes('create')) { icon = 'fa-plus-circle'; color = '#28a745'; }
-                                else if (type.includes('delete')) { icon = 'fa-trash-alt'; color = '#dc3545'; }
-                                else if (type.includes('edit') || type.includes('rename') || type.includes('resize') || type.includes('move')) { icon = 'fa-edit'; color = '#ffc107'; }
-                                else if (type.includes('open')) { icon = 'fa-folder-open'; color = '#17a2b8'; }
-                                else if (type.includes('login')) { icon = 'fa-sign-in-alt'; color = '#007bff'; }
+                                if (type.includes('create')) { icon = ICONS.plusCircle; color = '#28a745'; }
+                                else if (type.includes('delete')) { icon = ICONS.trash; color = '#dc3545'; }
+                                else if (type.includes('edit') || type.includes('rename') || type.includes('resize') || type.includes('move')) { icon = ICONS.edit; color = '#ffc107'; }
+                                else if (type.includes('open')) { icon = ICONS.folderOpen; color = '#17a2b8'; }
+                                else if (type.includes('login')) { icon = ICONS.signInAlt; color = '#007bff'; }
 
                                 $list.append(`
                                     <div style="padding:8px 0; border-bottom:1px solid #f1f1f1; display:flex; align-items:flex-start; gap:10px;">
-                                        <i class="fas ${icon}" style="color:${color}; margin-top:3px; width:15px; text-align:center;"></i>
+                                        <span style="color:${color}; margin-top:3px; width:15px; display:flex; justify-content:center;">${icon}</span>
                                         <div style="flex:1;">
                                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                                 <span style="font-weight:600; font-size:0.8rem; text-transform:capitalize;">${a.jenis_aktivitas.replace(/_/g,' ')}</span>
