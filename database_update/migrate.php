@@ -4,9 +4,8 @@ $host = "localhost";
 $user = "root"; // Sesuaikan jika ada password db
 $pass = "";
 $db   = "lobe_v5_db";
-$socket = "/tmp/mysqld/mysql.sock";
 
-$conn = new mysqli($host, $user, $pass, "", 3306, $socket);
+$conn = new mysqli($host, $user, $pass);
 if ($conn->connect_error) die("Koneksi gagal: " . $conn->connect_error);
 
 // Buat database jika belum ada

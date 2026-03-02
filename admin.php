@@ -4,261 +4,313 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php");
     exit;
 }
+require 'koneksi.php';
+$username = $_SESSION['username'];
+$activeRoomId = $_SESSION['active_room_id'] ?? 'null';
+$activeRoomName = $_SESSION['active_room_name'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOBE - Admin Panel</title>
+    <title>LOBE - Admin Workspace</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <style>
-        body {
-            background-color: #f0f2f5;
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            overflow: hidden; /* Fix for window system */
-        }
+        body { margin: 0; overflow: hidden; background-color: #f0f2f5; }
 
-        .admin-workspace {
-            width: 100vw;
-            height: 100vh;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 20px;
-            padding: 20px;
-            box-sizing: border-box;
+        /* Admin Overlay Layer */
+        #admin-layer {
+            position: absolute; top: 60px; left: 0; right: 0; bottom: 0;
+            padding: 20px; display: grid;
+            grid-template-columns: 400px 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 20px; pointer-events: none; z-index: 100;
         }
 
         .admin-window {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 1px solid #ddd;
+            background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd;
+            pointer-events: all;
         }
 
         .window-header {
-            background: #f8f9fa;
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: #343a40; color: white; padding: 10px 15px;
+            font-weight: bold; display: flex; justify-content: space-between; align-items: center;
         }
 
-        .window-content {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-        }
+        .window-content { flex: 1; padding: 15px; overflow-y: auto; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
+        /* Metric Cards */
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .metric-card { background: #f8f9fa; padding: 15px; border-radius: 6px; text-align: center; border-left: 4px solid #007bff; }
+        .metric-card h4 { margin: 0; font-size: 0.7rem; color: #888; text-transform: uppercase; }
+        .metric-card .value { font-size: 1.5rem; font-weight: 900; color: #333; }
 
-        th, td {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+        th { background-color: #fafafa; color: #555; position: sticky; top: 0; z-index: 1; }
 
-        th {
-            background-color: #fafafa;
-            color: #555;
-        }
+        .badge { padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; }
+        .badge-premium { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .badge-admin { background: #d1ecf1; color: #0c5460; }
 
-        .pagination {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 10px;
-            gap: 5px;
-        }
+        .pagination { display: flex; justify-content: center; margin-top: 10px; gap: 3px; }
+        .pagination button { padding: 4px 8px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; font-size: 0.75rem; }
+        .pagination button.active { background: #007bff; color: white; border-color: #007bff; }
 
-        .pagination button {
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-            border-radius: 4px;
-        }
+        .search-bar { margin-bottom: 10px; display: flex; gap: 5px; align-items: center; }
+        .search-bar input { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem; }
+        .search-bar select { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8rem; background: white; }
 
-        .pagination button:hover {
-            background: #f0f0f0;
-        }
-
-        .pagination button.active {
-            background: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 400px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .btn-primary { background: #007bff; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-
+        /* Custom scrollbar for admin */
+        .window-content::-webkit-scrollbar { width: 6px; }
+        .window-content::-webkit-scrollbar-track { background: #f1f1f1; }
+        .window-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        .window-content::-webkit-scrollbar-thumb:hover { background: #999; }
     </style>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+
+    <script>
+        const APP_IS_LOGGED_IN = true;
+        const APP_USERNAME = "<?php echo htmlspecialchars($username); ?>";
+        const INITIAL_STATE = {
+            isLoggedIn: true,
+            username: APP_USERNAME,
+            activeRoomId: <?php echo $activeRoomId; ?>,
+            activeRoomName: "<?php echo htmlspecialchars($activeRoomName); ?>"
+        };
+    </script>
 </head>
 <body>
 
-    <div class="admin-workspace">
+    <div id="workspace-screen" class="screen" style="display: block;">
+        <div id="canvas" class="grid-background active">
 
-        <!-- Window 1: User Management -->
-        <div class="admin-window" style="grid-column: 1 / 2; grid-row: 1 / 3;">
-            <div class="window-header">
-                <span><i class="fas fa-users"></i> User Management</span>
+            <nav id="up-nav-bar" class="navbar">
+                <div class="nav-logo" style="display:flex; align-items:center;">
+                    LOBE <span style="margin-left:10px; background:#343a40; color:white; font-size:10px; padding:2px 8px; border-radius:20px; font-weight:900;">ADMIN</span>
+                </div>
+                <div class="nav-center">
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select-trigger">
+                            <span id="current-room-name"><?php echo $activeRoomName ?: '+ Create New Room'; ?></span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="custom-options">
+                            <span class="custom-option" data-value="new">+ Create New Room</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="nav-profile">
+                    <i class="fas fa-user-shield" style="font-size: 1.2rem; margin-right: 5px; color:#007bff;"></i>
+                    <span id="display-user" style="font-weight: 500; margin-right: 15px;"><?php echo $username; ?></span>
+                    <button id="btn-logout" style="padding: 5px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #ddd; background: #fff; cursor: pointer;">Logout</button>
+                </div>
+            </nav>
+
+            <!-- Admin Layer -->
+            <div id="admin-layer">
+
+                <!-- Dashboard & Stats -->
+                <div class="admin-window" style="grid-row: 1 / 3;">
+                    <div class="window-header">
+                        <span><i class="fas fa-tachometer-alt"></i> Dashboard Overview</span>
+                        <i class="fas fa-sync" style="cursor:pointer; font-size:0.8rem;" onclick="loadDashboard()"></i>
+                    </div>
+                    <div class="window-content">
+                        <div class="metrics-grid">
+                            <div class="metric-card"><h4 title="Total Users">Users</h4><div class="value" id="stat-users">-</div></div>
+                            <div class="metric-card" style="border-left-color:#ffc107;"><h4 title="Active Premium">Premium</h4><div class="value" id="stat-premium">-</div></div>
+                            <div class="metric-card" style="border-left-color:#28a745;"><h4 title="Total Rooms">Rooms</h4><div class="value" id="stat-rooms">-</div></div>
+                        </div>
+                        <div style="height: 180px; margin-bottom: 20px;">
+                            <canvas id="admin-activity-chart"></canvas>
+                        </div>
+                        <h5 style="margin-bottom:10px; font-size:0.8rem; color:#666;">POPULAR WIDGETS</h5>
+                        <div id="popular-widgets-list"></div>
+                    </div>
+                </div>
+
+                <!-- User Management -->
+                <div class="admin-window">
+                    <div class="window-header">
+                        <span><i class="fas fa-users-cog"></i> User Management</span>
+                    </div>
+                    <div class="window-content">
+                        <div class="search-bar">
+                            <input type="text" id="user-search" placeholder="Search username..." oninput="loadUsers(1)">
+                            <select id="user-limit" onchange="loadUsers(1)">
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div id="user-list-container">Loading...</div>
+                    </div>
+                    <div style="padding: 5px; border-top: 1px solid #eee;">
+                         <div class="pagination" id="user-pagination"></div>
+                    </div>
+                </div>
+
+                <!-- Transaction Logs -->
+                <div class="admin-window">
+                    <div class="window-header">
+                        <span><i class="fas fa-stream"></i> Live Activity Feed</span>
+                    </div>
+                    <div class="window-content">
+                        <div class="search-bar">
+                            <div style="font-size:0.7rem; color:#888;">Recent Activity Logs</div>
+                            <select id="trans-limit" onchange="loadTransactions(1)" style="margin-left:auto;">
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div id="transaction-list-container">Loading...</div>
+                    </div>
+                     <div style="padding: 5px; border-top: 1px solid #eee;">
+                         <div class="pagination" id="trans-pagination"></div>
+                    </div>
+                </div>
+
+                <!-- Master Items -->
+                <div class="admin-window" style="grid-column: 2 / 4;">
+                    <div class="window-header">
+                        <span><i class="fas fa-th-list"></i> Catalog Control (Master Items)</span>
+                        <button class="btn btn-primary" style="padding:2px 10px; font-size:0.7rem;" onclick="openItemModal()">+ Add New</button>
+                    </div>
+                    <div class="window-content" id="item-list-container">
+                        Loading...
+                    </div>
+                </div>
+
             </div>
-            <div class="window-content" id="user-list-container">
-                Loading...
-            </div>
-            <div style="padding: 10px; border-top: 1px solid #eee;">
-                 <div class="pagination" id="user-pagination"></div>
-            </div>
+
         </div>
-
-        <!-- Window 2: Transaction Logs -->
-        <div class="admin-window" style="grid-column: 2 / 4; grid-row: 1 / 2;">
-            <div class="window-header">
-                <span><i class="fas fa-history"></i> Transaction Logs</span>
-            </div>
-            <div class="window-content" id="transaction-list-container">
-                Loading...
-            </div>
-             <div style="padding: 10px; border-top: 1px solid #eee;">
-                 <div class="pagination" id="trans-pagination"></div>
-            </div>
-        </div>
-
-        <!-- Window 3: Master Items (Products) -->
-        <div class="admin-window" style="grid-column: 2 / 4; grid-row: 2 / 3;">
-            <div class="window-header">
-                <span><i class="fas fa-cubes"></i> Master Items (Products)</span>
-                <button class="btn btn-primary" onclick="openItemModal()">+ Add New Item</button>
-            </div>
-            <div class="window-content" id="item-list-container">
-                Loading...
-            </div>
-        </div>
-
     </div>
 
-    <!-- Modal for Create/Edit Item -->
-    <div id="item-modal" class="modal">
-        <div class="modal-content">
-            <h3 id="modal-title">Add New Item</h3>
+    <!-- MODAL BOXES -->
+    <div id="item-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+        <div class="windows-style" style="width: 400px;">
+            <div class="modal-header">
+                <span id="item-modal-title">Item Editor</span>
+                <button class="close-btn" onclick="$('#item-modal').hide()">&times;</button>
+            </div>
             <form id="item-form">
-                <input type="hidden" id="item-id">
-                <div class="form-group">
-                    <label>Nama Item</label>
-                    <input type="text" id="item-name" required>
-                </div>
-                <div class="form-group">
-                    <label>Deskripsi</label>
-                    <textarea id="item-desc" rows="3" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Tipe Item</label>
-                    <select id="item-type">
-                        <option value="ui">UI Component</option>
-                        <option value="input">Input Tool</option>
-                        <option value="output">Output Display</option>
-                        <option value="tools">Utility Tool</option>
-                        <option value="api">AI / API Feature</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Icon Class (FontAwesome)</label>
-                    <input type="text" id="item-icon" placeholder="fa-cube" required>
-                </div>
-                <div style="text-align: right;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
+                <div class="modal-body">
+                    <input type="hidden" id="item-id">
+                    <div class="form-group"><label>Name</label><input type="text" id="item-name" required></div>
+                    <div class="form-group"><label>Description</label><textarea id="item-desc" rows="2" style="width:100%; border:1px solid #ddd; padding:8px; border-radius:4px; font-size:14px;"></textarea></div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="item-type">
+                            <option value="ui">UI</option><option value="input">Input</option>
+                            <option value="output">Output</option><option value="tools">Tools</option>
+                            <option value="api">API</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Icon (fa-xxx)</label><input type="text" id="item-icon" required></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="$('#item-modal').hide()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Context Menus (Standard for spawning) -->
+    <div id="context-menu" class="context-menu" style="display: none;">
+        <ul id="menu-items-list"></ul>
+    </div>
+    <div id="widget-context-menu" class="context-menu" style="display: none;">
+        <div class="context-item" id="toggle-close-btn"><i class="fas fa-power-off"></i> Toggle Close Button</div>
+    </div>
+
+    <script src="assets/js/widgets.js"></script>
+    <script src="assets/js/app.js"></script>
     <script>
+        let activityChart = null;
+
         $(document).ready(function() {
+            loadDashboard();
             loadUsers(1);
             loadTransactions(1);
             loadItems();
+
+            // Auto refresh logs
+            setInterval(() => loadTransactions(1), 30000);
         });
 
-        function escapeHtml(text) {
-            if (text == null) return '';
-            return String(text)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+        function loadDashboard() {
+            $.get('backend/admin_api.php?action=get_dashboard_stats', function(res) {
+                if(res.status === 'success') {
+                    $('#stat-users').text(res.metrics.users);
+                    $('#stat-premium').text(res.metrics.premium);
+                    $('#stat-rooms').text(res.metrics.rooms);
+
+                    // Chart
+                    const ctx = document.getElementById('admin-activity-chart').getContext('2d');
+                    if (activityChart) activityChart.destroy();
+                    activityChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: res.activity_chart.map(d => d.date.split('-').slice(1).join('/')),
+                            datasets: [{
+                                label: 'Global Activity',
+                                data: res.activity_chart.map(d => d.count),
+                                borderColor: '#007bff',
+                                tension: 0.3,
+                                fill: true,
+                                backgroundColor: 'rgba(0, 123, 255, 0.1)'
+                            }]
+                        },
+                        options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+
+                    // Popular Widgets
+                    let popHtml = '';
+                    res.popular_widgets.forEach(w => {
+                        popHtml += `<div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:5px;">
+                            <span>${w.nama_item}</span>
+                            <span style="font-weight:bold;">${w.count} instances</span>
+                        </div>`;
+                    });
+                    $('#popular-widgets-list').html(popHtml || '<p style="color:#888;">No widgets spawned yet.</p>');
+                }
+            });
         }
 
-        // --- USERS ---
         function loadUsers(page) {
-            $.get('backend/admin_api.php?action=get_users&page=' + page, function(res) {
+            let q = $('#user-search').val();
+            let limit = $('#user-limit').val();
+            $.get(`backend/admin_api.php?action=get_users&page=${page}&search=${q}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
-                    let html = '<table><thead><tr><th>ID</th><th>Username</th><th>Role</th></tr></thead><tbody>';
+                    let html = '<table><thead><tr><th>User</th><th>Role</th><th>Premium</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(u => {
-                        html += `<tr><td>${u.id}</td><td>${escapeHtml(u.username)}</td><td><span class="badge">${escapeHtml(u.role)}</span></td></tr>`;
+                        let premBadge = u.is_premium ? `<span class="badge badge-premium">Active</span>` : `<span style="color:#ccc;">None</span>`;
+                        let roleBadge = u.role === 'admin' ? `<span class="badge badge-admin">Admin</span>` : 'User';
+
+                        html += `<tr>
+                            <td style="font-weight:bold;">${u.username}</td>
+                            <td>${roleBadge}</td>
+                            <td>${premBadge}</td>
+                            <td>
+                                <button class="btn" style="padding:2px 5px; font-size:0.6rem; background:#28a745;" onclick="givePremium(${u.id})">Grant</button>
+                                <button class="btn" style="padding:2px 5px; font-size:0.6rem; background:#dc3545;" onclick="givePremium(${u.id}, 0)">Strip</button>
+                            </td>
+                        </tr>`;
                     });
                     html += '</tbody></table>';
                     $('#user-list-container').html(html);
@@ -267,17 +319,26 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             });
         }
 
-        // --- TRANSACTIONS ---
+        function givePremium(id, days = 30) {
+            $.ajax({
+                url: 'backend/admin_api.php?action=update_user_premium',
+                type: 'POST',
+                data: JSON.stringify({ id: id, days: days }),
+                success: function() { loadUsers(1); loadDashboard(); }
+            });
+        }
+
         function loadTransactions(page) {
-            $.get('backend/admin_api.php?action=get_transactions&page=' + page, function(res) {
+            let limit = $('#trans-limit').val();
+            $.get(`backend/admin_api.php?action=get_transactions&page=${page}&limit=${limit}`, function(res) {
                 if(res.status === 'success') {
-                    let html = '<table><thead><tr><th>Date</th><th>User</th><th>Activity</th><th>Detail</th></tr></thead><tbody>';
+                    let html = '<table><thead><tr><th>User</th><th>Act</th><th>Time</th></tr></thead><tbody>';
                     res.data.forEach(t => {
+                        let time = new Date(t.waktu_transaksi.replace(/-/g,'/')).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
                         html += `<tr>
-                            <td>${t.waktu_transaksi}</td>
-                            <td>${escapeHtml(t.username || 'Guest')}</td>
-                            <td>${escapeHtml(t.jenis_aktivitas)}</td>
-                            <td>${escapeHtml(t.detail_aktivitas)}</td>
+                            <td style="color:#666;">${t.username || 'Guest'}</td>
+                            <td title="${t.detail_aktivitas}">${t.jenis_aktivitas}</td>
+                            <td>${time}</td>
                         </tr>`;
                     });
                     html += '</tbody></table>';
@@ -287,23 +348,24 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             });
         }
 
-        // --- ITEMS ---
         function loadItems() {
             $.get('backend/admin_api.php?action=get_items', function(res) {
                 if(res.status === 'success') {
-                    let html = '<table><thead><tr><th>Icon</th><th>Name</th><th>Type</th><th>Actions</th></tr></thead><tbody>';
+                    let html = '<table><thead><tr><th>Icon</th><th>Name</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>';
                     res.data.forEach(i => {
-                        // We serialize the item object for the onclick handler, but be careful with quotes
-                        // Ideally we fetch details by ID when clicking edit, but for simplicity here:
+                        let activeText = i.is_active == 1 ? 'Active' : 'Disabled';
+                        let activeColor = i.is_active == 1 ? 'green' : 'red';
+                        let btnText = i.is_active == 1 ? 'Disable' : 'Enable';
                         let itemJson = JSON.stringify(i).replace(/'/g, "&#39;");
 
                         html += `<tr>
-                            <td><i class="fas ${escapeHtml(i.gambar)}"></i></td>
-                            <td>${escapeHtml(i.nama_item)}<br><small>${escapeHtml(i.deskripsi)}</small></td>
-                            <td>${escapeHtml(i.tipe_item)}</td>
+                            <td><i class="fas ${i.gambar}"></i></td>
+                            <td><span style="font-weight:bold;">${i.nama_item}</span></td>
+                            <td>${i.tipe_item}</td>
+                            <td style="color:${activeColor}; font-weight:bold;">${activeText}</td>
                             <td>
-                                <button class="btn btn-secondary" onclick='editItem(${itemJson})'><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-danger" onclick="deleteItem(${i.id})"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-secondary" style="padding:2px 5px; font-size:0.6rem;" onclick='editItem(${itemJson})'>Edit</button>
+                                <button class="btn" style="padding:2px 5px; font-size:0.6rem; background:#6c757d;" onclick="toggleItem(${i.id}, ${i.is_active == 1 ? 0 : 1})">${btnText}</button>
                             </td>
                         </tr>`;
                     });
@@ -313,51 +375,40 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
             });
         }
 
-        // --- PAGINATION HELPER ---
+        function toggleItem(id, status) {
+            $.get(`backend/admin_api.php?action=toggle_item_status&id=${id}&status=${status}`, () => loadItems());
+        }
+
         function renderPagination(prefix, meta, callback) {
             let html = '';
-            for(let i=1; i<=meta.total_pages; i++) {
-                let active = i === meta.current_page ? 'active' : '';
-                html += `<button class="${active}" onclick="${callback.name}(${i})">${i}</button>`;
+            let start = Math.max(1, meta.current_page - 2);
+            let end = Math.min(meta.total_pages, start + 4);
+            for(let i=start; i<=end; i++) {
+                html += `<button class="${i === meta.current_page ? 'active' : ''}" onclick="${callback.name}(${i})">${i}</button>`;
             }
             $('#' + prefix + '-pagination').html(html);
         }
 
-        // --- MODAL LOGIC ---
         function openItemModal() {
-            $('#modal-title').text('Add New Item');
+            $('#item-modal-title').text('Add New Catalog Item');
             $('#item-id').val('');
             $('#item-form')[0].reset();
-            $('#item-modal').css('display', 'flex');
-        }
-
-        function closeModal() {
-            $('#item-modal').hide();
+            $('#item-modal').show();
         }
 
         function editItem(item) {
-            $('#modal-title').text('Edit Item');
+            $('#item-modal-title').text('Edit Catalog Item');
             $('#item-id').val(item.id);
             $('#item-name').val(item.nama_item);
             $('#item-desc').val(item.deskripsi);
             $('#item-type').val(item.tipe_item);
             $('#item-icon').val(item.gambar);
-            $('#item-modal').css('display', 'flex');
-        }
-
-        function deleteItem(id) {
-            if(confirm('Are you sure you want to delete this item?')) {
-                $.get('backend/admin_api.php?action=delete_item&id=' + id, function(res) {
-                    loadItems();
-                });
-            }
+            $('#item-modal').show();
         }
 
         $('#item-form').on('submit', function(e) {
             e.preventDefault();
             let id = $('#item-id').val();
-            let action = id ? 'update_item' : 'create_item';
-
             let data = {
                 id: id,
                 nama_item: $('#item-name').val(),
@@ -365,26 +416,12 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
                 tipe_item: $('#item-type').val(),
                 gambar: $('#item-icon').val()
             };
-
             $.ajax({
-                url: 'backend/admin_api.php?action=' + action,
-                type: 'POST',
-                data: JSON.stringify(data),
-                contentType: 'application/json',
-                success: function(res) {
-                    closeModal();
-                    loadItems();
-                }
+                url: 'backend/admin_api.php?action=' + (id ? 'update_item' : 'create_item'),
+                type: 'POST', data: JSON.stringify(data), contentType: 'application/json',
+                success: function() { $('#item-modal').hide(); loadItems(); }
             });
         });
-
-        // Close modal on click outside
-        $(window).on('click', function(e) {
-            if ($(e.target).is('.modal')) {
-                closeModal();
-            }
-        });
-
     </script>
 </body>
 </html>
