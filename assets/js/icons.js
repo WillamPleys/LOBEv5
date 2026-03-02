@@ -96,9 +96,28 @@ window.getSvgIcon = function(iconClass, size = 16) {
         'chalkboard': 'chalkboard',
         'microphone': 'microphone',
         'calendar-alt': 'calendar',
+        'calendar-check': 'calendar',
         'cloud-upload-alt': 'upload',
         'image': 'image',
-        'cog': 'cog'
+        'cog': 'cog',
+        'indent': 'columns',
+        'file-signature': 'edit',
+        'terminal': 'code',
+        'brain': 'robot',
+        'folder-tree': 'folderOpen',
+        'file-upload': 'upload',
+        'note-sticky': 'stickyNote',
+        'sitemap': 'projectDiagram',
+        'sliders': 'cog',
+        'chart-pie': 'chartLine',
+        'paint-brush': 'edit',
+        'list-check': 'listUl',
+        'stopwatch': 'stopwatch',
+        'microphone-lines': 'microphone',
+        'file-word': 'fileWord',
+        'tasks': 'listUl',
+        'hourglass-half': 'hourglass',
+        'clone': 'layerGroup'
     };
     let iconKey = mapping[key] || key;
     let svg = ICONS[iconKey] || ICONS.circle;
