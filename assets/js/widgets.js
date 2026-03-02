@@ -495,23 +495,23 @@ const WidgetRegistry = {
                             </div>
                         </div>
                         <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-shrink:0;">
-                            <button id="${wId}-prev" class="btn btn-outline-primary" style="flex:1; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px;">${ICONS.chevronLeft} Prev</button>
+                            <button id="${wId}-prev" type="button" class="btn btn-outline-primary" style="flex:1; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px;">${ICONS.chevronLeft} Prev</button>
                             <div style="flex:1; text-align:center; font-size:0.85rem; color:#666; font-weight:500;"><span id="${wId}-index-display">1</span> / <span id="${wId}-total-display">1</span></div>
-                            <button id="${wId}-next" class="btn btn-outline-primary" style="flex:1; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px;">Next ${ICONS.chevronRight}</button>
+                            <button id="${wId}-next" type="button" class="btn btn-outline-primary" style="flex:1; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:5px;">Next ${ICONS.chevronRight}</button>
                         </div>
                     </div>
 
                     <div id="${wId}-settings-area" style="position:absolute; top:0; left:0; width:100%; height:100%; background:white; display:none; flex-direction:column; padding:15px; box-sizing:border-box; z-index:5; overflow:hidden;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px; flex-shrink:0;">
                             <h3 style="margin:0; font-size:1.1rem; color:#333;">Flashcard Creator</h3>
-                            <button id="${wId}-save-settings" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:500; width: auto; flex-shrink:0; display:flex; align-items:center; gap:5px;">${ICONS.save} Save</button>
+                            <button id="${wId}-save-settings" type="button" style="padding:5px 15px; background:#28a745; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:500; width: auto; flex-shrink:0; display:flex; align-items:center; gap:5px;">${ICONS.save} Save</button>
                         </div>
                         <div style="margin-bottom:20px; padding:10px; border:1px solid #eee; border-radius:8px; border-top: 8px solid #673ab7; flex-shrink:0;">
                             <input type="text" id="${wId}-set-title" class="fc-input" placeholder="Set Title" style="font-size:1.5rem; border-bottom:1px solid #eee;" value="">
                             <input type="text" id="${wId}-set-desc" class="fc-input" placeholder="Set Description" style="font-size:0.9rem; border-bottom:none;" value="">
                         </div>
                         <div id="${wId}-editor-list" style="flex: 1; overflow-y: auto; margin-bottom: 10px; padding-right: 5px; min-height: 0;"></div>
-                        <button id="${wId}-add-card" style="width:100%; border-radius:8px; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; font-weight:500; flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:5px;">${ICONS.plus} Add Question</button>
+                        <button id="${wId}-add-card" type="button" style="width:100%; border-radius:8px; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; font-weight:500; flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:5px;">${ICONS.plus} Add Question</button>
                     </div>
                     <input type="file" id="${wId}-fc-img-upload" style="display:none;" accept="image/*">
                 </div>
@@ -519,12 +519,12 @@ const WidgetRegistry = {
         },
         init: function(wId) {
             const $widget = $(`#${wId}`);
-            const $playArea = $(`#${wId}-play-area`);
-            const $settingsArea = $(`#${wId}-settings-area`);
-            const $editorList = $(`#${wId}-editor-list`);
-            const $indexDisplay = $(`#${wId}-index-display`);
-            const $totalDisplay = $(`#${wId}-total-display`);
-            const $imgUpload = $(`#${wId}-fc-img-upload`);
+            const $playArea = $widget.find(`#${wId}-play-area`);
+            const $settingsArea = $widget.find(`#${wId}-settings-area`);
+            const $editorList = $widget.find(`#${wId}-editor-list`);
+            const $indexDisplay = $widget.find(`#${wId}-index-display`);
+            const $totalDisplay = $widget.find(`#${wId}-total-display`);
+            const $imgUpload = $widget.find(`#${wId}-fc-img-upload`);
 
             let isFlipped = false;
             let currentIdx = 0;
@@ -562,8 +562,8 @@ const WidgetRegistry = {
 
             function renderEditor() {
                 $editorList.empty();
-                $(`#${wId}-set-title`).val(setTitle);
-                $(`#${wId}-set-desc`).val(setDesc);
+                $widget.find(`#${wId}-set-title`).val(setTitle);
+                $widget.find(`#${wId}-set-desc`).val(setDesc);
                 cards.forEach((c, i) => {
                     addEditorRow(c.q, c.a, c.img);
                 });
@@ -596,31 +596,34 @@ const WidgetRegistry = {
                     item.find('.fc-remove-img').show();
                 }
 
-                item.on('click', function() {
+                $editorList.append(item);
+            }
+
+            // Delegated Row Listeners for better performance and reliability
+            $editorList.on('click', '.fc-editor-item', function() {
                     $editorList.find('.fc-editor-item').removeClass('active');
                     $(this).addClass('active');
                 });
 
-                item.find('.fc-upload-btn').click((e) => {
-                    e.stopPropagation();
-                    activeItem = item;
-                    $imgUpload.click();
-                });
+            $editorList.on('click', '.fc-upload-btn', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                activeItem = $(this).closest('.fc-editor-item');
+                $imgUpload.trigger('click');
+            });
 
-                item.find('.fc-remove-img').click((e) => {
-                    e.stopPropagation();
-                    item.find('.fc-img-preview').attr('src', '').hide();
-                    $(e.target).closest('.fc-remove-img').hide();
-                });
+            $editorList.on('click', '.fc-remove-img', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                const $item = $(this).closest('.fc-editor-item');
+                $item.find('.fc-img-preview').attr('src', '').hide();
+                $(this).hide();
+            });
 
-                item.find('.remove-card').click((e) => {
-                    e.stopPropagation();
-                    item.fadeOut(200, function() {
-                        $(this).remove();
-                    });
+            $editorList.on('click', '.remove-card', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                $(this).closest('.fc-editor-item').fadeOut(200, function() {
+                    $(this).remove();
                 });
-                $editorList.append(item);
-            }
+            });
 
             $imgUpload.on('change', function() {
                 const file = this.files[0];
@@ -651,12 +654,14 @@ const WidgetRegistry = {
                 }
             });
 
-            $(`#${wId}-add-card`).click(() => {
+            $widget.find(`#${wId}-add-card`).on('click', () => {
                 addEditorRow();
-                $editorList.scrollTop($editorList[0].scrollHeight);
+                if ($editorList.length > 0) {
+                    $editorList.scrollTop($editorList[0].scrollHeight);
+                }
             });
 
-            $(`#${wId}-save-settings`).click(() => {
+            $widget.find(`#${wId}-save-settings`).on('click', () => {
                 let newCards = [];
                 $editorList.children().each(function() {
                     let q = $(this).find('.card-q').val().trim();
@@ -665,8 +670,8 @@ const WidgetRegistry = {
                     if (q || a || img) newCards.push({q: q, a: a, img: img});
                 });
                 cards = newCards;
-                setTitle = $(`#${wId}-set-title`).val().trim() || "Flashcard Set";
-                setDesc = $(`#${wId}-set-desc`).val().trim() || "Practice your knowledge here.";
+                setTitle = $widget.find(`#${wId}-set-title`).val().trim() || "Flashcard Set";
+                setDesc = $widget.find(`#${wId}-set-desc`).val().trim() || "Practice your knowledge here.";
 
                 $widget.data('flashcards', cards);
                 $widget.data('fcTitle', setTitle);
