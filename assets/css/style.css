@@ -511,3 +511,41 @@ body, html {
 }
 
 .btn:hover { opacity: 0.9; }
+
+/* Admin Panel Specific Refinements */
+#admin-layer table tr:hover {
+    background-color: #f8f9fa;
+}
+
+#admin-layer .btn-primary { background: #007bff; color: white; }
+#admin-layer .btn-secondary { background: #6c757d; color: white; }
+#admin-layer .btn-danger { background: #dc3545; color: white; }
+#admin-layer .btn-success { background: #28a745; color: white; }
+
+#admin-layer .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+}
+
+#admin-layer .form-group input,
+#admin-layer .form-group select,
+#admin-layer .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+#admin-layer .modal-actions {
+    justify-content: flex-end;
+}
+
+#admin-layer .modal-actions .btn {
+    flex: none;
+    padding: 8px 15px;
+    min-width: 80px;
+}

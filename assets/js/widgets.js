@@ -402,7 +402,7 @@ const WidgetRegistry = {
         render: function(wId) { return WidgetRegistry['Clock'].render(wId); },
         init: function(wId) { WidgetRegistry['Clock'].init(wId); }
     },
-    'Flashcard': {
+    'Flashcard Maker': {
         render: function(wId) {
             return `
                 <div style="height:100%; display:flex; flex-direction:column; position:relative; background:#fff; border-radius:8px; overflow:hidden;">
