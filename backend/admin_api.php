@@ -15,28 +15,57 @@ $action = $_GET['action'] ?? '';
 
 switch ($action) {
     case 'get_dashboard_stats':
+        $username = $conn->real_escape_string($_GET['username'] ?? '');
+        $uId = null;
+        if ($username) {
+            $uRes = $conn->query("SELECT id FROM users WHERE username = '$username'");
+            if ($uRes && $uRes->num_rows > 0) {
+                $uId = $uRes->fetch_assoc()['id'];
+            }
+        }
+
         // 1. Basic Counts
         $total_users = $conn->query("SELECT COUNT(*) as c FROM users")->fetch_assoc()['c'];
         $total_premium = $conn->query("SELECT COUNT(*) as c FROM users WHERE premium_until > NOW()")->fetch_assoc()['c'];
-        $total_rooms = $conn->query("SELECT COUNT(*) as c FROM rooms")->fetch_assoc()['c'];
+
+        $room_where = $uId ? "WHERE user_id = $uId" : "";
+        $total_rooms = $conn->query("SELECT COUNT(*) as c FROM rooms $room_where")->fetch_assoc()['c'];
 
         // 2. Activity Trends (Last 7 days)
         $chart_data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-$i days"));
-            $count = $conn->query("SELECT COUNT(*) as c FROM transactions WHERE DATE(waktu_transaksi) = '$date'")->fetch_assoc()['c'];
+            $act_where = $uId ? "AND user_id = $uId" : "";
+            $count = $conn->query("SELECT COUNT(*) as c FROM transactions WHERE DATE(waktu_transaksi) = '$date' $act_where")->fetch_assoc()['c'];
             $chart_data[] = ['date' => $date, 'count' => (int)$count];
         }
 
-        // 3. Popular Widgets (based on room_widgets occurrences)
+        // 3. Widget Instance Counts (including 0s)
         $popular = [];
-        $res = $conn->query("SELECT mi.nama_item, COUNT(rw.id) as count FROM room_widgets rw JOIN master_items mi ON rw.master_item_id = mi.id GROUP BY mi.id ORDER BY count DESC LIMIT 5");
+        if ($uId) {
+            $res = $conn->query("SELECT mi.nama_item, COUNT(sub.id) as count
+                                FROM master_items mi
+                                LEFT JOIN (
+                                    SELECT rw.id, rw.master_item_id
+                                    FROM room_widgets rw
+                                    JOIN rooms r ON rw.room_id = r.id
+                                    WHERE r.user_id = $uId
+                                ) sub ON mi.id = sub.master_item_id
+                                GROUP BY mi.id ORDER BY count DESC");
+        } else {
+            $res = $conn->query("SELECT mi.nama_item, COUNT(rw.id) as count
+                                FROM master_items mi
+                                LEFT JOIN room_widgets rw ON mi.id = rw.master_item_id
+                                GROUP BY mi.id ORDER BY count DESC");
+        }
+
         while($row = $res->fetch_assoc()) {
             $popular[] = $row;
         }
 
         echo json_encode([
             'status' => 'success',
+            'scope' => $uId ? $username : 'GLOBAL',
             'metrics' => [
                 'users' => $total_users,
                 'premium' => $total_premium,
@@ -49,7 +78,7 @@ switch ($action) {
 
     case 'get_users':
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 25;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
         $search = $conn->real_escape_string($_GET['search'] ?? '');
         $offset = ($page - 1) * $limit;
 
@@ -78,6 +107,63 @@ switch ($action) {
                 'total_records' => $total
             ]
         ]);
+        break;
+
+    case 'update_user_role':
+        $data = json_decode(file_get_contents("php://input"), true);
+        $uId = (int)$data['id'];
+        $role = $conn->real_escape_string($data['role']);
+
+        $stmt = $conn->prepare("UPDATE users SET role = ? WHERE id = ?");
+        $stmt->bind_param("si", $role, $uId);
+
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Role updated']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => $conn->error]);
+        }
+        break;
+
+    case 'update_user_account':
+        $data = json_decode(file_get_contents("php://input"), true);
+        $uId = (int)$data['id'];
+        $user = $conn->real_escape_string($data['username']);
+        $pass = $conn->real_escape_string($data['password']);
+
+        $stmt = $conn->prepare("UPDATE users SET username = ?, password = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $user, $pass, $uId);
+
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Account updated']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => $conn->error]);
+        }
+        break;
+
+    case 'delete_user':
+        $id = (int)$_GET['id'];
+        if ($id == $_SESSION['user_id']) {
+            echo json_encode(['status' => 'error', 'message' => 'Cannot delete yourself']);
+            exit;
+        }
+        $conn->query("DELETE FROM users WHERE id = $id");
+        echo json_encode(['status' => 'success', 'message' => 'User deleted']);
+        break;
+
+    case 'create_user':
+        $data = json_decode(file_get_contents("php://input"), true);
+        $user = $conn->real_escape_string($data['username']);
+        $pass = $conn->real_escape_string($data['password']);
+        $role = $conn->real_escape_string($data['role'] ?? 'user');
+
+        $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $user, $pass, $role);
+
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Account created']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Username might already exist']);
+        }
         break;
 
     case 'update_user_premium':
@@ -118,7 +204,7 @@ switch ($action) {
 
     case 'get_transactions':
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 25;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
         $offset = ($page - 1) * $limit;
 
         $total_query = "SELECT COUNT(*) as total FROM transactions";
@@ -146,13 +232,29 @@ switch ($action) {
         break;
 
     case 'get_items':
-        $query = "SELECT * FROM master_items ORDER BY tipe_item, nama_item";
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        $offset = ($page - 1) * $limit;
+
+        $total_query = "SELECT COUNT(*) as total FROM master_items";
+        $total_res = $conn->query($total_query);
+        $total = $total_res->fetch_assoc()['total'];
+
+        $query = "SELECT * FROM master_items ORDER BY tipe_item, nama_item LIMIT $limit OFFSET $offset";
         $result = $conn->query($query);
         $items = [];
         while($row = $result->fetch_assoc()) {
             $items[] = $row;
         }
-        echo json_encode(['status' => 'success', 'data' => $items]);
+        echo json_encode([
+            'status' => 'success',
+            'data' => $items,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => ceil($total / $limit),
+                'total_records' => $total
+            ]
+        ]);
         break;
 
     case 'toggle_item_status':
