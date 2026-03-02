@@ -15,28 +15,43 @@ $action = $_GET['action'] ?? '';
 
 switch ($action) {
     case 'get_dashboard_stats':
+        $username = $conn->real_escape_string($_GET['username'] ?? '');
+        $uId = null;
+        if ($username) {
+            $uRes = $conn->query("SELECT id FROM users WHERE username = '$username'");
+            if ($uRes && $uRes->num_rows > 0) {
+                $uId = $uRes->fetch_assoc()['id'];
+            }
+        }
+
         // 1. Basic Counts
         $total_users = $conn->query("SELECT COUNT(*) as c FROM users")->fetch_assoc()['c'];
         $total_premium = $conn->query("SELECT COUNT(*) as c FROM users WHERE premium_until > NOW()")->fetch_assoc()['c'];
-        $total_rooms = $conn->query("SELECT COUNT(*) as c FROM rooms")->fetch_assoc()['c'];
+
+        $room_where = $uId ? "WHERE user_id = $uId" : "";
+        $total_rooms = $conn->query("SELECT COUNT(*) as c FROM rooms $room_where")->fetch_assoc()['c'];
 
         // 2. Activity Trends (Last 7 days)
         $chart_data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-$i days"));
-            $count = $conn->query("SELECT COUNT(*) as c FROM transactions WHERE DATE(waktu_transaksi) = '$date'")->fetch_assoc()['c'];
+            $act_where = $uId ? "AND user_id = $uId" : "";
+            $count = $conn->query("SELECT COUNT(*) as c FROM transactions WHERE DATE(waktu_transaksi) = '$date' $act_where")->fetch_assoc()['c'];
             $chart_data[] = ['date' => $date, 'count' => (int)$count];
         }
 
-        // 3. Popular Widgets (based on room_widgets occurrences)
+        // 3. Widget Instance Counts
+        $widget_where = $uId ? "WHERE r.user_id = $uId" : "";
         $popular = [];
-        $res = $conn->query("SELECT mi.nama_item, COUNT(rw.id) as count FROM room_widgets rw JOIN master_items mi ON rw.master_item_id = mi.id GROUP BY mi.id ORDER BY count DESC LIMIT 5");
+        // JOIN with rooms to filter by user if needed
+        $res = $conn->query("SELECT mi.nama_item, COUNT(rw.id) as count FROM room_widgets rw JOIN master_items mi ON rw.master_item_id = mi.id JOIN rooms r ON rw.room_id = r.id $widget_where GROUP BY mi.id ORDER BY count DESC");
         while($row = $res->fetch_assoc()) {
             $popular[] = $row;
         }
 
         echo json_encode([
             'status' => 'success',
+            'scope' => $uId ? $username : 'GLOBAL',
             'metrics' => [
                 'users' => $total_users,
                 'premium' => $total_premium,

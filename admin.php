@@ -26,8 +26,8 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
         #admin-layer {
             position: relative;
             padding: 20px; display: grid;
-            grid-template-columns: 400px 1fr 1fr;
-            grid-template-rows: repeat(2, minmax(450px, auto));
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 650px);
             gap: 20px; pointer-events: none; z-index: 100;
             padding-bottom: 80px;
         }
@@ -142,27 +142,34 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
 
     <div style="position: relative; z-index: 10;">
         <div id="admin-layer">
-                <!-- Dashboard & Stats -->
-                <div class="admin-window" style="grid-row: 1 / 3;">
+                <!-- 1. Dashboard Overview -->
+                <div class="admin-window">
                     <div class="window-header">
                         <span><i class="fas fa-tachometer-alt"></i> Dashboard Overview</span>
-                        <i class="fas fa-sync" style="cursor:pointer; font-size:0.8rem;" onclick="loadDashboard()"></i>
                     </div>
                     <div class="window-content">
+                        <div class="search-bar">
+                            <input type="text" id="dash-user-search" placeholder="Search specific user (or global)...">
+                            <button class="btn btn-secondary" style="padding:5px 10px; font-size:0.7rem;" onclick="resetDashboard()">Reset</button>
+                        </div>
+                        <div id="dash-scope-badge" style="font-size:0.7rem; color:#007bff; margin-bottom:10px; font-weight:bold;">SCOPE: GLOBAL</div>
+
                         <div class="metrics-grid">
                             <div class="metric-card"><h4 title="Total Users">Users</h4><div class="value" id="stat-users">-</div></div>
                             <div class="metric-card" style="border-left-color:#ffc107;"><h4 title="Active Premium">Premium</h4><div class="value" id="stat-premium">-</div></div>
                             <div class="metric-card" style="border-left-color:#28a745;"><h4 title="Total Rooms">Rooms</h4><div class="value" id="stat-rooms">-</div></div>
                         </div>
+
                         <div style="height: 180px; margin-bottom: 20px;">
                             <canvas id="admin-activity-chart"></canvas>
                         </div>
-                        <h5 style="margin-bottom:10px; font-size:0.8rem; color:#666;">POPULAR WIDGETS</h5>
-                        <div id="popular-widgets-list"></div>
+
+                        <h5 style="margin-bottom:10px; font-size:0.8rem; color:#333; border-bottom:1px solid #eee; padding-bottom:5px;">WIDGET INSTANCE COUNTS</h5>
+                        <div id="popular-widgets-list" style="max-height:200px; overflow-y:auto;"></div>
                     </div>
                 </div>
 
-                <!-- User Management -->
+                <!-- 2. User Management -->
                 <div class="admin-window">
                     <div class="window-header">
                         <span><i class="fas fa-users-cog"></i> User Management</span>
@@ -171,9 +178,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                         <div class="search-bar">
                             <input type="text" id="user-search" placeholder="Search username..." oninput="loadUsers(1)">
                             <select id="user-limit" onchange="loadUsers(1)">
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
+                                <option value="25">25</option><option value="50">50</option><option value="100">100</option>
                             </select>
                         </div>
                         <div id="user-list-container">Loading...</div>
@@ -183,18 +188,24 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     </div>
                 </div>
 
-                <!-- Transaction Logs -->
+                <!-- 3. Master Items -->
+                <div class="admin-window">
+                    <div class="window-header">
+                        <span><i class="fas fa-th-list"></i> Catalog Control</span>
+                        <button class="btn btn-primary" style="padding:2px 10px; font-size:0.7rem;" onclick="openItemModal()">+ Add New</button>
+                    </div>
+                    <div class="window-content" id="item-list-container">Loading...</div>
+                </div>
+
+                <!-- 4. Live Activity Feed -->
                 <div class="admin-window">
                     <div class="window-header">
                         <span><i class="fas fa-stream"></i> Live Activity Feed</span>
                     </div>
                     <div class="window-content">
                         <div class="search-bar">
-                            <div style="font-size:0.7rem; color:#888;">Recent Activity Logs</div>
                             <select id="trans-limit" onchange="loadTransactions(1)" style="margin-left:auto;">
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
+                                <option value="25">25</option><option value="50">50</option><option value="100">100</option>
                             </select>
                         </div>
                         <div id="transaction-list-container">Loading...</div>
@@ -204,16 +215,12 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     </div>
                 </div>
 
-                <!-- Master Items -->
-                <div class="admin-window" style="grid-column: 2 / 4;">
-                    <div class="window-header">
-                        <span><i class="fas fa-th-list"></i> Catalog Control (Master Items)</span>
-                        <button class="btn btn-primary" style="padding:2px 10px; font-size:0.7rem;" onclick="openItemModal()">+ Add New</button>
-                    </div>
-                    <div class="window-content" id="item-list-container">
-                        Loading...
-                    </div>
-                </div>
+                <!-- 5-9 placeholders or more info -->
+                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 5</div>
+                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 6</div>
+                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 7</div>
+                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 8</div>
+                <div class="admin-window" style="background:#f8f9fa; border-style:dashed; opacity:0.6; display:flex; align-items:center; justify-content:center; color:#ccc;">Slot 9</div>
 
             </div>
     </div>
@@ -274,12 +281,15 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
             setInterval(() => loadTransactions(1), 30000);
         });
 
+        let currentDashUser = '';
+
         function loadDashboard() {
-            $.get('backend/admin_api.php?action=get_dashboard_stats', function(res) {
+            $.get(`backend/admin_api.php?action=get_dashboard_stats&username=${currentDashUser}`, function(res) {
                 if(res.status === 'success') {
                     $('#stat-users').text(res.metrics.users);
                     $('#stat-premium').text(res.metrics.premium);
                     $('#stat-rooms').text(res.metrics.rooms);
+                    $('#dash-scope-badge').text('SCOPE: ' + res.scope);
 
                     // Chart
                     const ctx = document.getElementById('admin-activity-chart').getContext('2d');
@@ -289,7 +299,7 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                         data: {
                             labels: res.activity_chart.map(d => d.date.split('-').slice(1).join('/')),
                             datasets: [{
-                                label: 'Global Activity',
+                                label: res.scope === 'GLOBAL' ? 'Global Activity' : `${res.scope} Activity`,
                                 data: res.activity_chart.map(d => d.count),
                                 borderColor: '#007bff',
                                 tension: 0.3,
@@ -303,15 +313,28 @@ $activeRoomName = $_SESSION['active_room_name'] ?? '';
                     // Popular Widgets
                     let popHtml = '';
                     res.popular_widgets.forEach(w => {
-                        popHtml += `<div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:5px;">
+                        popHtml += `<div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:5px; border-bottom:1px solid #f9f9f9; padding-bottom:3px;">
                             <span>${w.nama_item}</span>
                             <span style="font-weight:bold;">${w.count} instances</span>
                         </div>`;
                     });
-                    $('#popular-widgets-list').html(popHtml || '<p style="color:#888;">No widgets spawned yet.</p>');
+                    $('#popular-widgets-list').html(popHtml || '<p style="color:#888; text-align:center; padding-top:20px;">No widget data found for this scope.</p>');
                 }
             });
         }
+
+        function resetDashboard() {
+            currentDashUser = '';
+            $('#dash-user-search').val('');
+            loadDashboard();
+        }
+
+        $('#dash-user-search').on('keypress', function(e) {
+            if(e.which == 13) {
+                currentDashUser = $(this).val().trim();
+                loadDashboard();
+            }
+        });
 
         function loadUsers(page) {
             let q = $('#user-search').val();
