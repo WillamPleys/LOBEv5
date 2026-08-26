@@ -1,0 +1,21 @@
+# Konfigurasi lokal — berisi kredensial database
+koneksi.php
+
+# Berkas unggahan pengguna
+uploads/*
+!uploads/.gitkeep
+
+# Log dan berkas sementara
+*.log
+*.tmp
+*.bak
+
+# Berkas sistem operasi
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
